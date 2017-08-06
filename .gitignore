@@ -1,0 +1,5 @@
+# IntelliJ project files
+.idea/
+
+# Jupyer Notebook
+notebooks/.ipynb_checkpoints/
