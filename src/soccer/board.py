@@ -5,16 +5,15 @@ ball_layer = directions
 dots_layer = ball_layer + 1
 player_color_layer = dots_layer + 1
 # nearby_dots_layer = player_color_layer + 1
-elo_layer = player_color_layer + 1
+# elo_layer = player_color_layer + 1
 
-
-# todo moves from position possible
 
 class Board:
     def __init__(self, player_color, player_elo, length=10, width=8):
         assert length % 2 == 0 and width % 2 == 0
-        depth = elo_layer + 5  # number of layers before elo layers + number of elo layers
-        player_elo_group = self.convert_elo(player_elo)
+        # depth = elo_layer + 5  # number of layers before elo layers + number of elo layers
+        depth = player_color_layer + 1
+        # player_elo_group = self.convert_elo(player_elo)
 
         self.length = length
         self.width = width
@@ -24,10 +23,10 @@ class Board:
 
         self.board[self.ball_pos[0], self.ball_pos[1], ball_layer] = 1
         self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
-
-        for i in range(length + 1):
-            for j in range(width + 1):
-                self.board[i, j, elo_layer + player_elo_group] = 1
+        #
+        # for i in range(length + 1):
+        #     for j in range(width + 1):
+        #         self.board[i, j, elo_layer + player_elo_group] = 1
 
         if player_color == 1:
             for i in range(length + 1):
