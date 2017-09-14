@@ -2,39 +2,28 @@
 import tensorflow as tf
 import os
 
-# from tensorflow.examples.tutorials.mnist import input_data as mnist_data
 from tensorflow.contrib import slim
 from tensorflow.contrib.learn import ModeKeys
 from tensorflow.contrib.learn import learn_runner
 
 from src.models.dataset import Dataset
 
-# Show debugging output
 tf.logging.set_verbosity(tf.logging.DEBUG)
 GAMES_DIR = os.path.join('data', 'games')
 
-# Set default flags for the output directories
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string(
     flag_name='model_dir', default_value='./training',
     docstring='Output directory for model and training stats.')
-tf.app.flags.DEFINE_string(
-    flag_name='data_dir', default_value='./data',
-    docstring='Directory to download the data to.')
 
 
-# Define and run experiment ###############################
 def run_experiment(argv=None):
-    """Run the training experiment."""
-    # Define model parameters
     params = tf.contrib.training.HParams(
         learning_rate=0.01,
-        # n_classes=8,
-        # train_steps=4,
-        min_eval_frequency=25
+        min_eval_frequency=1,
+        save_checkpoints_steps=1
     )
 
-    # Set the run_config and the directory to save the model and stats
     run_config = tf.contrib.learn.RunConfig()
     run_config = run_config.replace(model_dir=FLAGS.model_dir)
 
@@ -48,22 +37,22 @@ def run_experiment(argv=None):
 
 def experiment_fn(run_config, params):
     batch_size = 128
-    run_config = run_config.replace(
-        save_checkpoints_steps=params.min_eval_frequency)
-    estimator = get_estimator(run_config, params)
     dataset = Dataset(GAMES_DIR, batch_size=batch_size)
-    train_input_fn, train_input_hook = get_train_inputs(
-        batch_size=batch_size, dataset=dataset)
-    eval_input_fn, eval_input_hook = get_test_inputs(
-        batch_size=batch_size, dataset=dataset)
+    run_config = run_config.replace(
+        save_checkpoints_steps=params.save_checkpoints_steps * int(dataset.training_samples / batch_size))
+    estimator = get_estimator(run_config, params)
+    train_input_fn, train_input_hook = get_train_inputs(dataset=dataset)
+    eval_input_fn, eval_input_hook = get_test_inputs(dataset=dataset)
+
     print("Train samples = {}".format(dataset.training_samples))
+
     experiment = tf.contrib.learn.Experiment(
         estimator=estimator,
         train_input_fn=train_input_fn,
         eval_input_fn=eval_input_fn,
         train_steps=None,
         eval_steps=int(dataset.validation_samples / batch_size),
-        min_eval_frequency=params.min_eval_frequency
+        min_eval_frequency=params.min_eval_frequency * int(dataset.training_samples / batch_size)
     )
     return experiment
 
@@ -131,16 +120,21 @@ def architecture(inputs, is_training, scope='MnistConvNet'):
                               scope='conv1')
             net = slim.conv2d(net, 128, [3, 3], padding='SAME',
                               scope='conv2')
+            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+                              scope='conv3')
+            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+                              scope='conv4')
+            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+                              scope='conv5')
             net = slim.flatten(net)
-            net = slim.fully_connected(net, 256, scope='fn3')
+            net = slim.fully_connected(net, 256, scope='fn6')
             net = slim.dropout(net, is_training=is_training,
-                               scope='dropout3')
+                               scope='dropout6')
             net = slim.fully_connected(net, 8, scope='output',
                                        activation_fn=None)
         return net
 
 
-# Define data loaders #####################################
 class IteratorInitializerHook(tf.train.SessionRunHook):
     def __init__(self):
         super(IteratorInitializerHook, self).__init__()
@@ -150,7 +144,7 @@ class IteratorInitializerHook(tf.train.SessionRunHook):
         self.iterator_initializer_func(session)
 
 
-def get_train_inputs(batch_size, dataset):
+def get_train_inputs(dataset):
     iterator_initializer_hook = IteratorInitializerHook()
 
     def train_inputs():
@@ -163,7 +157,7 @@ def get_train_inputs(batch_size, dataset):
     return train_inputs, iterator_initializer_hook
 
 
-def get_test_inputs(batch_size, dataset):
+def get_test_inputs(dataset):
     iterator_initializer_hook = IteratorInitializerHook()
 
     def test_inputs():
