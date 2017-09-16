@@ -12,6 +12,8 @@ sys.path.append(parent)
 # from src.data.state_action_generate import StateActionGenerator
 from src.soccer.game import Game
 
+elo_threshold = 1985
+
 
 def extract_game_details(lines):
     games_elos = []
@@ -22,7 +24,7 @@ def extract_game_details(lines):
 
     for line in lines:
         if line == '' and game_moves != '':
-            if moves_sequences != '1. ' and white > 1800 and black > 1800:
+            if moves_sequences != '1. ' and white > elo_threshold and black > elo_threshold:
                 moves_sequences.append(game_moves)
                 games_elos.append((white, black))
 
@@ -36,7 +38,7 @@ def extract_game_details(lines):
         elif 'BlackElo' in line:
             black = int(re.findall('"([^"]*)"', line)[0])
 
-    if game_moves != '' and white > 1800 and black > 1800:
+    if game_moves != '' and white > elo_threshold and black > elo_threshold:
         moves_sequences.append(game_moves)
         games_elos.append((white, black))
 
@@ -67,10 +69,11 @@ def generate_state_actions(games_elos, games_moves, games_to_process, thread_id)
                 state_actions_game.append(state_action)
 
         games_processed += 1
-        to_save = np.array(state_actions_game, dtype=np.int8)
-        formatter = '%d'
-        np.savetxt('data/games/{}.csv'.format(games_processed + games_to_process * thread_id),
-                    to_save, delimiter=',', fmt=formatter)
+        if len(state_actions_game) != 0:
+            to_save = np.array(state_actions_game, dtype=np.int8)
+            formatter = '%d'
+            np.savetxt('data/games/{}.csv'.format(games_processed + games_to_process * thread_id),
+                       to_save, delimiter=',', fmt=formatter)
         if games_processed == games_to_process:
             break
 

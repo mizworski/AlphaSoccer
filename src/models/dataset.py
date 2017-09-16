@@ -10,17 +10,16 @@ N_ACTIONS = 8
 
 N_EPOCHS = 128
 TRAINING_SET_SIZE = 0.7
-GAMES_IN_BATCH = 128
-
+GAMES_IN_BATCH = 256
 N_STATE_ACTIONS = 282209
+
 
 def split_dataset(games_dir):
     filenames = np.asarray(os.listdir(games_dir))
     np.random.shuffle(filenames)
     training_samples = int(filenames.shape[0] * TRAINING_SET_SIZE)
 
-    return filenames[:training_samples], filenames[training_samples:], \
-           training_samples, filenames.shape[0] - training_samples
+    return filenames[:training_samples], filenames[training_samples:]
 
 
 class Dataset:
@@ -28,14 +27,13 @@ class Dataset:
         self.training_set_size = training_set_size
         self.batch_size = batch_size
         self.games_dir = games_dir
-        self.train_files, self.validation_files, self.training_samples, self.validation_samples = \
-            split_dataset(self.games_dir)
+        self.train_files, self.validation_files = split_dataset(self.games_dir)
 
         self.train_generator = self.batch_generator(self.train_files)
         self.validation_generator = self.batch_generator(self.validation_files)
 
-        self.training_samples *= N_STATE_ACTIONS * self.training_set_size
-        self.validation_samples *= N_STATE_ACTIONS * (1 - self.training_set_size)
+        self.training_samples = int(N_STATE_ACTIONS * self.training_set_size)
+        self.validation_samples = int(N_STATE_ACTIONS * (1 - self.training_set_size))
 
     def batch_generator(self, filenames):
         n_games = len(filenames)

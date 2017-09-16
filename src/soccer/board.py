@@ -3,7 +3,8 @@ import numpy as np
 directions = 8
 ball_layer = directions
 dots_layer = ball_layer + 1
-player_color_layer = dots_layer + 1
+ones_layer = dots_layer + 1
+# player_color_layer = dots_layer + 1
 # nearby_dots_layer = player_color_layer + 1
 # elo_layer = player_color_layer + 1
 
@@ -12,7 +13,7 @@ class Board:
     def __init__(self, player_color, player_elo, length=10, width=8):
         assert length % 2 == 0 and width % 2 == 0
         # depth = elo_layer + 5  # number of layers before elo layers + number of elo layers
-        depth = player_color_layer + 1
+        depth = ones_layer + 1
         # player_elo_group = self.convert_elo(player_elo)
 
         self.length = length
@@ -28,10 +29,7 @@ class Board:
         #     for j in range(width + 1):
         #         self.board[i, j, elo_layer + player_elo_group] = 1
 
-        if player_color == 1:
-            for i in range(length + 1):
-                for j in range(width + 1):
-                    self.board[i, j, player_color_layer] = 1
+        self.board[:, :, ones_layer] = 1
 
         for i in range(length + 1):
             for j in range(5, 8):
@@ -77,25 +75,25 @@ class Board:
     def has_scored(self, direction):
         if self.ball_pos[0] == 0:
             if direction == 0 and self.ball_pos[1] == self.width / 2:
-                return 0
+                return 1
 
             if direction == 1 and -1 + self.width / 2 <= self.ball_pos[1] <= self.width / 2:
-                return 0
+                return 1
 
             if direction == 7 and self.width / 2 <= self.ball_pos[1] <= 1 + self.width / 2:
-                return 0
+                return 1
 
         elif self.ball_pos[0] == self.length + 1:
             if direction == 4 and self.ball_pos[1] == self.width / 2:
-                return 1
+                return -1
 
             if direction == 3 and -1 + self.width / 2 <= self.ball_pos[1] <= self.width / 2:
-                return 1
+                return -1
 
             if direction == 5 and self.width / 2 <= self.ball_pos[1] <= 1 + self.width / 2:
-                return 1
+                return -1
 
-        return -1
+        return 0
 
     def out_of_board(self, x_delta, y_delta):
         if self.ball_pos[0] == 0 and x_delta <= 0:
@@ -114,7 +112,7 @@ class Board:
         y_delta = 0
 
         game_winner = self.has_scored(direction)
-        if game_winner >= 0:
+        if game_winner != 0:
             return game_winner
 
         if direction < 2 or direction > 6:
@@ -141,7 +139,7 @@ class Board:
         self.board[self.ball_pos[0], self.ball_pos[1], ball_layer] = 1
         self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
 
-        return 2
+        return 0
 
     def print_layer(self, k):
         layer = np.dsplit(self.board, self.board.shape[2])[k].reshape((self.board.shape[0], self.board.shape[1]))
