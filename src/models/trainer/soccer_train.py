@@ -9,10 +9,7 @@ from tensorflow.contrib.learn import learn_runner
 import multiprocessing
 from tensorflow.python.lib.io import file_io
 
-# from src.models.dataset import Dataset
-
 tf.logging.set_verbosity(tf.logging.DEBUG)
-# GAMES_DIR = os.path.join('data', 'games')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -46,13 +43,14 @@ tf.app.flags.DEFINE_string(
 
 params = tf.contrib.training.HParams(
     learning_rate=0.001,
-    min_eval_frequency=1,
-    save_checkpoints_steps=1,
+    min_eval_frequency=8,
+    save_checkpoints_steps=8,
     num_epochs=FLAGS.num_epochs,
     batch_size=FLAGS.batch_size
 )
-def run_experiment(argv=None):
 
+
+def run_experiment(argv=None):
     run_config = tf.contrib.learn.RunConfig()
     run_config = run_config.replace(model_dir=FLAGS.model_dir)
 
@@ -65,7 +63,8 @@ def run_experiment(argv=None):
 
 
 def experiment_fn(run_config, params):
-    if FLAGS.train_files is None:
+    tfrecords = True
+    if not tfrecords:
         train_files_names = os.listdir(FLAGS.train_data_dir)
         train_files = [os.path.join(FLAGS.train_data_dir, filename) for filename in train_files_names]
     else:
@@ -74,12 +73,12 @@ def experiment_fn(run_config, params):
         # train_files = [file_io.FileIO(FLAGS.train_files, mode='r')]
         train_files = [FLAGS.train_files]
 
-    train_input_fn = lambda: generate_input_fn(
+    train_input_fn = lambda: generate_input_tfr_fn(
         train_files,
         num_epochs=params.num_epochs,
         batch_size=params.batch_size
     )
-    if FLAGS.train_files is None:
+    if not tfrecords:
         eval_files = np.asarray(os.listdir(FLAGS.eval_data_dir))
         eval_files = [os.path.join(FLAGS.eval_data_dir, filename) for filename in eval_files]
     else:
@@ -88,7 +87,7 @@ def experiment_fn(run_config, params):
         # eval_files = [file_io.FileIO(FLAGS.train_files, mode='r')]
         eval_files = [FLAGS.eval_files]
 
-    eval_input_fn = lambda: generate_input_fn(
+    eval_input_fn = lambda: generate_input_tfr_fn(
         eval_files,
         num_epochs=params.num_epochs,
         batch_size=params.batch_size,
@@ -97,21 +96,22 @@ def experiment_fn(run_config, params):
 
     avg_actions_per_game = 112
 
-    training_steps = int(len(train_files) * avg_actions_per_game / params.batch_size)
-    validation_steps = int(len(eval_files) * avg_actions_per_game / params.batch_size)
+    training_steps = int(2048 * avg_actions_per_game / params.batch_size)
+    validation_steps = int((2495 - 2048) * avg_actions_per_game / params.batch_size)
 
     run_config = run_config.replace(
         save_checkpoints_steps=params.save_checkpoints_steps * training_steps
     )
     estimator = get_estimator(run_config, params)
 
-    print("Train samples = {}".format(len(train_files) * avg_actions_per_game))
+    print("Train steps = {}".format(training_steps))
+    print("eval steps = {}".format(validation_steps))
 
     experiment = tf.contrib.learn.Experiment(
         estimator=estimator,
         train_input_fn=train_input_fn,
         eval_input_fn=eval_input_fn,
-        train_steps=None,
+        train_steps=training_steps * params.num_epochs,
         eval_steps=validation_steps,
         min_eval_frequency=params.min_eval_frequency * training_steps
     )
@@ -202,6 +202,53 @@ def parse_file(rows):
     return [features, labels]
 
 
+def generate_input_tfr_fn(filenames,
+                          num_epochs=None,
+                          shuffle=True,
+                          batch_size=256):
+    feature = {'features': tf.FixedLenFeature([], tf.string),
+               'label': tf.FixedLenFeature([], tf.int64)}
+
+    filename_queue = tf.train.string_input_producer(
+        filenames,
+        num_epochs=num_epochs,
+        shuffle=shuffle
+    )
+    reader = tf.TFRecordReader()
+
+    _, serialized_example = reader.read(filename_queue)
+    features = tf.parse_single_example(serialized_example, features=feature)
+
+    game = tf.to_float(tf.decode_raw(features['features'], tf.int8))
+    label = tf.cast(features['label'], tf.int64)
+
+    game = tf.reshape(game, [-1, 11, 9, 11])
+    label = tf.reshape(label, [-1, 1])
+    batch = [game, label]
+
+    if shuffle:
+        batch = tf.train.shuffle_batch(
+            batch,
+            batch_size,
+            min_after_dequeue=2 * batch_size + 1,
+            capacity=batch_size * 10,
+            num_threads=multiprocessing.cpu_count(),
+            enqueue_many=True,
+            allow_smaller_final_batch=True,
+        )
+    else:
+        batch = tf.train.batch(
+            batch,
+            batch_size,
+            capacity=batch_size * 10,
+            num_threads=multiprocessing.cpu_count(),
+            enqueue_many=True,
+            allow_smaller_final_batch=True
+        )
+
+    return batch[0], batch[1]
+
+
 def generate_input_fn(filenames,
                       num_epochs=None,
                       shuffle=True,
@@ -224,8 +271,7 @@ def generate_input_fn(filenames,
             capacity=batch_size * 10,
             num_threads=multiprocessing.cpu_count(),
             enqueue_many=True,
-            allow_smaller_final_batch=True,
-            # shapes=[1, 11, 9, 11]
+            allow_smaller_final_batch=True
         )
     else:
         batch = tf.train.batch(

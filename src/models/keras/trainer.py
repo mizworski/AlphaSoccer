@@ -59,14 +59,14 @@ from src.models.dataset import Dataset
 
 def action_predictor():
     model = Sequential()
-    model.add(Conv2D(64, kernel_size=(5, 5),
+    model.add(Conv2D(128, kernel_size=(5, 5),
                      activation='relu',
                      input_shape=(WIDTH, HEIGHT, DEPTH),
                      padding='same'))
-    model.add(BatchNormalization())
-    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same', activity_regularizer=l2(0.0001)))
-    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same', activity_regularizer=l2(0.001)))
-    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same', activity_regularizer=l2(0.001)))
+    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
+    # model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same', activity_regularizer=l2(0.001)))
+    # model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same', activity_regularizer=l2(0.001)))
     # model.add(BatchNormalization())
     # model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
     # model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
@@ -100,8 +100,8 @@ if __name__ == '__main__':
     steps_per_epoch = int(dataset.training_samples / BATCH_SIZE)
     validation_steps = int(dataset.validation_samples / BATCH_SIZE)
 
-    for i in range(32):
-        model.fit_generator(train_generator, steps_per_epoch, 4,
+    for i in range(128):
+        model.fit_generator(train_generator, steps_per_epoch, 1,
                             validation_data=validation_generator, validation_steps=validation_steps)
 
-        model.save('models/model-{}.h5'.format(4 * (i + 1)))
+        model.save('models/model-{}.h5'.format((i + 1)))
