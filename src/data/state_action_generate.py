@@ -65,7 +65,9 @@ def generate_state_actions(games_elos, games_moves, games_to_process, thread_id)
                 action = int(move)
                 state = game.boards[i % 2].board
                 game.make_move(action)
-                state_action = np.append(state.flatten(), [action])
+
+                action_from_perspective = action if i % 2 == 0 else (action + 4) % 8
+                state_action = np.append(state.flatten(), [action_from_perspective])
                 state_actions_game.append(state_action)
 
         games_processed += 1

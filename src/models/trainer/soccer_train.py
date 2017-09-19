@@ -7,6 +7,8 @@ from tensorflow.contrib import slim
 from tensorflow.contrib.learn import ModeKeys
 from tensorflow.contrib.learn import learn_runner
 import multiprocessing
+from functools import reduce
+import operator
 from tensorflow.python.lib.io import file_io
 
 tf.logging.set_verbosity(tf.logging.DEBUG)
@@ -48,6 +50,8 @@ params = tf.contrib.training.HParams(
     num_epochs=FLAGS.num_epochs,
     batch_size=FLAGS.batch_size
 )
+
+input_dim = [-1, 11, 9, 12]
 
 
 def run_experiment(argv=None):
@@ -128,15 +132,19 @@ def get_estimator(run_config, params, model_dir=None):
             model_dir=model_dir
         )
 
+
 def model_fn(features, labels, mode, params):
     is_training = mode == ModeKeys.TRAIN
     if mode == ModeKeys.INFER:
         logits = architecture(features['x'], is_training=is_training)
+        predictions = {
+            'probabilities': tf.nn.softmax(logits),
+            'labels': tf.argmax(logits, axis=-1)
+        }
     else:
         logits = architecture(features, is_training=is_training)
         labels = tf.cast(labels, tf.int64)
-
-    predictions = tf.argmax(logits, axis=-1)
+        predictions = tf.argmax(logits, axis=-1)
     loss = None
     train_op = None
     eval_metric_ops = {}
@@ -198,22 +206,25 @@ def architecture(inputs, is_training, reuse=None, scope='SLNet'):
                 weights_initializer=tf.contrib.layers.xavier_initializer(),
                 weights_regularizer=slim.l2_regularizer(0.1)
         ):
-            net = slim.conv2d(inputs, 32, [5, 5], padding='SAME',
+            net = slim.conv2d(inputs, 128, [5, 5], padding='SAME',
                               reuse=reuse,
                               scope='conv1')
-            net = slim.conv2d(net, 32, [3, 3], padding='SAME',
+            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
                               reuse=reuse,
                               scope='conv2')
-            net = slim.conv2d(net, 64, [3, 3], padding='SAME',
+            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
                               reuse=reuse,
                               scope='conv3')
+            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+                              reuse=reuse,
+                              scope='conv4')
             net = slim.flatten(net)
-            net = slim.fully_connected(net, 128,
+            net = slim.fully_connected(net, 256,
                                        reuse=reuse,
-                                       scope='fc4')
+                                       scope='fc5')
             net = slim.dropout(net, is_training=is_training,
                                keep_prob=0.85,
-                               scope='dropout4')
+                               scope='dropout5')
             net = slim.fully_connected(net, 8,
                                        scope='output',
                                        reuse=reuse,
@@ -223,8 +234,9 @@ def architecture(inputs, is_training, reuse=None, scope='SLNet'):
 
 def parse_file(rows):
     row_cols = tf.expand_dims(rows, -1)
-    columns = tf.decode_csv(row_cols, record_defaults=[[0.0]] * 1090)
-    features = tf.reshape(tf.stack(columns[:-1]), [-1, 11, 9, 11])
+    n_features = reduce(operator.mul, input_dim, 1)
+    columns = tf.decode_csv(row_cols, record_defaults=[[0.0]] * (n_features + 1))
+    features = tf.reshape(tf.stack(columns[:-1]), input_dim)
     labels = tf.reshape(columns[-1:], [-1, 1])
     return [features, labels]
 
@@ -249,7 +261,7 @@ def generate_input_tfr_fn(filenames,
     game = tf.to_float(tf.decode_raw(features['features'], tf.int8))
     label = tf.cast(features['label'], tf.int64)
 
-    game = tf.reshape(game, [-1, 11, 9, 11])
+    game = tf.reshape(game, input_dim)
     label = tf.reshape(label, [-1, 1])
     batch = [game, label]
 

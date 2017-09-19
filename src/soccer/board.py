@@ -3,7 +3,10 @@ import numpy as np
 directions = 8
 ball_layer = directions
 dots_layer = ball_layer + 1
-ones_layer = dots_layer + 1
+turn_layer = dots_layer + 1
+ones_layer = turn_layer + 1
+
+
 # player_color_layer = dots_layer + 1
 # nearby_dots_layer = player_color_layer + 1
 # elo_layer = player_color_layer + 1
@@ -30,6 +33,7 @@ class Board:
         #         self.board[i, j, elo_layer + player_elo_group] = 1
 
         self.board[:, :, ones_layer] = 1
+        self.board[:, :, turn_layer] = 0
 
         for i in range(length + 1):
             for j in range(5, 8):
@@ -137,7 +141,11 @@ class Board:
         self.board[self.ball_pos[0], self.ball_pos[1], ball_layer] = 0
         self.ball_pos = tuple(map(sum, zip(self.ball_pos, (x_delta, y_delta))))
         self.board[self.ball_pos[0], self.ball_pos[1], ball_layer] = 1
-        self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
+        if self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] == 1:
+            prev_player = self.board[0, 0, turn_layer]
+            self.board[:, :, turn_layer] = 1 - prev_player
+        else:
+            self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
 
         return 0
 

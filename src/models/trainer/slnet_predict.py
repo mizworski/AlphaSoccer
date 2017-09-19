@@ -19,11 +19,9 @@ params = tf.contrib.training.HParams(
 run_config = tf.contrib.learn.RunConfig()
 
 model_dir = os.path.join('models', 'tf')
-# model_path = tf.train.latest_checkpoint(model_dir)
-# saver = tf.train.import_meta_graph(model_path + '.meta')
 estimator = get_estimator(run_config, params, model_dir)
 
-input_shape = [1, 11, 9, 11]
+input_shape = [1, 11, 9, 12]
 N_ACTIONS = 8
 
 game = Game()
@@ -33,14 +31,6 @@ train_input_fn = lambda x: tf.estimator.inputs.numpy_input_fn(
     shuffle=False)
 
 with tf.Session() as sess:
-    # sess.run(tf.initialize_all_variables())
-    # saver.restore(sess, model_path)
-    # graph = tf.get_default_graph()
-
-    # 'shuffle_batch:0'
-
-    # logits1 = architecture(boards, reuse=None, is_training=False)
-    # predictions1 = tf.argmax(logits1, axis=-1)
     while True:
         board_first = game.boards[0].board.reshape(input_shape)
         board_second = game.boards[1].board.reshape(input_shape)
@@ -49,16 +39,8 @@ with tf.Session() as sess:
         all_logits = estimator.predict(input_fn=train_input_fn(x), predict_keys='probabilities')
 
         for logits in all_logits:
-            print(logits)
-        # logits = sess.run([logits], feed_dict=feed_dict)
-        # logits_first = logits[0][0]
-        # logits_second = logits[0][1]
-        # print(logits_first)
-        # print(logits_second)
-        # moves_first = sorted(range(N_ACTIONS), key=lambda k: logits_first[k])
-        # moves_seconds = sorted(range(N_ACTIONS), key=lambda k: logits_second[k])
-        # print(moves_first)
-        # print(moves_seconds)
+            moves = sorted(range(N_ACTIONS), key=lambda k: logits['probabilities'][k], reverse=True)
+            print(moves)
 
         print("Input next move that was made.")
         action = input()

@@ -3,7 +3,10 @@ import pandas as pd
 import os
 from numpy import genfromtxt
 import numpy as np
+from functools import reduce
+import operator
 
+input_dim = [11, 9, 12]
 
 def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -19,7 +22,8 @@ for subset in subsets:
     files = [os.path.join(games_dir, file) for file in files]
 
     count = 0
-    state_action_batch = np.ndarray((0, 1090), dtype=np.int8)
+    n_features = reduce(operator.mul, input_dim, 1)
+    state_action_batch = np.ndarray((0, n_features + 1), dtype=np.int8)
     for file in files:
         csv = genfromtxt(file, delimiter=',', dtype=np.int8)
         state_action_batch = np.concatenate((state_action_batch, csv))
@@ -29,8 +33,9 @@ for subset in subsets:
             # break
 
     np.random.shuffle(state_action_batch)
+    # filename = "data/tfrecords/{}".format(subset)
 
-    with tf.python_io.TFRecordWriter("data/tfrecords/{}".format(subset)) as writer:
+    with tf.python_io.TFRecordWriter(subset) as writer:
         for row in state_action_batch:
             features, label = row[:-1], row[-1]
             features_string = features.tostring()
