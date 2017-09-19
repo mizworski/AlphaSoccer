@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-PREFIX='bs1024'
+if [ -z $1 ]; then
+echo "no args given"
+exit 42
+fi
+PREFIX=$1
 JOB_NAME=$PREFIX"_$(date +%Y_%m_%d_%H_%M_%S)"
 
 BUCKET_NAME="cnn-test"
@@ -14,8 +18,8 @@ MODEL_DIR=${OUTPUT_PATH}/model
 #EVAL_FILES=gs://cnn-test/data/links/eval.csv
 TRAIN_FILES=gs://cnn-test/data/tfrecords/train
 EVAL_FILES=gs://cnn-test/data/tfrecords/eval
-N_EPOCHS=1024
-BATCH_SIZE=1024
+N_EPOCHS=64
+BATCH_SIZE=2048
 
 gcloud ml-engine jobs submit training $JOB_NAME \
                                     --runtime-version 1.2 \

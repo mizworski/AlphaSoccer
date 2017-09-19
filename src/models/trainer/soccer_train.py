@@ -68,9 +68,6 @@ def experiment_fn(run_config, params):
         train_files_names = os.listdir(FLAGS.train_data_dir)
         train_files = [os.path.join(FLAGS.train_data_dir, filename) for filename in train_files_names]
     else:
-        # with file_io.FileIO(FLAGS.train_files, mode='r') as file:
-        #     train_files = file.readlines()
-        # train_files = [file_io.FileIO(FLAGS.train_files, mode='r')]
         train_files = [FLAGS.train_files]
 
     train_input_fn = lambda: generate_input_tfr_fn(
@@ -82,9 +79,6 @@ def experiment_fn(run_config, params):
         eval_files = np.asarray(os.listdir(FLAGS.eval_data_dir))
         eval_files = [os.path.join(FLAGS.eval_data_dir, filename) for filename in eval_files]
     else:
-        # with file_io.FileIO(FLAGS.eval_files, mode='r') as file:
-        #     eval_files = file.readlines()
-        # eval_files = [file_io.FileIO(FLAGS.train_files, mode='r')]
         eval_files = [FLAGS.eval_files]
 
     eval_input_fn = lambda: generate_input_tfr_fn(
@@ -100,7 +94,7 @@ def experiment_fn(run_config, params):
     validation_steps = int((2495 - 2048) * avg_actions_per_game / params.batch_size)
 
     run_config = run_config.replace(
-        save_checkpoints_steps=params.save_checkpoints_steps * training_steps
+        save_checkpoints_steps=params.save_checkpoints_steps * training_steps - 1
     )
     estimator = get_estimator(run_config, params)
 
@@ -118,21 +112,31 @@ def experiment_fn(run_config, params):
     return experiment
 
 
-def get_estimator(run_config, params):
-    return tf.estimator.Estimator(
-        model_fn=model_fn,
-        params=params,
-        config=run_config
-    )
+def get_estimator(run_config, params, model_dir=None):
+    if model_dir is None:
+        return tf.estimator.Estimator(
+            model_fn=model_fn,
+            params=params,
+            config=run_config
+        )
+    else:
 
+        return tf.estimator.Estimator(
+            model_fn=model_fn,
+            params=params,
+            config=run_config,
+            model_dir=model_dir
+        )
 
 def model_fn(features, labels, mode, params):
     is_training = mode == ModeKeys.TRAIN
+    if mode == ModeKeys.INFER:
+        logits = architecture(features['x'], is_training=is_training)
+    else:
+        logits = architecture(features, is_training=is_training)
+        labels = tf.cast(labels, tf.int64)
 
-    logits = architecture(features, is_training=is_training)
     predictions = tf.argmax(logits, axis=-1)
-
-    labels = tf.cast(labels, tf.int32)
     loss = None
     train_op = None
     eval_metric_ops = {}
@@ -141,7 +145,7 @@ def model_fn(features, labels, mode, params):
             labels=labels,
             logits=logits)
         train_op = get_train_op_fn(loss, params)
-        eval_metric_ops = get_eval_metric_ops(labels, predictions)
+        eval_metric_ops = get_eval_metric_ops(labels, logits, predictions)
     return tf.estimator.EstimatorSpec(
         mode=mode,
         predictions=predictions,
@@ -160,36 +164,59 @@ def get_train_op_fn(loss, params):
     )
 
 
-def get_eval_metric_ops(labels, predictions):
+def get_eval_metric_ops(labels, logits, predictions):
     return {
         'Accuracy': tf.metrics.accuracy(
             labels=labels,
             predictions=predictions,
-            name='accuracy')
+            name='accuracy'),
+        'Top2': tf.metrics.recall_at_k(
+            labels=labels,
+            predictions=logits,
+            k=2,
+            name='in_top2'
+        ),
+        'Top3': tf.metrics.recall_at_k(
+            labels=labels,
+            predictions=logits,
+            k=3,
+            name='in_top3'
+        ),
+        'Top4': tf.metrics.recall_at_k(
+            labels=labels,
+            predictions=logits,
+            k=4,
+            name='in_top4'
+        ),
     }
 
 
-def architecture(inputs, is_training, scope='MnistConvNet'):
+def architecture(inputs, is_training, reuse=None, scope='SLNet'):
     with tf.variable_scope(scope):
         with slim.arg_scope(
                 [slim.conv2d, slim.fully_connected],
-                weights_initializer=tf.contrib.layers.xavier_initializer()
+                weights_initializer=tf.contrib.layers.xavier_initializer(),
+                weights_regularizer=slim.l2_regularizer(0.1)
         ):
-            net = slim.conv2d(inputs, 128, [5, 5], padding='SAME',
+            net = slim.conv2d(inputs, 32, [5, 5], padding='SAME',
+                              reuse=reuse,
                               scope='conv1')
-            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+            net = slim.conv2d(net, 32, [3, 3], padding='SAME',
+                              reuse=reuse,
                               scope='conv2')
-            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+            net = slim.conv2d(net, 64, [3, 3], padding='SAME',
+                              reuse=reuse,
                               scope='conv3')
-            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
-                              scope='conv4')
-            # net = slim.conv2d(net, 128, [3, 3], padding='SAME',
-            #                   scope='conv5')
             net = slim.flatten(net)
-            net = slim.fully_connected(net, 256, scope='fn6')
-            # net = slim.dropout(net, is_training=is_training,
-            #                    scope='dropout6')
-            net = slim.fully_connected(net, 8, scope='output',
+            net = slim.fully_connected(net, 128,
+                                       reuse=reuse,
+                                       scope='fc4')
+            net = slim.dropout(net, is_training=is_training,
+                               keep_prob=0.85,
+                               scope='dropout4')
+            net = slim.fully_connected(net, 8,
+                                       scope='output',
+                                       reuse=reuse,
                                        activation_fn=None)
         return net
 

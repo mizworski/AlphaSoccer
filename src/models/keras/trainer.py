@@ -65,6 +65,7 @@ def action_predictor():
                      padding='same'))
     model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
     model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
+    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
     # model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same', activity_regularizer=l2(0.001)))
     # model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same', activity_regularizer=l2(0.001)))
     # model.add(BatchNormalization())
