@@ -18,7 +18,7 @@ MODEL_DIR=${OUTPUT_PATH}/model
 #EVAL_FILES=gs://cnn-test/data/links/eval.csv
 TRAIN_FILES=gs://cnn-test/data/tfrecords/train
 EVAL_FILES=gs://cnn-test/data/tfrecords/eval
-N_EPOCHS=64
+N_EPOCHS=10
 BATCH_SIZE=2048
 
 gcloud ml-engine jobs submit training $JOB_NAME \

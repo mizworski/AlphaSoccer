@@ -9,7 +9,6 @@ from tensorflow.contrib.learn import learn_runner
 import multiprocessing
 from functools import reduce
 import operator
-from tensorflow.python.lib.io import file_io
 
 tf.logging.set_verbosity(tf.logging.DEBUG)
 
@@ -74,7 +73,7 @@ def experiment_fn(run_config, params):
     else:
         train_files = [FLAGS.train_files]
 
-    train_input_fn = lambda: generate_input_tfr_fn(
+    train_input_fn = lambda: generate_input_fn(
         train_files,
         num_epochs=params.num_epochs,
         batch_size=params.batch_size
@@ -85,7 +84,7 @@ def experiment_fn(run_config, params):
     else:
         eval_files = [FLAGS.eval_files]
 
-    eval_input_fn = lambda: generate_input_tfr_fn(
+    eval_input_fn = lambda: generate_input_fn(
         eval_files,
         num_epochs=params.num_epochs,
         batch_size=params.batch_size,
@@ -103,7 +102,7 @@ def experiment_fn(run_config, params):
     estimator = get_estimator(run_config, params)
 
     print("Train steps = {}".format(training_steps))
-    print("eval steps = {}".format(validation_steps))
+    print("Eval steps = {}".format(validation_steps))
 
     experiment = tf.contrib.learn.Experiment(
         estimator=estimator,
@@ -137,14 +136,13 @@ def model_fn(features, labels, mode, params):
     is_training = mode == ModeKeys.TRAIN
     if mode == ModeKeys.INFER:
         logits = architecture(features['x'], is_training=is_training)
-        predictions = {
-            'probabilities': tf.nn.softmax(logits),
-            'labels': tf.argmax(logits, axis=-1)
-        }
     else:
         logits = architecture(features, is_training=is_training)
         labels = tf.cast(labels, tf.int64)
-        predictions = tf.argmax(logits, axis=-1)
+    predictions = {
+        'probabilities': tf.nn.softmax(logits),
+        'labels': tf.argmax(logits, axis=-1)
+    }
     loss = None
     train_op = None
     eval_metric_ops = {}
@@ -153,10 +151,12 @@ def model_fn(features, labels, mode, params):
             labels=labels,
             logits=logits)
         train_op = get_train_op_fn(loss, params)
-        eval_metric_ops = get_eval_metric_ops(labels, logits, predictions)
+        eval_metric_ops = get_eval_metric_ops(labels, logits, predictions['labels'])
+
+    predictions2 = predictions if mode == ModeKeys.INFER else predictions['labels']
     return tf.estimator.EstimatorSpec(
         mode=mode,
-        predictions=predictions,
+        predictions=predictions2,
         loss=loss,
         train_op=train_op,
         eval_metric_ops=eval_metric_ops
@@ -200,31 +200,35 @@ def get_eval_metric_ops(labels, logits, predictions):
 
 
 def architecture(inputs, is_training, reuse=None, scope='SLNet'):
+    kernels = 128
     with tf.variable_scope(scope):
         with slim.arg_scope(
                 [slim.conv2d, slim.fully_connected],
                 weights_initializer=tf.contrib.layers.xavier_initializer(),
                 weights_regularizer=slim.l2_regularizer(0.1)
         ):
-            net = slim.conv2d(inputs, 128, [5, 5], padding='SAME',
+            net = slim.conv2d(inputs, kernels, [5, 5], padding='SAME',
                               reuse=reuse,
                               scope='conv1')
-            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
                               reuse=reuse,
                               scope='conv2')
-            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
                               reuse=reuse,
                               scope='conv3')
-            net = slim.conv2d(net, 128, [3, 3], padding='SAME',
+            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
                               reuse=reuse,
                               scope='conv4')
+            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
+                              reuse=reuse,
+                              scope='conv5')
             net = slim.flatten(net)
             net = slim.fully_connected(net, 256,
                                        reuse=reuse,
-                                       scope='fc5')
+                                       scope='fc6')
             net = slim.dropout(net, is_training=is_training,
                                keep_prob=0.85,
-                               scope='dropout5')
+                               scope='dropout6')
             net = slim.fully_connected(net, 8,
                                        scope='output',
                                        reuse=reuse,
@@ -241,10 +245,10 @@ def parse_file(rows):
     return [features, labels]
 
 
-def generate_input_tfr_fn(filenames,
-                          num_epochs=None,
-                          shuffle=True,
-                          batch_size=256):
+def generate_input_fn(filenames,
+                      num_epochs=None,
+                      shuffle=True,
+                      batch_size=256):
     feature = {'features': tf.FixedLenFeature([], tf.string),
                'label': tf.FixedLenFeature([], tf.int64)}
 
@@ -274,43 +278,6 @@ def generate_input_tfr_fn(filenames,
             num_threads=multiprocessing.cpu_count(),
             enqueue_many=True,
             allow_smaller_final_batch=True,
-        )
-    else:
-        batch = tf.train.batch(
-            batch,
-            batch_size,
-            capacity=batch_size * 10,
-            num_threads=multiprocessing.cpu_count(),
-            enqueue_many=True,
-            allow_smaller_final_batch=True
-        )
-
-    return batch[0], batch[1]
-
-
-def generate_input_fn(filenames,
-                      num_epochs=None,
-                      shuffle=True,
-                      batch_size=256):
-    filename_queue = tf.train.string_input_producer(
-        filenames,
-        num_epochs=num_epochs,
-        shuffle=shuffle
-    )
-    reader = tf.TextLineReader()
-
-    _, rows = reader.read_up_to(filename_queue, num_records=batch_size)
-    batch = parse_file(rows)
-
-    if shuffle:
-        batch = tf.train.shuffle_batch(
-            batch,
-            batch_size,
-            min_after_dequeue=2 * batch_size + 1,
-            capacity=batch_size * 10,
-            num_threads=multiprocessing.cpu_count(),
-            enqueue_many=True,
-            allow_smaller_final_batch=True
         )
     else:
         batch = tf.train.batch(

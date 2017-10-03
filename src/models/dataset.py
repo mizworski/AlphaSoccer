@@ -5,7 +5,7 @@ import keras
 
 np.random.seed(42)
 
-WIDTH, HEIGHT, DEPTH = 11, 9, 11
+WIDTH, HEIGHT, DEPTH = 11, 9, 12
 N_ACTIONS = 8
 
 N_EPOCHS = 128
@@ -38,9 +38,10 @@ class Dataset:
     def batch_generator(self, filenames):
         n_games = len(filenames)
 
+        features = WIDTH * HEIGHT * DEPTH + 1
         while True:
             games_processed = 0
-            state_action_batch = np.ndarray((0, 1090))
+            state_action_batch = np.ndarray((0, features))
             for filename in filenames:
                 file_path = os.path.join(self.games_dir, filename)
                 state_actions = genfromtxt(file_path, delimiter=',')
@@ -61,4 +62,4 @@ class Dataset:
                         x = x[self.batch_size:]
                         y = y[self.batch_size:]
 
-                    state_action_batch = np.ndarray((0, 1090))
+                    state_action_batch = np.ndarray((0, features))

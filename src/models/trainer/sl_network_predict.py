@@ -6,7 +6,7 @@ from src.soccer.game import Game
 import tensorflow as tf
 from src.models.trainer.soccer_train import architecture
 
-input_shape = [1, 11, 9, 11]
+input_shape = [1, 11, 9, 12]
 N_ACTIONS = 8
 
 game = Game()
@@ -16,20 +16,13 @@ model_path = tf.train.latest_checkpoint(model_dir)
 saver = tf.train.import_meta_graph(model_path + '.meta')
 
 with tf.Session() as sess:
-    # sess.run(tf.initialize_all_variables())
     saver.restore(sess, model_path)
     graph = tf.get_default_graph()
 
-    # 'shuffle_batch:0'
-
-    # logits1 = architecture(boards, reuse=None, is_training=False)
-    # predictions1 = tf.argmax(logits1, axis=-1)
     while True:
         board_first = game.boards[0].board.reshape(input_shape)
         board_second = game.boards[1].board.reshape(input_shape)
         print(board_first.shape)
-        # action_first_player = model.predict(board_first)
-        # action_second_player = model.predict(board_second)
 
         batch = graph.get_tensor_by_name("shuffle_batch:0")
         logits = graph.get_tensor_by_name("SLNet/output/BiasAdd:0")

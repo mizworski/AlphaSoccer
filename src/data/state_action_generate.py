@@ -58,7 +58,7 @@ def extract_game_details(lines):
 def generate_state_actions(games_elos, games_moves, games_to_process, thread_id):
     games_processed = 0
     for elos, turns in zip(games_elos, games_moves):
-        game = Game(elos[0], elos[1])
+        game = Game()
         state_actions_game = []
         for i, turn in enumerate(turns):
             for move in turn:
