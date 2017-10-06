@@ -6,12 +6,17 @@ import time
 
 input_shape = [1, 11, 9, 12]
 
+
 class Soccer:
-    def __init__(self, models_dir='models/tf'):
+    def __init__(self, k_last_models=5, models_dir='models/tf'):
         self.player_board = None
         self.env_agent_board = None
 
-        model_path = tf.train.latest_checkpoint(models_dir)
+        models_dirs = os.listdir(models_dir)
+        chosen_model = int(np.random.random(k_last_models))
+        model_dir = models_dirs[chosen_model]
+
+        model_path = tf.train.latest_checkpoint(model_dir)
         saver = tf.train.import_meta_graph(model_path + '.meta')
 
         self.sess = tf.Session()
@@ -50,7 +55,6 @@ class Soccer:
 
             reward_after_env_move, _ = self.player_board.make_move((env_action + 4) % 8)
 
-
             print('env rew = {}'.format(env_reward))
             print('my rew = {}'.format(reward_after_env_move))
             while env_reward == -1:
@@ -85,6 +89,7 @@ class Soccer:
                 self.player_board.print_board()
 
         return self.player_board.board.reshape(input_shape)
+
 
 if __name__ == '__main__':
     env = Soccer()

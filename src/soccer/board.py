@@ -197,16 +197,3 @@ class Board:
         print('+-+-+')
 
         print('Next player = {}'.format(int(self.board[0, 0, turn_layer])))
-
-    @staticmethod
-    def convert_elo(elo):
-        if elo < 1150:
-            return 0
-        if elo < 1250:
-            return 1
-        if elo < 1400:
-            return 2
-        if elo < 1650:
-            return 3
-
-        return 4

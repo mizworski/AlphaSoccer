@@ -3,7 +3,7 @@ import os
 import numpy as np
 from src.soccer.game import Game
 
-from src.models.trainer.soccer_train import get_estimator
+from src.models.supervised_policy.soccer_train import get_estimator
 
 FLAGS = tf.app.flags.FLAGS
 tf.logging.set_verbosity(tf.logging.DEBUG)

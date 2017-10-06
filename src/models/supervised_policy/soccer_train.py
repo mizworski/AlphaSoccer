@@ -3,19 +3,20 @@ import tensorflow as tf
 import os
 import numpy as np
 
-from tensorflow.contrib import slim
 from tensorflow.contrib.learn import ModeKeys
 from tensorflow.contrib.learn import learn_runner
 import multiprocessing
 from functools import reduce
 import operator
 
+from src.models.networks.policy_network import get_policy_network
+
 tf.logging.set_verbosity(tf.logging.DEBUG)
 
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string(
-    flag_name='model_dir', default_value='model',
+    flag_name='model_dir', default_value='models/policy_networks/0_supervised',
     docstring='Output directory for model and training stats.')
 tf.app.flags.DEFINE_string(
     flag_name='train_data_dir', default_value='data/games/train',
@@ -135,9 +136,9 @@ def get_estimator(run_config, params, model_dir=None):
 def model_fn(features, labels, mode, params):
     is_training = mode == ModeKeys.TRAIN
     if mode == ModeKeys.INFER:
-        logits = architecture(features['x'], is_training=is_training)
+        logits = get_policy_network(features['x'], is_training=is_training)
     else:
-        logits = architecture(features, is_training=is_training)
+        logits = get_policy_network(features, is_training=is_training)
         labels = tf.cast(labels, tf.int64)
     predictions = {
         'probabilities': tf.nn.softmax(logits),
@@ -197,43 +198,6 @@ def get_eval_metric_ops(labels, logits, predictions):
             name='in_top4'
         ),
     }
-
-
-def architecture(inputs, is_training, reuse=None, scope='SLNet'):
-    kernels = 128
-    with tf.variable_scope(scope):
-        with slim.arg_scope(
-                [slim.conv2d, slim.fully_connected],
-                weights_initializer=tf.contrib.layers.xavier_initializer(),
-                weights_regularizer=slim.l2_regularizer(0.1)
-        ):
-            net = slim.conv2d(inputs, kernels, [5, 5], padding='SAME',
-                              reuse=reuse,
-                              scope='conv1')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv2')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv3')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv4')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv5')
-            net = slim.flatten(net)
-            net = slim.fully_connected(net, 256,
-                                       reuse=reuse,
-                                       scope='fc6')
-            net = slim.dropout(net, is_training=is_training,
-                               keep_prob=0.85,
-                               scope='dropout6')
-            net = slim.fully_connected(net, 8,
-                                       scope='output',
-                                       reuse=reuse,
-                                       activation_fn=None)
-        return net
 
 
 def parse_file(rows):

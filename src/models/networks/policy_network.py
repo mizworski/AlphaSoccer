@@ -1,10 +1,7 @@
 import tensorflow as tf
-
 from tensorflow.contrib import slim
 
-
-
-def get_reinforcement_network(inputs, is_training, reuse=None, scope='SLNet'):
+def get_policy_network(inputs, is_training, reuse=None, scope='PolicyNetwork'):
     kernels = 128
     with tf.variable_scope(scope):
         with slim.arg_scope(

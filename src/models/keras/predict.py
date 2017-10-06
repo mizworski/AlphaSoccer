@@ -4,7 +4,7 @@ import os
 from keras.models import load_model
 from src.soccer.game import Game
 import tensorflow as tf
-from src.models.trainer.soccer_train import architecture
+from src.models.supervised_policy.soccer_train import architecture
 
 # model = load_model('model-80.h5')
 # input_shape = (1, 11, 9, 11)
