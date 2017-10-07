@@ -196,4 +196,4 @@ class Board:
             print(' ', end='')
         print('+-+-+')
 
-        print('Next player = {}'.format(int(self.board[0, 0, turn_layer])))
+        # print('Next player = {}'.format(int(self.board[0, 0, turn_layer])))

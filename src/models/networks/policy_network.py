@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib import slim
 
-def get_policy_network(inputs, is_training, reuse=None, scope='PolicyNetwork'):
+def     get_policy_network(inputs, is_training=False, reuse=None, scope='PolicyNetwork'):
     kernels = 128
     keep_prob = tf.placeholder_with_default(0.85, shape=(), name='keep_prob')
 

@@ -58,13 +58,20 @@ class Soccer:
             env_action = np.argmax(env_logits)
 
             env_reward, env_turn = self.env_agent_board.make_move(env_action)
+            _ = self.player_board.make_move((env_action + 4) % 8)
+            reward_after_env_move = -env_reward
 
-            reward_after_env_move, _ = self.player_board.make_move((env_action + 4) % 8)
-
+            # todo experiment with this shit
             while env_reward == -1:
-                rand_move = int(np.random.rand() * 7.99)
+                ball_pos = self.env_agent_board.get_pos()
+                # if there is still move available
+                if (self.env_agent_board.board[ball_pos][:8] == np.array([1] * 8)).all():
+                    return self.player_board.board.reshape(input_shape), 1, True # reward=1 or reward=0?
+
+                rand_move = int(np.random.rand() * 8)
                 env_reward, env_turn = self.env_agent_board.make_move(rand_move)
-                reward_after_env_move, _ = self.player_board.make_move((rand_move + 4) % 8)
+                _ = self.player_board.make_move((rand_move + 4) % 8)
+                reward_after_env_move = -env_reward
 
 
             if verbose:
@@ -104,7 +111,7 @@ if __name__ == '__main__':
             action = input()
             action = int(action)
 
-            state, reward, done = env.step(action, verbose=1)
+            state, reward, done = env.step(action, verbose=0)
 
             if done:
                 print('Game ended, reward = {}'.format(reward))
