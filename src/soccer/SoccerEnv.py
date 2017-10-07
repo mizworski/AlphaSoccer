@@ -8,22 +8,25 @@ input_shape = [1, 11, 9, 12]
 
 
 class Soccer:
-    def __init__(self, k_last_models=5, models_dir='models/tf'):
+    def __init__(self, k_last_models=5, models_dir='models/policy_networks/policy_gradient'):
         self.player_board = None
         self.env_agent_board = None
 
-        models_dirs = os.listdir(models_dir)
-        chosen_model = int(np.random.random(k_last_models))
-        model_dir = models_dirs[chosen_model]
+        checkpoint_state = tf.train.get_checkpoint_state(models_dir)
+        all_checkpoints = list(reversed(checkpoint_state.all_model_checkpoint_paths))
 
-        model_path = tf.train.latest_checkpoint(model_dir)
+        k_last_models = k_last_models if k_last_models <= len(all_checkpoints) else len(all_checkpoints)
+
+        chosen_model = int(k_last_models * np.random.random())
+        model_path = all_checkpoints[chosen_model]
         saver = tf.train.import_meta_graph(model_path + '.meta')
 
         self.sess = tf.Session()
         saver.restore(self.sess, model_path)
         graph = tf.get_default_graph()
         self.inputs = graph.get_tensor_by_name("shuffle_batch:0")
-        self.output = graph.get_tensor_by_name("SLNet/output/BiasAdd:0")
+        self.keep_prob = graph.get_tensor_by_name("keep_prob:0")
+        self.output = graph.get_tensor_by_name("PolicyNetwork/output/BiasAdd:0")
 
     def step(self, action, verbose=0):
         reward_after_player_move, bonus_move = self.player_board.make_move(action)
@@ -44,8 +47,11 @@ class Soccer:
 
         while env_turn:
             inputs = self.inputs
+            keep_prob = self.keep_prob
+
             feed_dict = {
-                inputs: self.env_agent_board.board.reshape(input_shape)
+                inputs: self.env_agent_board.board.reshape(input_shape),
+                keep_prob: 1.0
             }
 
             env_logits = self.sess.run([self.output], feed_dict=feed_dict)
@@ -55,14 +61,11 @@ class Soccer:
 
             reward_after_env_move, _ = self.player_board.make_move((env_action + 4) % 8)
 
-            print('env rew = {}'.format(env_reward))
-            print('my rew = {}'.format(reward_after_env_move))
             while env_reward == -1:
                 rand_move = int(np.random.rand() * 7.99)
                 env_reward, env_turn = self.env_agent_board.make_move(rand_move)
                 reward_after_env_move, _ = self.player_board.make_move((rand_move + 4) % 8)
 
-            print(env_action)
 
             if verbose:
                 self.player_board.print_board()
@@ -92,10 +95,10 @@ class Soccer:
 
 
 if __name__ == '__main__':
-    env = Soccer()
+    env = Soccer(k_last_models=4)
 
     while True:
-        state = env.reset(np.random.rand() < 0.5, verbose=True)
+        state = env.reset(0, verbose=True)
 
         for _ in range(100):
             action = input()

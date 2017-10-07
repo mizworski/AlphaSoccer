@@ -3,6 +3,8 @@ from tensorflow.contrib import slim
 
 def get_policy_network(inputs, is_training, reuse=None, scope='PolicyNetwork'):
     kernels = 128
+    keep_prob = tf.placeholder_with_default(0.85, shape=(), name='keep_prob')
+
     with tf.variable_scope(scope):
         with slim.arg_scope(
                 [slim.conv2d, slim.fully_connected],
@@ -29,7 +31,7 @@ def get_policy_network(inputs, is_training, reuse=None, scope='PolicyNetwork'):
                                        reuse=reuse,
                                        scope='fc6')
             net = slim.dropout(net, is_training=is_training,
-                               keep_prob=0.85,
+                               keep_prob=keep_prob,
                                scope='dropout6')
             net = slim.fully_connected(net, 8,
                                        scope='output',
