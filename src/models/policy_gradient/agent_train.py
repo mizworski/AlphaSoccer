@@ -21,28 +21,40 @@ tf.app.flags.DEFINE_string(
     docstring='Directory containing all policy networks.')
 
 tf.app.flags.DEFINE_integer(
-    flag_name='num_games', default_value='32',
+    flag_name='num_games', default_value='2048',
     docstring='Number of games played between each policy iteration.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='batch_size', default_value='4',
+    flag_name='sample_size', default_value='4096',
+    docstring='Size of learning sample from all games state-actions.'
+)
+tf.app.flags.DEFINE_integer(
+    flag_name='batch_size', default_value='1024',
     docstring='Number of state-action pairs in single batch.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='num_iterations', default_value='8',
+    flag_name='num_iterations', default_value='2048',
     docstring='Number of policy iterations.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='max_turns_per_game', default_value='100',
+    flag_name='max_turns_per_game', default_value='250',
     docstring='Number of policy iterations.'
 )
+tf.app.flags.DEFINE_integer(
+    flag_name='games_against_same_opponent', default_value='1',
+    docstring='Number of games played before opponent changes.'
+)
 tf.app.flags.DEFINE_float(
-    flag_name='exploratory_epsilon', default_value='0.01',
+    flag_name='exploratory_epsilon', default_value='0.005',
     docstring='Epsilon for epsilon-greedy exploration.'
+)
+tf.app.flags.DEFINE_integer(
+    flag_name='print_board', default_value='256',
+    docstring='Printing board every n games.'
 )
 
 params = tf.contrib.training.HParams(
-    learning_rate=0.00000001,
+    learning_rate=1e-8,
     num_games=FLAGS.num_games,
     batch_size=FLAGS.batch_size,
     num_iterations=FLAGS.num_iterations
@@ -71,23 +83,27 @@ def model_fn(features, labels, mode, params):
     loss = None
     train_op = None
     if mode != ModeKeys.INFER:
-        logits = tf.Print(logits, [logits], message="logits:")
-        log_prob = tf.log(tf.nn.softmax(logits))
-        log_prob = tf.Print(log_prob, [log_prob], message="log_prob:")
-        actions = features['actions']
-        actions = tf.Print(actions, [actions], message="actions:")
-        grad_act = tf.gather(log_prob, actions, axis=1)
-        grad_act = tf.Print(grad_act, [grad_act], message="grad_act:")
+        logits = tf.Print(logits, [logits], message="logits:", summarize=24)
 
-        # actions = tf.cast(actions, dtype=tf.float32)
-        # grad = tf.multiply(log_prob, actions)
-        # grad = tf.Print(grad, [grad], message="grad:")
-        # grad_act = tf.reduce_sum(grad, 1)
+        probs = tf.nn.softmax(logits)
+        probs = tf.Print(probs, [probs], message="probs:", summarize=24)
+
+        log_prob = tf.log(probs)
+        log_prob = tf.Print(log_prob, [log_prob], message="log_prob:", summarize=24)
+
+        actions = features['actions']
+        actions = tf.Print(actions, [actions], message="actions:", summarize=3)
+
+        indices = tf.range(0, 8 * tf.shape(log_prob)[0], delta=8) + actions
+        indices = tf.Print(indices, [indices], message="indices:", summarize=3)
+
+        grad_act = tf.gather(probs, indices, axis=1)
+        grad_act = tf.Print(grad_act, [grad_act], message="grad_act:", summarize=24)
 
         real_grad = tf.multiply(grad_act, rewards)
-        real_grad = tf.Print(real_grad, [real_grad], message="real_grad:")
+        real_grad = tf.Print(real_grad, [real_grad], message="real_grad:", summarize=2)
 
-        loss = -tf.reduce_sum(real_grad)
+        loss = tf.reduce_sum(real_grad)
 
         train_op = get_train_op_fn(loss, params)
 
@@ -139,7 +155,7 @@ if __name__ == '__main__':
     policy_network = get_estimator(run_config, params, FLAGS.policies_dir)
 
     for policy_iteration in range(FLAGS.num_iterations):
-        env = Soccer(k_last_models=4)
+        env = Soccer(k_last_models=3)
         print("iteration={}".format(policy_iteration))
 
         model_path = tf.train.latest_checkpoint(FLAGS.policies_dir)
@@ -156,41 +172,53 @@ if __name__ == '__main__':
             states = []
             actions = []
             rewards = []
-            for game in range(FLAGS.num_games):
+            games_won = 0
 
-                starting_game = np.random.rand() < 0.5
-                state = env.reset(starting_game=starting_game, verbose=0)
+            for _ in range(FLAGS.games_against_same_opponent):
+                for game in range(FLAGS.num_games):
 
-                for turn in range(FLAGS.max_turns_per_game):
+                    starting_game = np.random.rand() < 0.5
+                    state = env.reset(starting_game=starting_game, verbose=0)
 
-                    if np.random.random() < FLAGS.exploratory_epsilon:
-                        action = int(np.random.random() * 8)
-                    else:
-                        feed_dict = {
-                            inputs: state,
-                            keep_prob: 1.0
-                        }
+                    for turn in range(FLAGS.max_turns_per_game):
 
-                        logits = sess.run([output], feed_dict=feed_dict)
-                        action = np.argmax(logits)
+                        if np.random.random() < FLAGS.exploratory_epsilon * (1 / (policy_iteration + 1) ** (1 / 2)):
+                            action = int(np.random.random() * 8)
+                        else:
+                            feed_dict = {
+                                inputs: state,
+                                keep_prob: 1.0
+                            }
 
-                    states.append(state[0])
-                    # actions.append([1 if i == action else 0 for i in range(8)])
-                    actions.append(action)
-                    state, reward, done = env.step(action, verbose=0)
+                            logits = sess.run([output], feed_dict=feed_dict)
+                            action = np.argmax(logits)
 
-                    if done:
-                        # print('Game ended, reward = {}'.format(reward))
-                        rewards += [reward] * (turn + 1)
-                        break
+                        states.append(state[0])
+                        # actions.append([1 if i == action else 0 for i in range(8)])
+                        actions.append(action)
+                        state, reward, done = env.step(action, verbose=0)
 
-                if game % 128 == 0:
-                    print(game)
-                    env.player_board.print_board()
+                        if done:
+                            # print('Game ended, reward = {}'.format(reward))
+                            rewards += [reward] * (turn + 1)
+                            if reward == 1:
+                                games_won += 1
+                            break
+                    if reward == 1:
+                        env.player_board.print_board()
+                        print("Game won!")
+                    if game % FLAGS.print_board == FLAGS.print_board - 1:
+                        env.player_board.print_board()
+                        print("Win ratio = {:.2f}%".format(100 * games_won / game))
+                        print(game)
 
-            # state_actions_reward_history_arr = np.array(state_actions, dtype=np.int8)
-            # np.random.shuffle(state_actions_reward_history_arr)
-            num_state_actions = len(rewards)
-            num_epochs = int(num_state_actions / FLAGS.batch_size)  # todo check if correct
-            input_fn = lambda: get_input_fn(states, actions, rewards)
-            policy_network.train(input_fn, steps=1)
+                # state_actions_reward_history_arr = np.array(state_actions, dtype=np.int8)
+                # np.random.shuffle(state_actions_reward_history_arr)
+                num_state_actions = len(rewards)
+                num_epochs = int(num_state_actions / FLAGS.batch_size)  # todo check if correct
+                idx = np.random.choice(len(states), FLAGS.sample_size, replace=False)
+                states2 = np.take(states, idx, axis=0)
+                actions2 = np.take(actions, idx)
+                rewards2 = np.take(rewards, idx)
+                input_fn = lambda: get_input_fn(states, actions, rewards)
+                policy_network.train(input_fn, steps=1)

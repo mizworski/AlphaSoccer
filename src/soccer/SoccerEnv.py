@@ -19,6 +19,7 @@ class Soccer:
 
         chosen_model = int(k_last_models * np.random.random())
         model_path = all_checkpoints[chosen_model]
+        print("Playing against {}".format(model_path))
         saver = tf.train.import_meta_graph(model_path + '.meta')
 
         self.sess = tf.Session()
@@ -32,6 +33,8 @@ class Soccer:
         reward_after_player_move, bonus_move = self.player_board.make_move(action)
         reward_after_env_move = reward_after_player_move
         if reward_after_player_move != 0:
+            if reward_after_player_move > 0:
+                reward_after_player_move = 1000
             return self.player_board.board.reshape(input_shape), reward_after_player_move, True
 
         self.env_agent_board.make_move((action + 4) % 8)
