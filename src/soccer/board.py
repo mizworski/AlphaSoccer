@@ -196,4 +196,9 @@ class Board:
             print(' ', end='')
         print('+-+-+')
 
+    def get_legal_moves(self):
+        ball_pos = self.get_pos()
+        deep_column = self.board[ball_pos]
+        # print(deep_column)
+        return [1 - deep_column[k] for k in range(8)]
         # print('Next player = {}'.format(int(self.board[0, 0, turn_layer])))

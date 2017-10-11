@@ -29,12 +29,15 @@ class Soccer:
         self.keep_prob = graph.get_tensor_by_name("keep_prob:0")
         self.output = graph.get_tensor_by_name("PolicyNetwork/output/BiasAdd:0")
 
+    def get_legal_moves(self):
+        return self.player_board.get_legal_moves()
+
     def step(self, action, verbose=0):
         reward_after_player_move, bonus_move = self.player_board.make_move(action)
         reward_after_env_move = reward_after_player_move
         if reward_after_player_move != 0:
-            if reward_after_player_move > 0:
-                reward_after_player_move = 1000
+            # if reward_after_player_move > 0:
+            #     reward_after_player_move = 1
             return self.player_board.board.reshape(input_shape), reward_after_player_move, True
 
         self.env_agent_board.make_move((action + 4) % 8)
@@ -57,24 +60,40 @@ class Soccer:
                 keep_prob: 1.0
             }
 
-            env_logits = self.sess.run([self.output], feed_dict=feed_dict)
-            env_action = np.argmax(env_logits)
+            env_logits = self.sess.run(self.output, feed_dict=feed_dict)
+
+            env_acts = sorted(range(len(env_logits[0])), key=lambda k: env_logits[0][k], reverse=True)
+            legal_moves = self.env_agent_board.get_legal_moves()
+            # self.env_agent_board.print_board()
+            # print(legal_moves)
+            # print('opponent')
+
+            env_action = env_acts[0]
+            for act in env_acts:
+                if legal_moves[act] == 1:
+                    env_action = act
+                    break
+
+            # env_action = np.argmax(env_logits)
 
             env_reward, env_turn = self.env_agent_board.make_move(env_action)
             _ = self.player_board.make_move((env_action + 4) % 8)
             reward_after_env_move = -env_reward
 
-            # todo experiment with this shit
-            while env_reward == -1:
-                ball_pos = self.env_agent_board.get_pos()
-                # if there is still move available
-                if (self.env_agent_board.board[ball_pos][:8] == np.array([1] * 8)).all():
-                    return self.player_board.board.reshape(input_shape), 1, True # reward=1 or reward=0?
+            if env_reward == -1:
+                return self.player_board.board.reshape(input_shape), 0, True  # reward=1 or reward=0?
 
-                rand_move = int(np.random.rand() * 8)
-                env_reward, env_turn = self.env_agent_board.make_move(rand_move)
-                _ = self.player_board.make_move((rand_move + 4) % 8)
-                reward_after_env_move = -env_reward
+            # todo experiment with this shit
+            # while env_reward == -1:
+            #     ball_pos = self.env_agent_board.get_pos()
+            #     # if there is still move available
+            #     if (self.env_agent_board.board[ball_pos][:8] == np.array([1] * 8)).all():
+            #         return self.player_board.board.reshape(input_shape), 1, True # reward=1 or reward=0?
+            #
+            #     rand_move = int(np.random.rand() * 8)
+            #     env_reward, env_turn = self.env_agent_board.make_move(rand_move)
+            #     _ = self.player_board.make_move((rand_move + 4) % 8)
+            #     reward_after_env_move = -env_reward
 
 
             if verbose:

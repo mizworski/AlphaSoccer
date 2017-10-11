@@ -49,7 +49,7 @@ tf.app.flags.DEFINE_float(
     docstring='Epsilon for epsilon-greedy exploration.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='print_board', default_value='256',
+    flag_name='print_board', default_value='128',
     docstring='Printing board every n games.'
 )
 
@@ -181,6 +181,7 @@ if __name__ == '__main__':
                     state = env.reset(starting_game=starting_game, verbose=0)
 
                     for turn in range(FLAGS.max_turns_per_game):
+                        legal_moves = env.get_legal_moves()
 
                         if np.random.random() < FLAGS.exploratory_epsilon * (1 / (policy_iteration + 1) ** (1 / 2)):
                             action = int(np.random.random() * 8)
@@ -190,9 +191,31 @@ if __name__ == '__main__':
                                 keep_prob: 1.0
                             }
 
-                            logits = sess.run([output], feed_dict=feed_dict)
-                            action = np.argmax(logits)
+                            logits = sess.run(output, feed_dict=feed_dict)
+                            acts = sorted(range(len(logits[0])), key=lambda k: logits[0][k], reverse=True)
 
+                            lgl_mvs = legal_moves
+                            action = acts[0]
+                            for act in acts:
+                                if legal_moves[act] == 1:
+                                    action = act
+                                    break
+
+
+                            # if action is None:
+                            #     env.player_board.print_board()
+                            #     print(legal_moves)
+                            #     print(acts)
+
+                            # illegal_moves = [100 * (1 - k) for k in legal_moves]
+                            # illegal_moves_penalty = np.array(illegal_moves)
+                            # logits = logits - illegal_moves_penalty
+                            # print(env.get_legal_moves())
+
+                        # env.player_board.print_board()
+                        # print(legal_moves)
+                        # print('player')
+                        # print(action)
                         states.append(state[0])
                         # actions.append([1 if i == action else 0 for i in range(8)])
                         actions.append(action)
@@ -204,13 +227,19 @@ if __name__ == '__main__':
                             if reward == 1:
                                 games_won += 1
                             break
-                    if reward == 1:
-                        env.player_board.print_board()
-                        print("Game won!")
+                    # if reward == 1:
+                        # env.player_board.print_board()
+                        # print("Game won!")
                     if game % FLAGS.print_board == FLAGS.print_board - 1:
                         env.player_board.print_board()
+                        # print(lgl_mvs)
+                        # print(action)
+                        # print(env.player_board.ball_pos)
+                        # for i in range(8):
+                        #     print(i)
+                        #     env.player_board.print_layer(i)
                         print("Win ratio = {:.2f}%".format(100 * games_won / game))
-                        print(game)
+                        # print(game)
 
                 # state_actions_reward_history_arr = np.array(state_actions, dtype=np.int8)
                 # np.random.shuffle(state_actions_reward_history_arr)
