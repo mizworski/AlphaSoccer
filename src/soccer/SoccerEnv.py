@@ -36,15 +36,14 @@ class Soccer:
         reward_after_player_move, bonus_move = self.player_board.make_move(action)
         reward_after_env_move = reward_after_player_move
         if reward_after_player_move != 0:
-            # if reward_after_player_move > 0:
-            #     reward_after_player_move = 1
-            return self.player_board.board.reshape(input_shape), reward_after_player_move, True
+            # if reward_after_player_move < 0:
+            #     reward_after_player_move = -100
+
+            return self.player_board.board.reshape(input_shape), 1000 * reward_after_player_move, True
 
         self.env_agent_board.make_move((action + 4) % 8)
 
         if verbose:
-            # time.sleep(0.1)
-            # os.system('clear')
             self.player_board.print_board()
         if bonus_move:
             return self.player_board.board.reshape(input_shape), reward_after_player_move, False
@@ -64,9 +63,7 @@ class Soccer:
 
             env_acts = sorted(range(len(env_logits[0])), key=lambda k: env_logits[0][k], reverse=True)
             legal_moves = self.env_agent_board.get_legal_moves()
-            # self.env_agent_board.print_board()
-            # print(legal_moves)
-            # print('opponent')
+
 
             env_action = env_acts[0]
             for act in env_acts:
@@ -74,27 +71,18 @@ class Soccer:
                     env_action = act
                     break
 
-            # env_action = np.argmax(env_logits)
+            # if verbose:
+            #     self.env_agent_board.print_board()
+            #     print(legal_moves)
+            #     print(env_action)
+            #     print('Opponent')
 
             env_reward, env_turn = self.env_agent_board.make_move(env_action)
             _ = self.player_board.make_move((env_action + 4) % 8)
             reward_after_env_move = -env_reward
 
             if env_reward == -1:
-                return self.player_board.board.reshape(input_shape), 0, True  # reward=1 or reward=0?
-
-            # todo experiment with this shit
-            # while env_reward == -1:
-            #     ball_pos = self.env_agent_board.get_pos()
-            #     # if there is still move available
-            #     if (self.env_agent_board.board[ball_pos][:8] == np.array([1] * 8)).all():
-            #         return self.player_board.board.reshape(input_shape), 1, True # reward=1 or reward=0?
-            #
-            #     rand_move = int(np.random.rand() * 8)
-            #     env_reward, env_turn = self.env_agent_board.make_move(rand_move)
-            #     _ = self.player_board.make_move((rand_move + 4) % 8)
-            #     reward_after_env_move = -env_reward
-
+                return self.player_board.board.reshape(input_shape), 1, True  # reward=1 or reward=0?
 
             if verbose:
                 self.player_board.print_board()
@@ -124,7 +112,7 @@ class Soccer:
 
 
 if __name__ == '__main__':
-    env = Soccer(k_last_models=4)
+    env = Soccer(k_last_models=1)
 
     while True:
         state = env.reset(0, verbose=True)
@@ -133,7 +121,7 @@ if __name__ == '__main__':
             action = input()
             action = int(action)
 
-            state, reward, done = env.step(action, verbose=0)
+            state, reward, done = env.step(action, verbose=1)
 
             if done:
                 print('Game ended, reward = {}'.format(reward))

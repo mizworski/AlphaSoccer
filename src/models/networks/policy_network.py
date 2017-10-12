@@ -9,9 +9,9 @@ def     get_policy_network(inputs, is_training=False, reuse=None, scope='PolicyN
         with slim.arg_scope(
                 [slim.conv2d, slim.fully_connected],
                 weights_initializer=tf.contrib.layers.xavier_initializer(),
-                weights_regularizer=slim.l2_regularizer(0.1)
+                weights_regularizer=slim.l2_regularizer(0.2)
         ):
-            net = slim.conv2d(inputs, kernels, [5, 5], padding='SAME',
+            net = slim.conv2d(inputs, kernels, [3, 3], padding='SAME',
                               reuse=reuse,
                               scope='conv1')
             net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
@@ -26,13 +26,19 @@ def     get_policy_network(inputs, is_training=False, reuse=None, scope='PolicyN
             net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
                               reuse=reuse,
                               scope='conv5')
+            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
+                              reuse=reuse,
+                              scope='conv6')
+            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
+                              reuse=reuse,
+                              scope='conv7')
             net = slim.flatten(net)
             net = slim.fully_connected(net, 256,
                                        reuse=reuse,
-                                       scope='fc6')
+                                       scope='fc8')
             net = slim.dropout(net, is_training=is_training,
                                keep_prob=keep_prob,
-                               scope='dropout6')
+                               scope='dropout8')
             net = slim.fully_connected(net, 8,
                                        scope='output',
                                        reuse=reuse,
