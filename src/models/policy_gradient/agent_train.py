@@ -5,8 +5,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.learn import ModeKeys
 
-from src.soccer.SoccerEnv import Soccer
+from src.soccer.PaperSoccer import Soccer
 from src.models.networks.policy_network import get_policy_network
+
+from collections import deque
 
 tf.logging.set_verbosity(tf.logging.DEBUG)
 FLAGS = tf.app.flags.FLAGS
@@ -16,15 +18,19 @@ tf.app.flags.DEFINE_string(
     docstring='Directory containing all policy networks.')
 
 tf.app.flags.DEFINE_integer(
-    flag_name='num_games', default_value='256',
+    flag_name='num_games', default_value='512',
     docstring='Number of games played between each policy iteration.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='sample_size', default_value='1024',
+    flag_name='sample_size', default_value='512',
     docstring='Size of learning sample from all games state-actions.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='batch_size', default_value='512',
+    flag_name='history_size', default_value='2048',
+    docstring='Number of state-actions to be stored in history.'
+)
+tf.app.flags.DEFINE_integer(
+    flag_name='batch_size', default_value='256',
     docstring='Number of state-action pairs in single batch.'
 )
 tf.app.flags.DEFINE_integer(
@@ -44,11 +50,15 @@ tf.app.flags.DEFINE_integer(
     docstring='Number of games played before opponent changes.'
 )
 tf.app.flags.DEFINE_float(
-    flag_name='initial_epsilon', default_value='0.005',
+    flag_name='initial_epsilon', default_value='0.01',
     docstring='Initial epsilon for epsilon-greedy exploration.'
 )
+tf.app.flags.DEFINE_float(
+    flag_name='momentum', default_value='0.9',
+    docstring='Momentum for SGD.'
+)
 tf.app.flags.DEFINE_integer(
-    flag_name='last_k_models', default_value='4',
+    flag_name='last_k_models', default_value='5',
     docstring='Number of latest models to play against.'
 )
 tf.app.flags.DEFINE_integer(
@@ -56,7 +66,7 @@ tf.app.flags.DEFINE_integer(
     docstring='Training steps per single experience sample.'
 )
 tf.app.flags.DEFINE_float(
-    flag_name='initial_learning_rate', default_value='1e-10',
+    flag_name='initial_learning_rate', default_value='1e-11',
     docstring='Initial learning rate.'
 )
 
@@ -114,7 +124,7 @@ def get_train_op_fn(loss, params):
     return tf.contrib.layers.optimize_loss(
         loss=loss,
         global_step=tf.contrib.framework.get_global_step(),
-        optimizer=tf.train.AdamOptimizer,
+        optimizer=lambda lr: tf.train.MomentumOptimizer(lr, momentum=params.momentum),
         learning_rate=params.learning_rate
     )
 
@@ -156,7 +166,13 @@ def play_single_game(states, actions, rewards, env, verbose=0):
 
         exploration_epsilon = FLAGS.initial_epsilon * (1 / (policy_iteration + 1) ** (1 / 2))
         if np.random.random() < exploration_epsilon:
-            action = int(np.random.random() * 8)
+            if sum(legal_moves) == 0:
+                moves_prob = [0.125]*8
+            else:
+                moves_prob = [move / sum(legal_moves) for move in legal_moves]
+
+            # action = int(np.random.random() * 8)
+            action = np.random.choice(np.arange(8), p=moves_prob)
         else:
             feed_dict = {
                 inputs: state,
@@ -207,11 +223,16 @@ if __name__ == '__main__':
         learning_rate=FLAGS.initial_learning_rate,
         num_games=FLAGS.num_games,
         batch_size=FLAGS.batch_size,
-        num_iterations=FLAGS.num_iterations
+        num_iterations=FLAGS.num_iterations,
+        momentum=FLAGS.momentum
     )
     verbose = 0
 
     policy_network = get_estimator(run_config, params, FLAGS.policies_dir)
+
+    states = deque(maxlen=FLAGS.history_size)
+    actions = deque(maxlen=FLAGS.history_size)
+    rewards = deque(maxlen=FLAGS.history_size)
 
     with tf.Session() as sess:
         graph = tf.get_default_graph()
@@ -224,9 +245,6 @@ if __name__ == '__main__':
             saver.restore(sess, model_path)
 
             for _ in range(FLAGS.games_against_same_opponent):
-                states = []
-                actions = []
-                rewards = []
                 games_won = 0
                 for game in range(FLAGS.num_games):
                     outcome = play_single_game(states, actions, rewards, env, verbose)
@@ -235,7 +253,9 @@ if __name__ == '__main__':
                         print(outcome)
                     if game % FLAGS.print_board == FLAGS.print_board - 1:
                         env.player_board.print_board()
-                        print("Win ratio = {:.2f}%".format(100 * games_won / game))
+                        # print(games_won)
+                        # print(game)
+                        print("Win ratio = {:.2f}%".format(100 * games_won / (game + 1)))
 
                 states_sample, actions_sample, rewards_sample = sample_from_experience(states, actions, rewards,
                                                                                        FLAGS.sample_size)

@@ -17,7 +17,14 @@ class Soccer:
 
         k_last_models = k_last_models if k_last_models <= len(all_checkpoints) else len(all_checkpoints)
 
+        # k_last_models = max(1, k_last_models - 1)
+        # k_last_models -= 1
+
         chosen_model = int(k_last_models * np.random.random())
+
+        # if len(all_checkpoints) > 1:
+        #     chosen_model += 1
+
         model_path = all_checkpoints[chosen_model]
         print("Playing against {}".format(model_path))
         saver = tf.train.import_meta_graph(model_path + '.meta')
@@ -39,7 +46,7 @@ class Soccer:
             # if reward_after_player_move < 0:
             #     reward_after_player_move = -100
 
-            return self.player_board.board.reshape(input_shape), 1000 * reward_after_player_move, True
+            return self.player_board.board.reshape(input_shape),  reward_after_player_move, True
 
         self.env_agent_board.make_move((action + 4) % 8)
 

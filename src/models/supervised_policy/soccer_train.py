@@ -3,20 +3,19 @@ import tensorflow as tf
 import os
 import numpy as np
 
+from tensorflow.contrib import slim
 from tensorflow.contrib.learn import ModeKeys
 from tensorflow.contrib.learn import learn_runner
 import multiprocessing
 from functools import reduce
 import operator
 
-from src.models.networks.policy_network import get_policy_network
-
 tf.logging.set_verbosity(tf.logging.DEBUG)
 
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string(
-    flag_name='model_dir', default_value='models/policy_networks/0_supervised',
+    flag_name='model_dir', default_value='model',
     docstring='Output directory for model and training stats.')
 tf.app.flags.DEFINE_string(
     flag_name='train_data_dir', default_value='data/games/train',
@@ -26,27 +25,27 @@ tf.app.flags.DEFINE_string(
     docstring='Output directory for model and training stats.')
 
 tf.app.flags.DEFINE_integer(
-    flag_name='num_epochs', default_value='1024',
+    flag_name='num_epochs', default_value='16',
     docstring='epochs number'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='batch_size', default_value='256',
+    flag_name='batch_size', default_value='2048',
     docstring='batch size'
 )
 
 tf.app.flags.DEFINE_string(
-    flag_name='train_files', default_value=None,
+    flag_name='train_files', default_value='data/tfrecords/train',
     docstring='train files'
 )
 tf.app.flags.DEFINE_string(
-    flag_name='eval_files', default_value=None,
+    flag_name='eval_files', default_value='data/tfrecords/eval',
     docstring='eval files'
 )
 
 params = tf.contrib.training.HParams(
     learning_rate=0.001,
-    min_eval_frequency=8,
-    save_checkpoints_steps=8,
+    min_eval_frequency=1,
+    save_checkpoints_steps=1,
     num_epochs=FLAGS.num_epochs,
     batch_size=FLAGS.batch_size
 )
@@ -136,9 +135,9 @@ def get_estimator(run_config, params, model_dir=None):
 def model_fn(features, labels, mode, params):
     is_training = mode == ModeKeys.TRAIN
     if mode == ModeKeys.INFER:
-        logits = get_policy_network(features['x'], is_training=is_training)
+        logits = architecture(features['x'])
     else:
-        logits = get_policy_network(features, is_training=is_training)
+        logits = architecture(features)
         labels = tf.cast(labels, tf.int64)
     predictions = {
         'probabilities': tf.nn.softmax(logits),
@@ -198,6 +197,40 @@ def get_eval_metric_ops(labels, logits, predictions):
             name='in_top4'
         ),
     }
+def res_block(x, reuse, scope):
+    kernels = 128
+
+    net = slim.conv2d(x, kernels, [3, 3], padding='SAME', reuse=reuse, scope='{}_conv1'.format(scope))
+    net = slim.batch_norm(net, activation_fn=tf.nn.relu)
+    net = slim.conv2d(net, kernels, [3, 3], padding='SAME', reuse=reuse, scope='{}_conv2'.format(scope))
+    net = tf.nn.relu(tf.add(net, x))
+
+    return net
+
+def architecture(inputs, reuse=None, scope='SLNet'):
+    with tf.variable_scope(scope):
+        with slim.arg_scope(
+                [slim.conv2d, slim.fully_connected],
+                weights_initializer=tf.contrib.layers.xavier_initializer(),
+                weights_regularizer=slim.l2_regularizer(0.1)
+        ):
+            net = slim.conv2d(inputs, 128, [3, 3], padding='SAME', reuse=reuse, scope='conv1')
+            net = slim.batch_norm(net, activation_fn=tf.nn.relu)
+
+            net = res_block(net, reuse, scope='block1')
+            net = res_block(net, reuse, scope='block2')
+            net = res_block(net, reuse, scope='block3')
+            net = res_block(net, reuse, scope='block4')
+
+            net = slim.flatten(net)
+            net = slim.fully_connected(net, 512,
+                                       reuse=reuse,
+                                       scope='fc6')
+            net = slim.fully_connected(net, 8,
+                                       scope='output',
+                                       reuse=reuse,
+                                       activation_fn=None)
+        return net
 
 
 def parse_file(rows):

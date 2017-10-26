@@ -2,7 +2,7 @@
 
 
 PREFIX=/home/mizworski/PycharmProjects/PaperSoccerRL
-MODEL_DIR=${PREFIX}/models/policy_networks/0_supervised
+MODEL_DIR=${PREFIX}/models/policy_networks/supervised_1
 TRAIN_DATA_DIR=${PREFIX}/data/games/train
 EVAL_DATA_DIR=${PREFIX}/data/games/eval
 N_EPOCHS=16
