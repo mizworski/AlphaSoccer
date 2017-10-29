@@ -5,8 +5,8 @@ from gym.spaces import Box, Discrete
 class Soccer:
     def __init__(self):
         self.board = None
-        # self.observation_space = [1, 11, 9, 12]
-        self.observation_space = Box(0, 1, shape=[11, 9, 12])
+        self.observation_space = [1, 11, 9, 12]
+        # self.observation_space = Box(0, 1, shape=[11, 9, 12])
         self.action_space = Discrete(8)
 
     def get_legal_moves(self):

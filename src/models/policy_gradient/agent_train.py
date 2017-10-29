@@ -1,4 +1,3 @@
-import gc
 import multiprocessing
 
 import numpy as np
@@ -14,7 +13,7 @@ tf.logging.set_verbosity(tf.logging.DEBUG)
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string(
-    flag_name='policies_dir', default_value='models/policy_networks/policy_gradient/',
+    flag_name='policies_dir', default_value='models/policy_networks/policy_gradient4/',
     docstring='Directory containing all policy networks.')
 
 tf.app.flags.DEFINE_integer(
