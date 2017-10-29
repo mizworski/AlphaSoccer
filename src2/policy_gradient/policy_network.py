@@ -3,39 +3,35 @@ from tensorflow.contrib import slim
 from tensorflow.contrib.learn import ModeKeys
 
 
-def get_policy_network(inputs, reuse=None, scope='PolicyNetwork'):
+def res_block(x, reuse, scope):
     kernels = 128
+
+    net = slim.conv2d(x, kernels, [3, 3], padding='SAME', reuse=reuse, scope='{}_conv1'.format(scope))
+    net = slim.batch_norm(net, activation_fn=tf.nn.relu)
+    net = slim.conv2d(net, kernels, [3, 3], padding='SAME', reuse=reuse, scope='{}_conv2'.format(scope))
+    net = tf.nn.relu(tf.add(net, x))
+
+    return net
+
+def get_policy_network(inputs, reuse=None, scope='SLNet'):
     with tf.variable_scope(scope):
         with slim.arg_scope(
                 [slim.conv2d, slim.fully_connected],
                 weights_initializer=tf.contrib.layers.xavier_initializer(),
-                weights_regularizer=slim.l2_regularizer(0.2)
+                weights_regularizer=slim.l2_regularizer(0.1)
         ):
-            net = slim.conv2d(inputs, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv1')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv2')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv3')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv4')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv5')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv6')
-            net = slim.conv2d(net, kernels, [3, 3], padding='SAME',
-                              reuse=reuse,
-                              scope='conv7')
+            net = slim.conv2d(inputs, 128, [3, 3], padding='SAME', reuse=reuse, scope='conv1')
+            net = slim.batch_norm(net, activation_fn=tf.nn.relu)
+
+            net = res_block(net, reuse, scope='block1')
+            net = res_block(net, reuse, scope='block2')
+            net = res_block(net, reuse, scope='block3')
+            net = res_block(net, reuse, scope='block4')
+
             net = slim.flatten(net)
             net = slim.fully_connected(net, 256,
                                        reuse=reuse,
-                                       scope='fc8')
+                                       scope='fc6')
             net = slim.fully_connected(net, 8,
                                        scope='output',
                                        reuse=reuse,
@@ -62,19 +58,16 @@ def model_fn(features, labels, mode, params):
 
     loss = None
     train_op = None
-    eval_metric_ops = None
     if mode != ModeKeys.INFER:
-        loss = get_loss_supervised_learning(network_outputs['probabilities'], labels)
+        loss = get_loss_reinforcement_learning(network_outputs['probabilities'], labels)
         train_op = get_train_op_fn(loss, params)
-        eval_metric_ops = get_eval_metric_ops(labels, logits, network_outputs['labels'])
 
     predictions = network_outputs if mode == ModeKeys.INFER else network_outputs['labels']
     return tf.estimator.EstimatorSpec(
         mode=mode,
         predictions=predictions,
         loss=loss,
-        train_op=train_op,
-        eval_metric_ops=eval_metric_ops
+        train_op=train_op
     )
 
 
@@ -104,35 +97,3 @@ def get_loss_reinforcement_learning(logits, rewards, actions):
                                   summarize=1)
     loss = -tf.reduce_sum(gain_single_action)
     return loss
-
-def get_loss_supervised_learning(logits, labels):
-    loss = tf.losses.sparse_softmax_cross_entropy(
-        labels=labels,
-        logits=logits)
-    return loss
-
-def get_eval_metric_ops(labels, logits, predictions):
-    return {
-        'Accuracy': tf.metrics.accuracy(
-            labels=labels,
-            predictions=predictions,
-            name='accuracy'),
-        'Top2': tf.metrics.recall_at_k(
-            labels=labels,
-            predictions=logits,
-            k=2,
-            name='in_top2'
-        ),
-        'Top3': tf.metrics.recall_at_k(
-            labels=labels,
-            predictions=logits,
-            k=3,
-            name='in_top3'
-        ),
-        'Top4': tf.metrics.recall_at_k(
-            labels=labels,
-            predictions=logits,
-            k=4,
-            name='in_top4'
-        ),
-    }

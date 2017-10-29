@@ -253,8 +253,6 @@ if __name__ == '__main__':
                         print(outcome)
                     if game % FLAGS.print_board == FLAGS.print_board - 1:
                         env.player_board.print_board()
-                        # print(games_won)
-                        # print(game)
                         print("Win ratio = {:.2f}%".format(100 * games_won / (game + 1)))
 
                 states_sample, actions_sample, rewards_sample = sample_from_experience(states, actions, rewards,
@@ -262,6 +260,3 @@ if __name__ == '__main__':
                 input_fn = lambda: get_input_fn(states_sample, actions_sample, rewards_sample)
 
                 policy_network.train(input_fn, steps=FLAGS.training_steps)
-                # gc.collect()
-
-                # tf.reset_default_graph()
