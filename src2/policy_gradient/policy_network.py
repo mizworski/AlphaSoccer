@@ -18,7 +18,7 @@ def get_policy_network(inputs, reuse=None, scope='SLNet'):
         with slim.arg_scope(
                 [slim.conv2d, slim.fully_connected],
                 weights_initializer=tf.contrib.layers.xavier_initializer(),
-                weights_regularizer=slim.l2_regularizer(0.2)
+                weights_regularizer=slim.l2_regularizer(0.001)
         ):
             net = slim.conv2d(inputs, 128, [3, 3], padding='SAME', reuse=reuse, scope='conv1')
             net = slim.batch_norm(net, activation_fn=tf.nn.relu)

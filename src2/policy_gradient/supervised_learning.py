@@ -16,7 +16,7 @@ tf.logging.set_verbosity(tf.logging.DEBUG)
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string(
-    flag_name='model_dir', default_value='models/policy_networks/supervised_2',
+    flag_name='model_dir', default_value='models/policy_networks/supervised_3',
     docstring='Output directory for model and training stats.')
 tf.app.flags.DEFINE_string(
     flag_name='train_data_dir', default_value='data/games/train',
@@ -181,8 +181,8 @@ def get_train_op_fn(loss, params):
     return tf.contrib.layers.optimize_loss(
         loss=loss,
         global_step=tf.contrib.framework.get_global_step(),
-        # optimizer=tf.train.AdamOptimizer,
-        optimizer=lambda lr: tf.train.MomentumOptimizer(lr, 0.9),
+        optimizer=tf.train.AdamOptimizer,
+        # optimizer=lambda lr: tf.train.MomentumOptimizer(lr, 0.9),
         learning_rate=params.learning_rate
     )
 
