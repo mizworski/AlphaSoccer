@@ -14,7 +14,6 @@ class Soccer:
 
         checkpoint_state = tf.train.get_checkpoint_state(models_dir)
         all_checkpoints = list(reversed(checkpoint_state.all_model_checkpoint_paths))
-
         k_last_models = k_last_models if k_last_models <= len(all_checkpoints) else len(all_checkpoints)
 
         # k_last_models = max(1, k_last_models - 1)
