@@ -8,7 +8,7 @@ bias_layer = turn_layer + 1
 
 
 class Board:
-    def __init__(self, length=10, width=8):
+    def __init__(self, starting_game=0, length=10, width=8):
         assert length % 2 == 0 and width % 2 == 0
         depth = bias_layer + 1
 
@@ -25,8 +25,8 @@ class Board:
         self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
 
         # player 0 starts game
-        self.player_turn = 0
-        self.board[:, :, turn_layer] = 0
+        # self.player_turn = starting_game
+        self.board[:, :, turn_layer] = starting_game
 
         # 1 padding map
         for i in range(length + 1):

@@ -1,5 +1,7 @@
 from src2.environment.PaperSoccer import Soccer
-from src2.policy_gradient.policy_network import get_policy_network
+# from src2.policy_gradient.policy_network import get_policy_network
+from src.models.networks.policy_network import get_policy_network
+from sklearn.utils.extmath import softmax
 
 import multiprocessing
 
@@ -22,15 +24,15 @@ tf.app.flags.DEFINE_string(
     docstring='Directory containing all policy networks.')
 
 tf.app.flags.DEFINE_integer(
-    flag_name='num_games', default_value='512',
+    flag_name='num_games', default_value='256',
     docstring='Number of games played between each policy iteration.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='sample_size', default_value='2048',
+    flag_name='sample_size', default_value='4096',
     docstring='Size of learning sample from all games state-actions.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='history_size', default_value='5000',
+    flag_name='history_size', default_value='10000',
     docstring='Number of state-actions to be stored in history.'
 )
 tf.app.flags.DEFINE_integer(
@@ -42,7 +44,7 @@ tf.app.flags.DEFINE_integer(
     docstring='Printing board every n games.'
 )
 tf.app.flags.DEFINE_integer(
-    flag_name='num_iterations', default_value='2048',
+    flag_name='num_iterations', default_value='4096',
     docstring='Number of policy iterations.'
 )
 tf.app.flags.DEFINE_integer(
@@ -70,7 +72,7 @@ tf.app.flags.DEFINE_integer(
     docstring='Training steps per single experience sample.'
 )
 tf.app.flags.DEFINE_float(
-    flag_name='initial_learning_rate', default_value='1e-8',
+    flag_name='initial_learning_rate', default_value='1e-14',
     docstring='Initial learning rate.'
 )
 
@@ -115,8 +117,8 @@ def get_loss_reinforcement_learning(logits, rewards, actions):
                                   summarize=1)
     loss = -tf.reduce_mean(gain_single_action)
 
-    # reg_loss = tf.add_n(tf.losses.get_regularization_losses())
-    # reg_loss = tf.Print(reg_loss, [reg_loss], message="reg_loss:", summarize=1)
+    reg_loss = tf.add_n(tf.losses.get_regularization_losses())
+    reg_loss = tf.Print(reg_loss, [reg_loss], message="reg_loss:", summarize=1)
 
 
     total_loss = loss
@@ -176,35 +178,45 @@ def play_single_game(graph, sess, history, env, opponent_graph, opponent_sess, e
                      verbose=0):
     # todo rename tensors to friendly names
     inputs = graph.get_tensor_by_name("shuffle_batch:0")
-    output = graph.get_tensor_by_name("SLNet/output/BiasAdd:0")
+    output = graph.get_tensor_by_name("PolicyNetwork/output/BiasAdd:0")
     inputs_opponent = opponent_graph.get_tensor_by_name("shuffle_batch:0")
-    output_opponent = opponent_graph.get_tensor_by_name("SLNet/output/BiasAdd:0")
+    output_opponent = opponent_graph.get_tensor_by_name("PolicyNetwork/output/BiasAdd:0")
     player_turn = 0 if np.random.rand() < 0.5 else 1
-    state = env.reset(verbose=verbose)
-    state_opponent = env_opponent.reset(verbose=verbose)
+    state = env.reset(starting_game=player_turn, verbose=verbose)
+    state_opponent = env_opponent.reset(starting_game=1 - player_turn, verbose=verbose)
     exploration_epsilon = FLAGS.initial_epsilon  # * (1 / (policy_iteration + 1) ** (1 / 2))
 
     states = []
     actions = []
     turn = 0
+
     while True:
+
         if player_turn == 0:
-            state_new, reward, done, action = make_single_step(sess, inputs, output, env, state, exploration_epsilon,
-                                                               verbose)
+            state_new, reward, done, action = make_single_step(sess, inputs, output,
+                                                               env, state, exploration_epsilon, verbose)
             action_opponent_perspective = (action + 4) % 8
             state_opponent, _, _ = env_opponent.step(action_opponent_perspective)
             states.append(state[0])
             actions.append(action)
             state = state_new
             turn += 1
+            if verbose:
+                print("Player took action {}".format(action))
+                # env.board.print_board()
+                # env_opponent.board.print_board()
         else:
             state_new_opp, _, _, action = make_single_step(opponent_sess, inputs_opponent, output_opponent,
                                                            env_opponent, state_opponent)
             action_player_perspective = (action + 4) % 8
             state, reward, done = env.step(action_player_perspective)
             state_opponent = state_new_opp
+            if verbose:
+                print("opponent acction: {}".format(action))
+                # env.board.print_board()
+                env_opponent.board.print_board()
         player_turn = env.board.board[0, 0, TURN_LAYER]
-
+        # print("player turn {}".format(player_turn))
         if done or turn > FLAGS.max_turns_per_game:
             if reward > 0:
                 history['states_positive'] += states
@@ -228,7 +240,8 @@ def make_single_step(sess, inputs, output, env, state, exploration_epsilon=0, ve
     else:
         network_output = sess.run(output, feed_dict={inputs: state})
         logits = network_output[0]
-
+        probs = softmax(network_output)
+        print(probs)
         acts = sorted(range(8), key=lambda k: logits[k], reverse=True)
 
         action = acts[0]
@@ -236,11 +249,11 @@ def make_single_step(sess, inputs, output, env, state, exploration_epsilon=0, ve
             if legal_moves[act] == 1:
                 action = act
                 break
-    if verbose:
-        env.board.print_board()
-        print(legal_moves)
-        print(action)
-        print('Player')
+    # if verbose:
+    #     env.board.print_board()
+    #     print(legal_moves)
+    #     print(action)
+    #     print('Player')
 
     state_new, reward, done = env.step(action, verbose=verbose)
     return state_new, reward, done, action
@@ -298,7 +311,7 @@ def main():
         batch_size=FLAGS.batch_size,
         num_iterations=FLAGS.num_iterations
     )
-    verbose = 0
+    verbose = 1
 
     policy_network = get_estimator(run_config, params, FLAGS.policies_dir)
 
@@ -308,9 +321,6 @@ def main():
         'actions_positive': deque(maxlen=FLAGS.history_size),
         'actions_negative': deque(maxlen=FLAGS.history_size)
     }
-    # states = deque(maxlen=FLAGS.history_size)
-    # actions = deque(maxlen=FLAGS.history_size)
-    # rewards = deque(maxlen=FLAGS.history_size)
 
     env = Soccer()
     env_opponent = Soccer()
@@ -328,17 +338,8 @@ def main():
             print("iteration={}".format(policy_iteration))
             opponent_sess, opponent_graph = get_opponent_policy(k_last_models, FLAGS.policies_dir)
 
-            # if len(rewards) > 0:
-            #     positive_rewards = 0
-            #     negative_rewards = 0
-            #     for r in rewards:
-            #         if r == 1:
-            #             positive_rewards += 1
-            #         elif r == -1:
-            #             negative_rewards += 1
-            #
-            #     print("Positive rewards {}".format(positive_rewards / len(rewards)) )
-            #     print("Negative rewards {}".format(negative_rewards / len(rewards)) )
+            won_before = False
+            lost_before = False
 
             for _ in range(FLAGS.games_against_same_opponent):
                 games_won = 0
@@ -348,17 +349,24 @@ def main():
                     games_won += outcome
                     if outcome > 1:
                         print(outcome)
-                    if game % FLAGS.print_board == FLAGS.print_board - 1:
+                    if game % FLAGS.print_board == FLAGS.print_board - 1 or (not won_before and outcome > 0) or (
+                                not lost_before and outcome == 0):
+                        if outcome > 0:
+                            won_before = True
+                        elif outcome == 0:
+                            lost_before = True
                         env.board.print_board()
                         print("Win ratio = {:.2f}%".format(100 * games_won / (game + 1)))
 
-                states_sample, actions_sample, rewards_sample = sample_from_experience(history,
-                                                                                       FLAGS.sample_size)
+                states_sample, actions_sample, rewards_sample = sample_from_experience(history, FLAGS.sample_size)
                 input_fn = lambda: get_input_fn(states_sample, actions_sample, rewards_sample)
 
                 policy_network.train(input_fn, steps=FLAGS.training_steps)
 
-                saver.save(sess, 'policy_network', global_step=policy_iteration)
+                # print(tf.all_variables())
+                print("positives {}".format(len(history['states_positive'])))
+                print("negatives {}".format(len(history['states_negative'])))
+                # saver.save(sess, 'policy_network', global_step=policy_iteration)
 
 
 if __name__ == '__main__':

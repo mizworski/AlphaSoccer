@@ -19,8 +19,8 @@ class Soccer:
 
         return self.board.board.reshape(self.observation_space), reward, reward != 0
 
-    def reset(self, verbose=0):
-        self.board = Board()
+    def reset(self, starting_game=0, verbose=0):
+        self.board = Board(starting_game=starting_game)
         if verbose:
             self.board.print_board()
 
