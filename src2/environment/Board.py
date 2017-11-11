@@ -16,88 +16,88 @@ class Board:
         self.width = width
 
         # initialize board with zeros
-        self.board = np.zeros((length + 1, width + 1, depth), dtype=np.float32)
-        self.board[:, :, bias_layer] = 1
+        self.state = np.zeros((length + 1, width + 1, depth), dtype=np.float32)
+        self.state[:, :, bias_layer] = 1
 
         # initial ball position in middle
         self.ball_pos = (int(length / 2), int(width / 2))
-        self.board[self.ball_pos[0], self.ball_pos[1], ball_layer] = 1
-        self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
+        self.state[self.ball_pos[0], self.ball_pos[1], ball_layer] = 1
+        self.state[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
 
         # player 0 starts game
         # self.player_turn = starting_game
-        self.board[:, :, turn_layer] = starting_game
+        self.state[:, :, turn_layer] = starting_game
 
         # 1 padding map
         for i in range(length + 1):
             # can't go (North, South)-West when you are on left edge
             for j in range(5, 8):
-                self.board[i, 0, j] = 1
+                self.state[i, 0, j] = 1
 
             # can't go (North, South)-East when you are on right edge
             for j in range(1, 4):
-                self.board[i, width, j] = 1
+                self.state[i, width, j] = 1
 
             # you can bounce off edges even if ball wasn't there yet
-            self.board[i, 0, dots_layer] = 1
-            self.board[i, width, dots_layer] = 1
+            self.state[i, 0, dots_layer] = 1
+            self.state[i, width, dots_layer] = 1
 
         for i in range(width + 1):
             # can't go North-(East, West)
             for j in {0, 1, 7}:
-                self.board[0, i, j] = 1
+                self.state[0, i, j] = 1
             # can't go South-(East, West)
             for j in range(3, 6):
-                self.board[length, i, j] = 1
+                self.state[length, i, j] = 1
 
             # bouncing off edge
-            self.board[0, i, dots_layer] = 1
-            self.board[length, i, dots_layer] = 1
+            self.state[0, i, dots_layer] = 1
+            self.state[length, i, dots_layer] = 1
 
         # todo is below necessary?
         for i in range(width + 1):
-            self.board[0, i, 2] = 1
-            self.board[0, i, 6] = 1
-            self.board[length, i, 2] = 1
-            self.board[length, i, 6] = 1
+            self.state[0, i, 2] = 1
+            self.state[0, i, 6] = 1
+            self.state[length, i, 2] = 1
+            self.state[length, i, 6] = 1
 
         for i in range(length + 1):
-            self.board[i, 0, 0] = 1
-            self.board[i, 0, 4] = 1
-            self.board[i, width, 0] = 1
-            self.board[i, width, 4] = 1
+            self.state[i, 0, 0] = 1
+            self.state[i, 0, 4] = 1
+            self.state[i, width, 0] = 1
+            self.state[i, width, 4] = 1
 
         # you can't bounce off point in front of goals
-        self.board[0, int(self.width / 2), dots_layer] = 0
-        self.board[self.length, int(self.width / 2), dots_layer] = 0
+        self.state[0, int(self.width / 2), dots_layer] = 0
+        self.state[self.length, int(self.width / 2), dots_layer] = 0
 
         # player 0 scoring
         # possible to score from front
-        self.board[0, int(width / 2), 0] = 0
-        self.board[0, int(width / 2), 1] = 0
-        self.board[0, int(width / 2), 2] = 0
-        self.board[0, int(width / 2), 6] = 0
-        self.board[0, int(width / 2), 7] = 0
+        self.state[0, int(width / 2), 0] = 0
+        self.state[0, int(width / 2), 1] = 0
+        self.state[0, int(width / 2), 2] = 0
+        self.state[0, int(width / 2), 6] = 0
+        self.state[0, int(width / 2), 7] = 0
 
         # possible to score from sides
-        self.board[0, int(width / 2) - 1, 1] = 0
-        self.board[0, int(width / 2) - 1, 2] = 0
-        self.board[0, int(width / 2) + 1, 6] = 0
-        self.board[0, int(width / 2) + 1, 7] = 0
+        self.state[0, int(width / 2) - 1, 1] = 0
+        self.state[0, int(width / 2) - 1, 2] = 0
+        self.state[0, int(width / 2) + 1, 6] = 0
+        self.state[0, int(width / 2) + 1, 7] = 0
 
         # player 1 scoring
         # possible to score from front
-        self.board[length, int(width / 2), 2] = 0
-        self.board[length, int(width / 2), 3] = 0
-        self.board[length, int(width / 2), 4] = 0
-        self.board[length, int(width / 2), 5] = 0
-        self.board[length, int(width / 2), 6] = 0
+        self.state[length, int(width / 2), 2] = 0
+        self.state[length, int(width / 2), 3] = 0
+        self.state[length, int(width / 2), 4] = 0
+        self.state[length, int(width / 2), 5] = 0
+        self.state[length, int(width / 2), 6] = 0
 
         # possible to score from sides
-        self.board[length, int(width / 2) - 1, 2] = 0
-        self.board[length, int(width / 2) - 1, 3] = 0
-        self.board[length, int(width / 2) + 1, 5] = 0
-        self.board[length, int(width / 2) + 1, 6] = 0
+        self.state[length, int(width / 2) - 1, 2] = 0
+        self.state[length, int(width / 2) - 1, 3] = 0
+        self.state[length, int(width / 2) + 1, 5] = 0
+        self.state[length, int(width / 2) + 1, 6] = 0
 
     def get_pos(self):
         return self.ball_pos
@@ -128,7 +128,7 @@ class Board:
     def make_move(self, direction):
         x_delta = 0
         y_delta = 0
-        player_taking_action = self.board[0, 0, turn_layer]
+        player_taking_action = self.state[0, 0, turn_layer]
 
         game_winner = self.has_scored(direction)
         if game_winner != 0:
@@ -144,23 +144,23 @@ class Board:
         elif 4 < direction < 8:
             y_delta = -1
 
-        if self.board[self.ball_pos[0], self.ball_pos[1], direction] == 1:
+        if self.state[self.ball_pos[0], self.ball_pos[1], direction] == 1:
             return -1, True
 
-        self.board[self.ball_pos[0], self.ball_pos[1], direction] = 1
-        self.board[self.ball_pos[0] + x_delta, self.ball_pos[1] + y_delta, (direction + 4) % 8] = 1
+        self.state[self.ball_pos[0], self.ball_pos[1], direction] = 1
+        self.state[self.ball_pos[0] + x_delta, self.ball_pos[1] + y_delta, (direction + 4) % 8] = 1
 
-        self.board[self.ball_pos[0], self.ball_pos[1], ball_layer] = 0
+        self.state[self.ball_pos[0], self.ball_pos[1], ball_layer] = 0
         self.ball_pos = tuple(map(sum, zip(self.ball_pos, (x_delta, y_delta))))
-        self.board[self.ball_pos[0], self.ball_pos[1], ball_layer] = 1
-        if self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] == 0:
-            self.board[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
-            self.board[:, :, turn_layer] = 1 - player_taking_action
+        self.state[self.ball_pos[0], self.ball_pos[1], ball_layer] = 1
+        if self.state[self.ball_pos[0], self.ball_pos[1], dots_layer] == 0:
+            self.state[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
+            self.state[:, :, turn_layer] = 1 - player_taking_action
 
-        return 0, player_taking_action == self.board[0, 0, turn_layer]
+        return 0, player_taking_action == self.state[0, 0, turn_layer]
 
     def print_layer(self, k):
-        layer = np.dsplit(self.board, self.board.shape[2])[k].reshape((self.board.shape[0], self.board.shape[1]))
+        layer = np.dsplit(self.state, self.state.shape[2])[k].reshape((self.state.shape[0], self.state.shape[1]))
         print(layer)
 
     def print_board(self):
@@ -170,14 +170,14 @@ class Board:
 
         for row in range(self.length + 1):
             for col in range(self.width + 1):
-                if self.board[row, col, ball_layer] == 1:
+                if self.state[row, col, ball_layer] == 1:
                     print('O', end='')
-                elif self.board[row, col, dots_layer] == 1:
+                elif self.state[row, col, dots_layer] == 1:
                     print('+', end='')
                 else:
                     print('.', end='')
 
-                if col != self.width and (self.board[row, col, 2] == 1):
+                if col != self.width and (self.state[row, col, 2] == 1):
                     print('-', end='')
                 elif col != self.width:
                     print(' ', end='')
@@ -185,17 +185,17 @@ class Board:
 
             if row != self.length:
                 for col in range(self.width + 1):
-                    if self.board[row, col, 4] == 1:
+                    if self.state[row, col, 4] == 1:
                         print('|', end='')
                     elif col != self.width:
                         print(' ', end='')
 
-                    if col != self.width and self.board[row, col, 3] == 1:
-                        if self.board[row + 1, col, 1] == 1:
+                    if col != self.width and self.state[row, col, 3] == 1:
+                        if self.state[row + 1, col, 1] == 1:
                             print('X', end='')
                         else:
                             print('\\', end='')
-                    elif col != self.width and self.board[row + 1, col, 1] == 1:
+                    elif col != self.width and self.state[row + 1, col, 1] == 1:
                         print('/', end='')
                     elif col != self.width:
                         print(' ', end='')
@@ -208,6 +208,6 @@ class Board:
 
     def get_legal_moves(self):
         ball_pos = self.get_pos()
-        deep_column = self.board[ball_pos]
+        deep_column = self.state[ball_pos]
 
         return [1 - deep_column[k] for k in range(8)]

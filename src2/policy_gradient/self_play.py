@@ -241,7 +241,7 @@ def make_single_step(sess, inputs, output, env, state, exploration_epsilon=0, ve
         network_output = sess.run(output, feed_dict={inputs: state})
         logits = network_output[0]
         probs = softmax(network_output)
-        print(probs)
+        # print(probs)
         acts = sorted(range(8), key=lambda k: logits[k], reverse=True)
 
         action = acts[0]
@@ -302,6 +302,13 @@ def get_opponent_policy(k_last_models, policies_dir):
 
     return sess, opponent_policy_graph
 
+def cat_entropy(logits):
+    a0 = logits - tf.reduce_max(logits, 1, keep_dims=True)
+    ea0 = tf.exp(a0)
+    z0 = tf.reduce_sum(ea0, 1, keep_dims=True)
+    p0 = ea0 / z0
+    return tf.reduce_sum(p0 * (tf.log(z0) - a0), 1)
+
 
 def main():
     run_config = tf.contrib.learn.RunConfig()
@@ -311,9 +318,8 @@ def main():
         batch_size=FLAGS.batch_size,
         num_iterations=FLAGS.num_iterations
     )
-    verbose = 1
-
-    policy_network = get_estimator(run_config, params, FLAGS.policies_dir)
+    verbose = 0
+    # policy_network = get_estimator(run_config, params, FLAGS.policies_dir)
 
     history = {
         'states_positive': deque(maxlen=FLAGS.history_size),
@@ -359,9 +365,9 @@ def main():
                         print("Win ratio = {:.2f}%".format(100 * games_won / (game + 1)))
 
                 states_sample, actions_sample, rewards_sample = sample_from_experience(history, FLAGS.sample_size)
-                input_fn = lambda: get_input_fn(states_sample, actions_sample, rewards_sample)
+                # input_fn = lambda: get_input_fn(states_sample, actions_sample, rewards_sample)
 
-                policy_network.train(input_fn, steps=FLAGS.training_steps)
+                # policy_network.train(input_fn, steps=FLAGS.training_steps)
 
                 # print(tf.all_variables())
                 print("positives {}".format(len(history['states_positive'])))

@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.contrib import slim
-from tensorflow.contrib.learn import ModeKeys
 
 
 def res_block(x, scope):
@@ -8,6 +7,7 @@ def res_block(x, scope):
 
     net = slim.conv2d(x, kernels, [3, 3], padding='SAME', scope='{}_conv1'.format(scope))
     net = slim.batch_norm(net, activation_fn=tf.nn.relu)
+
     net = slim.conv2d(net, kernels, [3, 3], padding='SAME', scope='{}_conv2'.format(scope))
     net = tf.nn.relu(x + net)
 
@@ -15,10 +15,11 @@ def res_block(x, scope):
 
 
 class CnnPolicy:
-    def __init__(self, sess, ob_shape, n_acts):
-        # todo for now its [1,11,9,12], in future we might want to predict for more than 1 obs
-        X = tf.placeholder(tf.uint8, ob_shape)  # obs
-        with tf.variable_scope('PolicyNetwork'):
+    def __init__(self, sess, ob_space, n_act, n_batch, reuse=False):
+        ob_shape = (n_batch, ) + ob_space.shape
+        X = tf.placeholder(tf.float32, ob_shape)
+        # X = tf.placeholder(tf.float32, shape=None)
+        with tf.variable_scope('AgentCriticNetwork', reuse=reuse):
             with slim.arg_scope(
                     [slim.conv2d, slim.fully_connected],
                     weights_initializer=tf.contrib.layers.xavier_initializer(),
@@ -33,7 +34,7 @@ class CnnPolicy:
 
                 flat = slim.flatten(res3)
                 fc = slim.fully_connected(flat, 256, scope='fc1')
-                pi = slim.fully_connected(fc, n_acts, scope='pi', activation_fn=None)
+                pi = slim.fully_connected(fc, n_act, scope='pi', activation_fn=None)
                 vf = slim.fully_connected(fc, 1, scope='vf', activation_fn=None)
 
         v0 = vf[:, 0]
@@ -41,7 +42,7 @@ class CnnPolicy:
 
         def step(ob, *_args, **_kwargs):
             a, v = sess.run([a0, v0], {X: ob})
-            return a, v, []  # dummy state
+            return a, v
 
         def value(ob, *_args, **_kwargs):
             return sess.run(v0, {X: ob})
