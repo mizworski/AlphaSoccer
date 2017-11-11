@@ -211,3 +211,6 @@ class Board:
         deep_column = self.state[ball_pos]
 
         return [1 - deep_column[k] for k in range(8)]
+
+    def get_player_turn(self):
+        return int(self.state[0, 0, turn_layer])

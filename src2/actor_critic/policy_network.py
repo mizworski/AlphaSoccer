@@ -34,21 +34,21 @@ class CnnPolicy:
 
                 flat = slim.flatten(res3)
                 fc = slim.fully_connected(flat, 256, scope='fc1')
-                pi = slim.fully_connected(fc, n_act, scope='pi', activation_fn=None)
-                vf = slim.fully_connected(fc, 1, scope='vf', activation_fn=None)
+                probs = slim.fully_connected(fc, n_act, scope='logits', activation_fn=tf.nn.softmax)
+                vf = slim.fully_connected(fc, 1, scope='vf', activation_fn=tf.nn.tanh)
 
         v0 = vf[:, 0]
-        a0 = tf.argmax(pi, axis=1)
+        pi0 = probs[:]
 
         def step(ob, *_args, **_kwargs):
-            a, v = sess.run([a0, v0], {X: ob})
-            return a, v
+            pi, v = sess.run([pi0, v0], {X: ob})
+            return pi, v
 
         def value(ob, *_args, **_kwargs):
             return sess.run(v0, {X: ob})
 
         self.X = X
-        self.pi = pi
+        self.pi = probs
         self.vf = vf
         self.step = step
         self.value = value
