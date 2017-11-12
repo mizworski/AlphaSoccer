@@ -16,7 +16,7 @@ def res_block(x, scope):
 
 class CnnPolicy:
     def __init__(self, sess, ob_space, n_act, n_batch, reuse=False):
-        ob_shape = (n_batch, ) + ob_space.shape
+        ob_shape = (n_batch,) + ob_space.shape
         X = tf.placeholder(tf.float32, ob_shape, name='state')
         with tf.variable_scope('AgentCriticNetwork', reuse=reuse):
             with slim.arg_scope(
@@ -33,7 +33,8 @@ class CnnPolicy:
 
                 flat = slim.flatten(res3)
                 fc = slim.fully_connected(flat, 256, scope='fc1')
-                probs = slim.fully_connected(fc, n_act, scope='logits', activation_fn=tf.nn.softmax)
+                logits = slim.fully_connected(fc, n_act, scope='logits', activation_fn=None)
+                probs = tf.nn.softmax(logits, name='probs')
                 vf = slim.fully_connected(fc, 1, scope='vf', activation_fn=tf.nn.tanh)
 
         v0 = vf[:, 0]
@@ -47,8 +48,8 @@ class CnnPolicy:
             return sess.run(v0, {X: ob})
 
         self.X = X
+        self.logits = logits
         self.pi = probs
         self.vf = vf
         self.step = step
         self.value = value
-

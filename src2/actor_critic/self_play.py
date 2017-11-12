@@ -29,10 +29,10 @@ class Runner(object):
         self.best_player = initial_model
         self.replay_memory = ReplayMemory(n_replays)
 
-    def run(self, n_games=int(1e5), temperature=1):
+    def run(self, n_games=int(1e4), temperature=1):
         n_act = Soccer.action_space.n
 
-        for _ in range(n_games):
+        for game in range(n_games):
             states = [self.envs[i].reset(i) for i in range(2)]
 
             history = [[], []]
@@ -58,11 +58,14 @@ class Runner(object):
             for state, action, value in history[1 - player_turn]:
                 self.replay_memory.push(state, action, -reward, value)
 
+            if (game + 1) % (n_games // 10) == 0:
+                print("Completed {}% of self-play.".format(int(100 * (game + 1) / n_games)))
+
     def evaluate(self, model, temperature=0.25, verbose=0):
         n_act = Soccer.action_space.n
 
         n_games = 256
-        log_every_n_games = n_games // 2
+        log_every_n_games = n_games // 4
         n_wins = 0
 
         for game in range(n_games):
@@ -92,8 +95,15 @@ class Runner(object):
                 states[player_turn] = state
                 states[1 - player_turn] = state_opp
 
+            if verbose == 1 and game % log_every_n_games == 0:
+                self.envs[0].print_board()
+
             if (player_turn == 0 and reward > 0) or (player_turn == 1 and reward < 0):
                 n_wins += 1
+                if verbose == 1 and game % log_every_n_games == 0:
+                    print("Player won")
+            elif verbose == 1 and game % log_every_n_games == 0:
+                print("Player lost")
 
         if verbose == 1:
             print("Win ratio of new model = {:.2f}".format(100 * n_wins / n_games))
