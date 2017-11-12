@@ -18,7 +18,6 @@ class CnnPolicy:
     def __init__(self, sess, ob_space, n_act, n_batch, reuse=False):
         ob_shape = (n_batch, ) + ob_space.shape
         X = tf.placeholder(tf.float32, ob_shape)
-        # X = tf.placeholder(tf.float32, shape=None)
         with tf.variable_scope('AgentCriticNetwork', reuse=reuse):
             with slim.arg_scope(
                     [slim.conv2d, slim.fully_connected],
