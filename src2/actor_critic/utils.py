@@ -1,25 +1,14 @@
 import random
+import numpy as np
 import tensorflow as tf
 from collections import namedtuple
 
-Transition = namedtuple('Transition', ('state', 'action', 'reward'))
+Transition = namedtuple('Transition', ('state', 'action', 'reward', 'value'))
 
 schedules = {
     'constant': lambda p: 1,
     'linear': lambda p: 1 - p
 }
-
-
-def cat_entropy(logits):
-    a0 = logits - tf.reduce_max(logits, 1, keep_dims=True)
-    ea0 = tf.exp(a0)
-    z0 = tf.reduce_sum(ea0, 1, keep_dims=True)
-    p0 = ea0 / z0
-    return tf.reduce_sum(p0 * (tf.log(z0) - a0), 1)
-
-
-def mse(pred, target):
-    return tf.square(pred - target) / 2.
 
 
 class ReplayMemory(object):
@@ -35,8 +24,12 @@ class ReplayMemory(object):
         self.memory[self.position] = Transition(*args)
         self.position = (self.position + 1) % self.capacity
 
-    def sample(self, batch_size):
+    def sample_sarvs(self, batch_size):
         return random.sample(self.memory, batch_size)
+
+    def sample(self, batch_size):
+        sarvs = random.sample(self.memory, batch_size)
+        return (np.asarray(data) for data in zip(*sarvs))
 
     def __len__(self):
         return len(self.memory)
@@ -56,3 +49,31 @@ class Scheduler(object):
 
     def value_steps(self, steps):
         return self.v * self.schedule(steps / self.nvalues)
+
+
+def cat_entropy(logits):
+    a0 = logits - tf.reduce_max(logits, 1, keep_dims=True)
+    ea0 = tf.exp(a0)
+    z0 = tf.reduce_sum(ea0, 1, keep_dims=True)
+    p0 = ea0 / z0
+    return tf.reduce_sum(p0 * (tf.log(z0) - a0), 1)
+
+
+def mse(pred, target):
+    return tf.square(pred - target) / 2.
+
+
+def explained_variance(ypred, y):
+    """
+    Computes fraction of variance that ypred explains about y.
+    Returns 1 - Var[y-ypred] / Var[y]
+
+    interpretation:
+        ev=0  =>  might as well have predicted zero
+        ev=1  =>  perfect prediction
+        ev<0  =>  worse than just predicting zero
+
+    """
+    assert y.ndim == 1 and ypred.ndim == 1
+    vary = np.var(y)
+    return np.nan if vary == 0 else 1 - np.var(y - ypred) / vary

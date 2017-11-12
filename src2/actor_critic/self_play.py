@@ -29,7 +29,7 @@ class Runner(object):
         self.best_player = initial_model
         self.replay_memory = ReplayMemory(n_replays)
 
-    def run(self, n_games, temperature=1):
+    def run(self, n_games=int(1e5), temperature=1):
         n_act = Soccer.action_space.n
 
         for _ in range(n_games):
@@ -40,7 +40,7 @@ class Runner(object):
             done = False
             while not done:
                 player_turn = self.envs[0].get_player_turn()
-                probs, _ = self.best_player.step(states[player_turn])
+                probs, value = self.best_player.step(states[player_turn])
                 legal_moves = self.envs[player_turn].get_legal_moves()
                 action = select_action(probs[0], legal_moves, n_act, temperature)
                 state, reward, done = self.envs[player_turn].step(action)
@@ -48,20 +48,21 @@ class Runner(object):
                 action_opposite_player_perspective = (action + 4) % 8
                 state_opp, _, _ = self.envs[1 - player_turn].step(action_opposite_player_perspective)
 
-                history[player_turn].append([state, action])
+                history[player_turn].append([np.squeeze(state), action, value[0]])
 
                 states[player_turn] = state
                 states[1 - player_turn] = state_opp
 
-            for state, action in history[player_turn]:
-                self.replay_memory.push(state, action, reward)
-            for state, action in history[1 - player_turn]:
-                self.replay_memory.push(state, action, -reward)
+            for state, action, value in history[player_turn]:
+                self.replay_memory.push(state, action, reward, value)
+            for state, action, value in history[1 - player_turn]:
+                self.replay_memory.push(state, action, -reward, value)
 
-    def evaluate(self, model, verbose=0):
+    def evaluate(self, model, temperature=0.25, verbose=0):
         n_act = Soccer.action_space.n
 
-        n_games = 400
+        n_games = 256
+        log_every_n_games = n_games // 2
         n_wins = 0
 
         for game in range(n_games):
@@ -78,7 +79,11 @@ class Runner(object):
                     probs, _ = self.best_player.step(states[player_turn])
 
                 legal_moves = self.envs[player_turn].get_legal_moves()
-                action = select_action(probs[0], legal_moves, n_act)
+                action = select_action(probs[0], legal_moves, n_act, temperature=temperature)
+
+                if verbose == 2 and game % log_every_n_games == 0:
+                    self.envs[0].print_board()
+
                 state, reward, done = self.envs[player_turn].step(action)
 
                 action_opposite_player_perspective = (action + 4) % 8
@@ -90,11 +95,14 @@ class Runner(object):
             if (player_turn == 0 and reward > 0) or (player_turn == 1 and reward < 0):
                 n_wins += 1
 
+        if verbose == 1:
+            print("Win ratio of new model = {:.2f}".format(100 * n_wins / n_games))
+
         if n_wins / n_games > new_best_model_threshold:
             self.best_player = model
+            return True
 
-        if verbose:
-            print("Win ratio of new model = {:.2f}".format(100 * n_wins / n_games))
+        return False
 
 
 def main():

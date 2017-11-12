@@ -15,6 +15,9 @@ class Soccer:
     def get_player_turn(self):
         return self.board.get_player_turn()
 
+    def print_board(self):
+        self.board.print_board()
+
     def step(self, action, verbose=0):
         reward, _ = self.board.make_move(action)
         if verbose:
