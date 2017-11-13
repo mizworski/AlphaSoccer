@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 from src2.actor_critic.policy_network import CnnPolicy
 from src2.actor_critic.utils import cat_entropy, mse, Scheduler
@@ -5,7 +6,8 @@ from src2.actor_critic.utils import cat_entropy, mse, Scheduler
 
 class Model(object):
     def __init__(self, ob_space, ac_space, batch_size, ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5, lr=7e-4,
-                 alpha=0.99, epsilon=1e-5, lrschedule='linear', training_timesteps=int(80e6), verbose=0):
+                 alpha=0.99, epsilon=1e-5, lrschedule='linear', training_timesteps=int(80e6),
+                 model_dir='models/actor_critic', verbose=0):
         config = tf.ConfigProto(allow_soft_placement=True)
         config.gpu_options.allow_growth = True
 
@@ -57,6 +59,9 @@ class Model(object):
 
         lr = Scheduler(v=lr, nvalues=training_timesteps, schedule=lrschedule)
 
+        saver = tf.train.Saver()
+        writer = tf.summary.FileWriter(model_dir, sess.graph)
+
         def train(state, actions, rewards, values):
             advs = rewards - values
             cur_lr = lr.value()
@@ -69,9 +74,22 @@ class Model(object):
 
             return policy_loss, value_loss, policy_entropy
 
+
+        def save_model(step=0):
+            model_path = os.path.join(model_dir, 'model.ckpt')
+            saver.save(sess, model_path, global_step=step)
+
         self.train = train
         self.train_model = train_model
         self.step_model = step_model
         self.step = step_model.step
         self.value = step_model.value
-        tf.global_variables_initializer().run(session=sess)
+        self.save = save_model
+
+        latest_checkpoint = tf.train.latest_checkpoint(model_dir)
+        if latest_checkpoint is None:
+            tf.global_variables_initializer().run(session=sess)
+        else:
+            saver.restore(sess, save_path=latest_checkpoint)
+
+

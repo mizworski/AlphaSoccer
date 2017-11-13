@@ -1,10 +1,9 @@
 import numpy as np
 
 from src2.environment.PaperSoccer import Soccer
-from src2.actor_critic.model import Model
 from src2.actor_critic.utils import ReplayMemory
 
-new_best_model_threshold = 0.55
+new_best_model_threshold = 0.25
 
 
 def select_action(probs, legal_moves, n_act, temperature=None):
@@ -113,16 +112,3 @@ class Runner(object):
             return True
 
         return False
-
-
-def main():
-    n_batch = 1024
-    model = Model(Soccer.observation_space, Soccer.action_space, n_batch)
-
-    r = Runner(model, 10)
-    r.run(5, temperature=2)
-    r.evaluate(model, verbose=1)
-
-
-if __name__ == '__main__':
-    main()
