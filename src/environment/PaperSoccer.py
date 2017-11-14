@@ -1,4 +1,4 @@
-from src2.environment.Board import Board
+from src.environment.Board import Board
 from gym.spaces import Box, Discrete
 
 

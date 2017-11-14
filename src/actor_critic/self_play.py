@@ -1,7 +1,7 @@
 import numpy as np
 
-from src2.environment.PaperSoccer import Soccer
-from src2.actor_critic.utils import ReplayMemory
+from src.environment.PaperSoccer import Soccer
+from src.actor_critic.utils import ReplayMemory
 
 
 def select_action(probs, legal_moves, n_act, temperature=None):

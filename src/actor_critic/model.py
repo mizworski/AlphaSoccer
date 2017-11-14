@@ -1,7 +1,7 @@
 import os
 import tensorflow as tf
-from src2.actor_critic.policy_network import CnnPolicy
-from src2.actor_critic.utils import cat_entropy, mse, Scheduler
+from src.actor_critic.policy_network import CnnPolicy
+from src.actor_critic.utils import cat_entropy, mse, Scheduler
 
 
 class Model(object):
@@ -21,35 +21,26 @@ class Model(object):
 
         training_player_scope = 'training_player'
         best_player_scope = 'best_player'
-        # best_player_scope = training_player_scope
 
         step_model = CnnPolicy(sess, ob_space, n_act, 1, best_player_scope, reuse=False)
         train_model = CnnPolicy(sess, ob_space, n_act, batch_size, training_player_scope, reuse=False)
 
-        logits = train_model.logits
-        if verbose == 2:
-            ADV_print = tf.Print(ADV, [ADV], summarize=8, message='advs: ')
-            A_print = tf.Print(A, [A], summarize=8, message='actions: ')
-            logits = tf.Print(logits, [logits], summarize=8, message='logits: ')
-        else:
-            A_print = A
-            ADV_print = ADV
 
-        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=A_print)
-        pg_loss = tf.reduce_mean(ADV_print * cross_entropy)
-        vf_loss = tf.reduce_mean(mse(tf.squeeze(train_model.vf), R))
-        entropy = tf.reduce_mean(cat_entropy(train_model.logits))
-        reg_loss = tf.losses.get_regularization_losses()
+        with tf.variable_scope('loss'):
+            logits = train_model.logits
 
-        if verbose == 2:
-            pg_loss = tf.Print(pg_loss, [pg_loss], message='pg loss: ')
-            vf_loss = tf.Print(vf_loss, [vf_loss], message='vf loss: ')
-            reg_loss = tf.Print(reg_loss, [reg_loss], message='reg loss: ')
+            with tf.variable_scope('actor_loss'):
+                cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=A)
+                pg_loss = tf.reduce_mean(ADV * cross_entropy)
 
-        loss = pg_loss - entropy * ent_coef + vf_loss * vf_coef + reg_loss
+            with tf.variable_scope('critic_loss'):
+                vf_loss = tf.reduce_mean(mse(tf.squeeze(train_model.vf), R))
 
-        if verbose == 2:
-            loss = tf.Print(loss, [loss], message='loss: ')
+            with tf.variable_scope('regularization_loss'):
+                entropy = tf.reduce_mean(cat_entropy(train_model.logits))
+                reg_loss = tf.losses.get_regularization_losses()
+
+            loss = pg_loss - entropy * ent_coef + vf_loss * vf_coef + reg_loss
 
         params = tf.trainable_variables(scope=training_player_scope)
         grads = tf.gradients(loss, params)
@@ -66,6 +57,7 @@ class Model(object):
         saver = tf.train.Saver()
         writer = tf.summary.FileWriter(model_dir, sess.graph)
 
+        self.training_timestep = 0
         def train(state, actions, rewards, values):
             advs = rewards - values
             cur_lr = lr.value()
@@ -78,7 +70,6 @@ class Model(object):
 
             return policy_loss, value_loss, policy_entropy
 
-
         def save_model(step=0):
             model_path = os.path.join(model_dir, 'model.ckpt')
             saver.save(sess, model_path, global_step=step)
@@ -90,6 +81,7 @@ class Model(object):
             # assuming all variables are in the same order
             # todo check
             copy_vars = []
+
             for best_model_var, train_player_var in zip(best_player_vars, train_player_vars):
                 copy_var = best_model_var.assign(train_player_var)
                 copy_vars.append(copy_var)
@@ -109,5 +101,3 @@ class Model(object):
             tf.global_variables_initializer().run(session=sess)
         else:
             saver.restore(sess, save_path=latest_checkpoint)
-
-

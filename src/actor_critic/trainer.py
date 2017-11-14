@@ -1,7 +1,7 @@
-from src2.actor_critic.self_play import Runner
-from src2.actor_critic.model import Model
-from src2.actor_critic.utils import Scheduler, explained_variance
-from src2.environment.PaperSoccer import Soccer
+from src.actor_critic.self_play import Runner
+from src.actor_critic.model import Model
+from src.actor_critic.utils import Scheduler, explained_variance
+from src.environment.PaperSoccer import Soccer
 
 
 def learn(batch_size=2048, n_games=int(4e3), n_replays=int(3e5), n_total_timesteps=int(1e3), initial_temperature=8,
@@ -36,5 +36,5 @@ def learn(batch_size=2048, n_games=int(4e3), n_replays=int(3e5), n_total_timeste
                 model_iterations += 1
                 model.save(model_iterations)
                 model.update_best_player()
-                print('model saved')
+                print('New best player saved.')
                 break

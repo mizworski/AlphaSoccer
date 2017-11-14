@@ -1,11 +1,12 @@
 import os
-from src2.actor_critic.trainer import learn
+from src.actor_critic.trainer import learn
 
 
 def main():
     batch_size = 2048
-    n_games = int(1e3)
+    n_games = int(4e3)
     n_replays = int(2e5)
+    # todo better name
     n_total_timesteps = int(1e3)
     initial_temperature = 8
     initial_lr = 1e-10

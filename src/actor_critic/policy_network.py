@@ -1,15 +1,16 @@
 import tensorflow as tf
 from tensorflow.contrib import slim
 
+n_kernels = 128
 
-def res_block(x, scope):
-    kernels = 128
 
-    net = slim.conv2d(x, kernels, [3, 3], padding='SAME', scope='{}_conv1'.format(scope))
-    net = slim.batch_norm(net, activation_fn=tf.nn.relu)
+def res_block(x, scope, reuse):
+    with tf.variable_scope(scope, reuse=reuse):
+        net = slim.conv2d(x, n_kernels, [3, 3], padding='SAME', scope='conv1')
+        net = slim.batch_norm(net, activation_fn=tf.nn.relu)
 
-    net = slim.conv2d(net, kernels, [3, 3], padding='SAME', scope='{}_conv2'.format(scope))
-    net = tf.nn.relu(x + net)
+        net = slim.conv2d(net, n_kernels, [3, 3], padding='SAME', scope='conv2')
+        net = tf.nn.relu(x + net)
 
     return net
 
@@ -27,15 +28,17 @@ class CnnPolicy:
                 conv1 = slim.conv2d(X, 128, [3, 3], padding='SAME', scope='conv1')
                 bn1 = slim.batch_norm(conv1, activation_fn=tf.nn.relu)
 
-                res1 = res_block(bn1, scope='block1')
-                res2 = res_block(res1, scope='block2')
-                res3 = res_block(res2, scope='block3')
+                res1 = res_block(bn1, scope='res_block1', reuse=reuse)
+                res2 = res_block(res1, scope='res_block2', reuse=reuse)
+                res3 = res_block(res2, scope='res_block3', reuse=reuse)
 
                 flat = slim.flatten(res3)
                 fc = slim.fully_connected(flat, 256, scope='fc1')
-                logits = slim.fully_connected(fc, n_act, scope='logits', activation_fn=None)
-                probs = tf.nn.softmax(logits, name='probs')
-                vf = slim.fully_connected(fc, 1, scope='vf', activation_fn=tf.nn.tanh)
+                with tf.variable_scope('policy_head', reuse=reuse):
+                    logits = slim.fully_connected(fc, n_act, scope='logits', activation_fn=None)
+                    probs = tf.nn.softmax(logits, name='probs')
+                with tf.variable_scope('value_head', reuse=reuse):
+                    vf = slim.fully_connected(fc, 1, scope='vf', activation_fn=tf.nn.tanh)
 
         v0 = vf[:, 0]
         pi0 = probs[:]
