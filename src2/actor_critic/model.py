@@ -5,8 +5,8 @@ from src2.actor_critic.utils import cat_entropy, mse, Scheduler
 
 
 class Model(object):
-    def __init__(self, ob_space, ac_space, batch_size, ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5, lr=7e-4,
-                 alpha=0.99, epsilon=1e-5, lrschedule='linear', training_timesteps=int(80e6),
+    def __init__(self, ob_space, ac_space, batch_size, ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5, lr=1e-8,
+                 alpha=0.99, epsilon=1e-5, lrschedule='linear', training_timesteps=int(1e6),
                  model_dir='models/actor_critic', verbose=0):
         config = tf.ConfigProto(allow_soft_placement=True)
         config.gpu_options.allow_growth = True
@@ -19,8 +19,12 @@ class Model(object):
         R = tf.placeholder(tf.float32, [batch_size], name='reward')
         LR = tf.placeholder(tf.float32, [], name='learning_rate')
 
-        step_model = CnnPolicy(sess, ob_space, n_act, 1, reuse=False)
-        train_model = CnnPolicy(sess, ob_space, n_act, batch_size, reuse=True)
+        training_player_scope = 'training_player'
+        best_player_scope = 'best_player'
+        # best_player_scope = training_player_scope
+
+        step_model = CnnPolicy(sess, ob_space, n_act, 1, best_player_scope, reuse=False)
+        train_model = CnnPolicy(sess, ob_space, n_act, batch_size, training_player_scope, reuse=False)
 
         logits = train_model.logits
         if verbose == 2:
@@ -47,7 +51,7 @@ class Model(object):
         if verbose == 2:
             loss = tf.Print(loss, [loss], message='loss: ')
 
-        params = tf.trainable_variables(scope='AgentCriticNetwork')
+        params = tf.trainable_variables(scope=training_player_scope)
         grads = tf.gradients(loss, params)
         if max_grad_norm is not None:
             grads, grad_norm = tf.clip_by_global_norm(grads, max_grad_norm)
@@ -79,12 +83,26 @@ class Model(object):
             model_path = os.path.join(model_dir, 'model.ckpt')
             saver.save(sess, model_path, global_step=step)
 
+        def update_best_player():
+            best_player_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=best_player_scope)
+            train_player_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=training_player_scope)
+
+            # assuming all variables are in the same order
+            # todo check
+            copy_vars = []
+            for best_model_var, train_player_var in zip(best_player_vars, train_player_vars):
+                copy_var = best_model_var.assign(train_player_var)
+                copy_vars.append(copy_var)
+
+            sess.run(copy_vars)
+
         self.train = train
         self.train_model = train_model
         self.step_model = step_model
         self.step = step_model.step
         self.value = step_model.value
         self.save = save_model
+        self.update_best_player = update_best_player
 
         latest_checkpoint = tf.train.latest_checkpoint(model_dir)
         if latest_checkpoint is None:

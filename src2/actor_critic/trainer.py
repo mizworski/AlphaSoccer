@@ -6,7 +6,7 @@ from src2.environment.PaperSoccer import Soccer
 
 def learn(batch_size=2048, n_games=int(4e3), n_replays=int(3e5), n_total_timesteps=int(1e3), initial_temperature=8,
           initial_lr=1e-10, evaluation_temperature=0.5, n_training_steps=16, n_evaluations=8, model_dir=None,
-          verbose=1):
+          new_best_model_threshold=0.55, verbose=1):
     n_training_timesteps = n_total_timesteps * n_training_steps
     log_every_n_train_steps = n_training_steps // 2
 
@@ -29,11 +29,12 @@ def learn(batch_size=2048, n_games=int(4e3), n_replays=int(3e5), n_total_timeste
                     print("value_loss", float(value_loss))
                     print("explained_variance", float(ev))
 
-            new_best_player = runner.evaluate(model, temperature=evaluation_temperature, verbose=verbose)
+            new_best_player = runner.evaluate(model, temperature=evaluation_temperature,
+                                              new_best_model_threshold=new_best_model_threshold, verbose=verbose)
 
             if new_best_player:
                 model_iterations += 1
                 model.save(model_iterations)
+                model.update_best_player()
                 print('model saved')
                 break
-

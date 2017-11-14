@@ -3,8 +3,6 @@ import numpy as np
 from src2.environment.PaperSoccer import Soccer
 from src2.actor_critic.utils import ReplayMemory
 
-new_best_model_threshold = 0.25
-
 
 def select_action(probs, legal_moves, n_act, temperature=None):
     if temperature is None:
@@ -60,7 +58,7 @@ class Runner(object):
             if (game + 1) % (n_games // 10) == 0:
                 print("Completed {}% of self-play.".format(int(100 * (game + 1) / n_games)))
 
-    def evaluate(self, model, temperature=0.25, verbose=0):
+    def evaluate(self, model, temperature=0.25, new_best_model_threshold = 0.55, verbose=0):
         n_act = Soccer.action_space.n
 
         n_games = 256

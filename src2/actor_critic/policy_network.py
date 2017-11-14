@@ -15,10 +15,10 @@ def res_block(x, scope):
 
 
 class CnnPolicy:
-    def __init__(self, sess, ob_space, n_act, n_batch, reuse=False):
+    def __init__(self, sess, ob_space, n_act, n_batch, scope, reuse=False):
         ob_shape = (n_batch,) + ob_space.shape
         X = tf.placeholder(tf.float32, ob_shape, name='state')
-        with tf.variable_scope('AgentCriticNetwork', reuse=reuse):
+        with tf.variable_scope(scope, reuse=reuse):
             with slim.arg_scope(
                     [slim.conv2d, slim.fully_connected],
                     weights_initializer=tf.contrib.layers.xavier_initializer(),
