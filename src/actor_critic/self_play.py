@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.actor_critic.mcts import MCTS
 from src.environment.PaperSoccer import Soccer
 from src.actor_critic.utils import ReplayMemory
 
@@ -27,28 +28,24 @@ class Runner(object):
         self.replay_memory = ReplayMemory(n_replays)
 
     def run(self, n_games=int(1e4), temperature=1):
-        n_act = Soccer.action_space.n
+        mcts = [MCTS(self.envs[i], self.best_player, temperature=temperature) for i in range(2)]
 
         for game in range(n_games):
-            states = [self.envs[i].reset(i) for i in range(2)]
-
+            for i in range(2):
+                self.envs[i].reset(i)
             history = [[], []]
 
             done = False
             while not done:
                 player_turn = self.envs[0].get_player_turn()
-                probs, value = self.best_player.step(states[player_turn])
-                legal_moves = self.envs[player_turn].get_legal_moves()
-                action = select_action(probs[0], legal_moves, n_act, temperature)
-                state, reward, done = self.envs[player_turn].step(action)
+                state = self.envs[player_turn].board.state
+                action, value = mcts[player_turn].select_action()
+                _, reward, done = self.envs[player_turn].step(action)
 
                 action_opposite_player_perspective = (action + 4) % 8
-                state_opp, _, _ = self.envs[1 - player_turn].step(action_opposite_player_perspective)
+                _ = self.envs[1 - player_turn].step(action_opposite_player_perspective)
 
-                history[player_turn].append([np.squeeze(state), action, value[0]])
-
-                states[player_turn] = state
-                states[1 - player_turn] = state_opp
+                history[player_turn].append([np.squeeze(state), action, np.squeeze(value)])
 
             for state, action, value in history[player_turn]:
                 self.replay_memory.push(state, action, reward, value)
@@ -58,39 +55,31 @@ class Runner(object):
             if (game + 1) % (n_games // 10) == 0:
                 print("Completed {}% of self-play.".format(int(100 * (game + 1) / n_games)))
 
-    def evaluate(self, model, temperature=0.25, new_best_model_threshold = 0.55, verbose=0):
-        n_act = Soccer.action_space.n
-
+    def evaluate(self, model, temperature=0.25, new_best_model_threshold=0.55, verbose=0):
         n_games = 256
         log_every_n_games = n_games // 4
         n_wins = 0
+        mcts = [MCTS(self.envs[0], model, temperature=temperature),
+                MCTS(self.envs[1], self.best_player, temperature=temperature)]
 
         for game in range(n_games):
             starting_player = game % 2
-            states = [self.envs[i].reset(starting_game=abs(i - starting_player)) for i in range(2)]
+            for i in range(2):
+                self.envs[i].reset(starting_game=abs(i - starting_player))
 
             done = False
             while not done:
                 player_turn = self.envs[0].get_player_turn()
-
-                if player_turn == 0:
-                    probs, _ = model.step(states[player_turn])
-                else:
-                    probs, _ = self.best_player.step(states[player_turn])
-
-                legal_moves = self.envs[player_turn].get_legal_moves()
-                action = select_action(probs[0], legal_moves, n_act, temperature=temperature)
+                action, _ = mcts[player_turn].select_action()
 
                 if verbose == 2 and game % log_every_n_games == 0:
                     self.envs[0].print_board()
 
-                state, reward, done = self.envs[player_turn].step(action)
+                _, reward, done = self.envs[player_turn].step(action)
 
                 action_opposite_player_perspective = (action + 4) % 8
-                state_opp, _, _ = self.envs[1 - player_turn].step(action_opposite_player_perspective)
+                _ = self.envs[1 - player_turn].step(action_opposite_player_perspective)
 
-                states[player_turn] = state
-                states[1 - player_turn] = state_opp
 
             if verbose == 1 and game % log_every_n_games == 0:
                 self.envs[0].print_board()
