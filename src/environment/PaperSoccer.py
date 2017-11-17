@@ -19,7 +19,7 @@ class Soccer:
         self.board.print_board()
 
     def step(self, action, verbose=0):
-        reward, _ = self.board.make_move(action)
+        reward = self.board.make_move(action)
         if verbose:
             self.board.print_board()
 

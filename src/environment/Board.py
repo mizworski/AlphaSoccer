@@ -132,7 +132,7 @@ class Board:
 
         game_winner = self.has_scored(direction)
         if game_winner != 0:
-            return game_winner, False
+            return game_winner
 
         if direction < 2 or direction > 6:
             x_delta = -1
@@ -145,7 +145,8 @@ class Board:
             y_delta = -1
 
         if self.state[self.ball_pos[0], self.ball_pos[1], direction] == 1:
-            return -1, True
+            return -1
+
 
         self.state[self.ball_pos[0], self.ball_pos[1], direction] = 1
         self.state[self.ball_pos[0] + x_delta, self.ball_pos[1] + y_delta, (direction + 4) % 8] = 1
@@ -157,7 +158,11 @@ class Board:
             self.state[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
             self.state[:, :, turn_layer] = 1 - player_taking_action
 
-        return 0, player_taking_action == self.state[0, 0, turn_layer]
+
+        if (np.asarray(self.get_legal_moves()) == 0).all():
+            return -1
+
+        return 0
 
     def print_layer(self, k):
         layer = np.dsplit(self.state, self.state.shape[2])[k].reshape((self.state.shape[0], self.state.shape[1]))
