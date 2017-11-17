@@ -37,8 +37,8 @@ class MCTS:
 
     def select_action(self):
         n_act = Soccer.action_space.n
+        states_visited = {}
 
-        state_visit_count = {}
         state = np.expand_dims(self.env.board.state, axis=0)
         probs, value = self.model.step(state)
         legal_moves = self.env.get_legal_moves()
@@ -47,7 +47,7 @@ class MCTS:
 
         # for _ in range(self.n_rollouts):
         #     rollout_env = copy.deepcopy(self.env)
-        return action, value
+        return action
 
 
 

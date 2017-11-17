@@ -20,14 +20,13 @@ def learn(batch_size=2048, n_games=int(4e3), n_replays=int(3e5), n_total_timeste
         runner.run(n_games=n_games, temperature=temperature.value())
         for _ in range(n_evaluations):
             for train in range(n_training_steps):
-                states, actions, rewards, values = runner.replay_memory.sample(batch_size)
-                policy_loss, value_loss, policy_entropy = model.train(states, actions, rewards, values)
+                states, actions, rewards = runner.replay_memory.sample(batch_size)
+                policy_loss, value_loss, policy_entropy = model.train(states, actions, rewards)
 
                 if train % log_every_n_train_steps == log_every_n_train_steps - 1:
-                    ev = explained_variance(values, rewards)
+                    # ev = explained_variance(values, rewards)
                     print("policy_entropy", float(policy_entropy))
                     print("value_loss", float(value_loss))
-                    print("explained_variance", float(ev))
 
             new_best_player = runner.evaluate(model, temperature=evaluation_temperature,
                                               new_best_model_threshold=new_best_model_threshold, verbose=verbose)

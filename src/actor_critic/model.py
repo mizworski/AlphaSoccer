@@ -58,8 +58,8 @@ class Model(object):
         writer = tf.summary.FileWriter(model_dir, sess.graph)
 
         self.training_timestep = 0
-        def train(state, actions, rewards, values):
-            advs = rewards - values
+        def train(state, actions, rewards):
+            advs = rewards
             cur_lr = lr.value()
             td_map = {train_model.X: state, A: actions, ADV: advs, R: rewards, LR: cur_lr}
 

@@ -39,18 +39,18 @@ class Runner(object):
             while not done:
                 player_turn = self.envs[0].get_player_turn()
                 state = self.envs[player_turn].board.state
-                action, value = mcts[player_turn].select_action()
+                action = mcts[player_turn].select_action()
                 _, reward, done = self.envs[player_turn].step(action)
 
                 action_opposite_player_perspective = (action + 4) % 8
                 _ = self.envs[1 - player_turn].step(action_opposite_player_perspective)
 
-                history[player_turn].append([np.squeeze(state), action, np.squeeze(value)])
+                history[player_turn].append([np.squeeze(state), action,])
 
-            for state, action, value in history[player_turn]:
-                self.replay_memory.push(state, action, reward, value)
-            for state, action, value in history[1 - player_turn]:
-                self.replay_memory.push(state, action, -reward, value)
+            for state, action in history[player_turn]:
+                self.replay_memory.push(state, action, reward)
+            for state, action in history[1 - player_turn]:
+                self.replay_memory.push(state, action, -reward)
 
             if (game + 1) % (n_games // 10) == 0:
                 print("Completed {}% of self-play.".format(int(100 * (game + 1) / n_games)))
@@ -70,7 +70,7 @@ class Runner(object):
             done = False
             while not done:
                 player_turn = self.envs[0].get_player_turn()
-                action, _ = mcts[player_turn].select_action()
+                action = mcts[player_turn].select_action()
 
                 if verbose == 2 and game % log_every_n_games == 0:
                     self.envs[0].print_board()
