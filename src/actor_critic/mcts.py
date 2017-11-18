@@ -9,13 +9,6 @@ from src.environment.PaperSoccer import Soccer
 ActionStatistics = recordclass('ActionStatistics', ('state_node', 'N', 'W', 'Q', 'P'))
 
 
-def to_tuple(a):
-    try:
-        return tuple(to_tuple(i) for i in a)
-    except TypeError:
-        return a
-
-
 def select_action(probs, legal_moves, n_act, temperature=None):
     if temperature is None:
         probs_only_legal = np.multiply(probs, legal_moves)
@@ -58,27 +51,29 @@ def rotate_probabilities(probs):
 
 
 class StateNode:
-    n_act = Soccer.action_space.n
+    # n_act = Soccer.action_space.n
 
-    def __init__(self, probs, value, player, legal_actions=range(n_act), previous_state=None, c_puct=1):
+    def __init__(self, probs, value, player, legal_actions=None, terminal_state=False, c_puct=1):
         self.v = value
         # todo probs don't sum up to 1 due to legal actions clip
-        self.transition = {
+        if legal_actions is None:
+            legal_actions = range(Soccer.action_space.n)
+        self.transitions = {
             action: ActionStatistics(state_node=None, N=0, W=0, Q=0, P=probs[action])
             for action in legal_actions
         }
         self.player = player
+        self.terminal_state = terminal_state
         self.c_puct = c_puct
-        # self.previous_state = previous_state
 
     def select(self):
-        N_sum = np.sum([self.transition[i].N for i in self.transition])
+        N_sum = np.sum([self.transitions[i].N for i in self.transitions])
         U = {
-            a: (1 + np.sqrt(N_sum) / (1 + self.transition[a].N)) * self.c_puct * self.transition[a].P
-            for a in self.transition
+            a: (1 + np.sqrt(N_sum) / (1 + self.transitions[a].N)) * self.c_puct * self.transitions[a].P
+            for a in self.transitions
         }
 
-        Q_U = {a: self.transition[a].Q + U[a] for a in self.transition}
+        Q_U = {a: self.transitions[a].Q + U[a] for a in self.transitions}
 
         action = max(Q_U, key=Q_U.get)
         return action
@@ -86,17 +81,19 @@ class StateNode:
     def backup(self, actions, values):
         if len(actions) > 0:
             action = actions[0]
-            self.transition[action].N += 1
-            self.transition[action].W += values[self.player]
-            self.transition[action].state_node.backup(actions[1:], values)
+            self.transitions[action].N += 1
+            self.transitions[action].W += values[self.player]
+            self.transitions[action].Q = self.transitions[action].W / self.transitions[action].N
+            self.transitions[action].state_node.backup(actions[1:], values)
 
 
 class MctsTree:
-    def __init__(self, envs, model, initial_temperature, c_puct=1):
+    def __init__(self, envs, model, initial_temperature, n_rollouts=1600, c_puct=1):
         self.envs = envs
         self.model = model
         self.root = None
         self.temperature = initial_temperature
+        self.n_rollouts = n_rollouts
         self.c_puct = c_puct
 
     def reset(self):
@@ -110,44 +107,85 @@ class MctsTree:
 
         tree_state_node = self.root
         parent_tree_state_node = tree_state_node
-        action = -1
+
+        action = None
+        actions_history = []
+        reward = [None, None]
+        done = False
 
         # traversing game tree
-        actions_history = []
-        while tree_state_node is not None:
+        while tree_state_node is not None and not done:
             action = tree_state_node.select()
             parent_tree_state_node = tree_state_node
-            tree_state_node = parent_tree_state_node.transition[action].state_node
+            tree_state_node = parent_tree_state_node.transitions[action].state_node
 
-            rollout_envs[0].step(action)
-            rollout_envs[1].step((action + 4) % 8)
+            _, reward[0], _ = rollout_envs[0].step(action)
+            _, reward[1], done = rollout_envs[1].step((action + 4) % 8)
 
-            actions_history.append(action)
+            if False:
+                print('action history')
+                print(actions_history)
+                print('board')
+                rollout_envs[0].print_board()
+                print('legal moves')
+                print(rollout_envs[0].get_legal_moves())
+                print('transitions')
+                print(parent_tree_state_node.transitions)
+                # actions_history.append(action)
+                # print("action={}".format(action))
 
         # expand and evaluate
-        leaf_node = parent_tree_state_node
         last_player_turn = rollout_envs[0].get_player_turn()
-        state = np.expand_dims(rollout_envs[last_player_turn].board.state, axis=0)
-        probs, value = self.model.step(state)
-        probs, value = np.squeeze(probs), np.squeeze(value)
 
-        if last_player_turn == 1:
-            probs = rotate_probabilities(probs)
-            value = -value
+        if done:
+            value = reward[last_player_turn]
+        else:
+            state = np.expand_dims(rollout_envs[last_player_turn].board.state, axis=0)
+            probs, value = self.model.step(state)
+            probs, value = np.squeeze(probs), np.squeeze(value)
 
-        tree_state_node = StateNode(probs, value, last_player_turn, rollout_envs[0].get_legal_moves(), leaf_node,
-                                    self.c_puct)
-        parent_tree_state_node.transition[action].state_node = tree_state_node
+            if last_player_turn == 1:
+                probs = rotate_probabilities(probs)
+                value = -value
+
+            if False:
+                print("adding new state")
+                print("after player={}".format(last_player_turn))
+                print('after move={}'.format(action))
+                print("legal moves")
+                print(rollout_envs[0].get_legal_moves())
+                print("board")
+
+                print('parent transitions before')
+                print(parent_tree_state_node.transitions)
+                legal_actions_sparse = rollout_envs[0].get_legal_moves()
+                legal_actions = [i for i, val in enumerate(legal_actions_sparse) if val == 1]
+                tree_state_node = StateNode(probs, value, last_player_turn, legal_actions,
+                                            c_puct=self.c_puct)
+                parent_tree_state_node.transitions[action].state_node = tree_state_node
+                print('parent transitions after')
+                print(parent_tree_state_node.transitions)
+                print('new node transitions')
+                print(tree_state_node.transitions)
+                rollout_envs[0].print_board()
+                print('-' * 42)
 
         # backup
         values = [None, None]
         values[last_player_turn] = value
         values[1 - last_player_turn] = -value
+
         self.root.backup(actions_history, values)
 
     def select_action(self, player):
         player_turn = self.envs[0].get_player_turn()
         assert player == player_turn
+
+        for i in range(self.n_rollouts):
+            self.rollout()
+
+    def play(self, action):
+        self.root = self.root.trasitions[action].state_node
 
 
 def main():
@@ -163,7 +201,10 @@ def main():
         envs[i].reset(starting_game=i)
 
     tree.reset()
-    tree.rollout()
+
+    tree.select_action(0)
+
+    print('dupa')
 
 
 if __name__ == '__main__':
