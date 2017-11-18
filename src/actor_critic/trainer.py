@@ -6,7 +6,7 @@ from src.environment.PaperSoccer import Soccer
 
 def learn(batch_size=2048, n_games=int(4e3), n_replays=int(3e5), n_total_timesteps=int(1e3), initial_temperature=8,
           initial_lr=1e-10, evaluation_temperature=0.5, n_training_steps=16, n_evaluations=8, model_dir=None,
-          new_best_model_threshold=0.55, verbose=1):
+          new_best_model_threshold=0.55, n_rollouts=1600, verbose=1):
     n_training_timesteps = n_total_timesteps * n_training_steps
     log_every_n_train_steps = n_training_steps // 2
 
@@ -17,7 +17,7 @@ def learn(batch_size=2048, n_games=int(4e3), n_replays=int(3e5), n_total_timeste
 
     model_iterations = 0
     for epoch in range(n_total_timesteps):
-        runner.run(n_games=n_games, temperature=temperature.value())
+        runner.run(n_games=n_games, temperature=temperature.value(), n_rollouts=n_rollouts)
         for _ in range(n_evaluations):
             for train in range(n_training_steps):
                 states, actions, rewards = runner.replay_memory.sample(batch_size)

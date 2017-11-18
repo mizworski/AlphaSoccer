@@ -1,5 +1,6 @@
 import os
 import copy
+
 import numpy as np
 from recordclass import recordclass
 
@@ -26,24 +27,23 @@ def select_action(probs, legal_moves, n_act, temperature=None):
 
 
 class MCTS:
-    def __init__(self, envs, model, temperature, n_rollouts=1600):
+    def __init__(self, envs, model, temperature, n_rollouts=1600, c_puct=1):
         self.envs = envs
         self.model = model
         self.temperature = temperature
         self.n_rollouts = n_rollouts
+        self.tree = MctsTree(envs, model, temperature, n_rollouts=n_rollouts, c_puct=c_puct)
+
+    def reset(self):
+        self.tree.reset()
 
     def select_action(self, player):
-        player_turn = self.envs[0].get_player_turn()
-        assert player == player_turn
-        n_act = Soccer.action_space.n
+        action, pi = self.tree.select_action(player)
 
-        state = np.expand_dims(self.envs[player].board.state, axis=0)
-        probs, value = self.model.step(state)
-        legal_moves = self.envs[player].get_legal_moves()
+        # be careful here - it assumes you take this action afterward
+        self.tree.play(action)
 
-        action = select_action(np.squeeze(probs), legal_moves, n_act, temperature=self.temperature)
-
-        return action
+        return action, pi
 
 
 def rotate_probabilities(probs):
@@ -79,11 +79,12 @@ class StateNode:
         return action
 
     def backup(self, actions, values):
-        if len(actions) > 0:
-            action = actions[0]
-            self.transitions[action].N += 1
-            self.transitions[action].W += values[self.player]
-            self.transitions[action].Q = self.transitions[action].W / self.transitions[action].N
+
+        action = actions[0]
+        self.transitions[action].N += 1
+        self.transitions[action].W += values[self.player]
+        self.transitions[action].Q = self.transitions[action].W / self.transitions[action].N
+        if len(actions[1:]) > 0:
             self.transitions[action].state_node.backup(actions[1:], values)
 
 
@@ -122,6 +123,8 @@ class MctsTree:
             _, reward[0], _ = rollout_envs[0].step(action)
             _, reward[1], done = rollout_envs[1].step((action + 4) % 8)
 
+            actions_history.append(action)
+
         # expand and evaluate
         last_player_turn = rollout_envs[0].get_player_turn()
 
@@ -135,6 +138,11 @@ class MctsTree:
             if last_player_turn == 1:
                 probs = rotate_probabilities(probs)
                 value = -value
+
+            legal_actions_sparse = rollout_envs[0].get_legal_moves()
+            legal_actions = [i for i, val in enumerate(legal_actions_sparse) if val == 1]
+            tree_state_node = StateNode(probs, value, last_player_turn, legal_actions, c_puct=self.c_puct)
+            parent_tree_state_node.transitions[action].state_node = tree_state_node
 
         # backup
         values = [None, None]
@@ -150,8 +158,16 @@ class MctsTree:
         for i in range(self.n_rollouts):
             self.rollout()
 
+        actions = list(self.root.transitions.keys())
+        Ns = [self.root.transitions[action].N for action in self.root.transitions]
+        NsT = [N ** (1 / self.temperature) for N in Ns]
+        pi = [N / np.sum(NsT) for N in NsT]
+        action = np.random.choice(actions, p=pi)
+
+        return action, pi
+
     def play(self, action):
-        self.root = self.root.trasitions[action].state_node
+        self.root = self.root.transitions[action].state_node
 
 
 def main():
@@ -162,7 +178,7 @@ def main():
     model = Model(Soccer.observation_space, Soccer.action_space, batch_size=None, lr=None,
                   training_timesteps=None, model_dir=model_dir, verbose=None)
 
-    tree = MctsTree(envs, model, temperature)
+    tree = MctsTree(envs, model, temperature, n_rollouts=800)
     for i in range(2):
         envs[i].reset(starting_game=i)
 

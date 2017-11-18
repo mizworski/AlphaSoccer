@@ -27,19 +27,20 @@ class Runner(object):
         self.best_player = initial_model
         self.replay_memory = ReplayMemory(n_replays)
 
-    def run(self, n_games=int(1e4), temperature=1):
-        mcts = MCTS(self.envs, self.best_player, temperature=temperature)
+    def run(self, n_games=int(1e4), temperature=1, n_rollouts=1600):
+        mcts = MCTS(self.envs, self.best_player, temperature=temperature, n_rollouts=n_rollouts)
 
         for game in range(n_games):
             for i in range(2):
                 self.envs[i].reset(i)
+            mcts.reset()
             history = [[], []]
 
             done = False
             while not done:
                 player_turn = self.envs[0].get_player_turn()
                 state = self.envs[player_turn].board.state
-                action = mcts.select_action(player_turn)
+                action, pi = mcts.select_action(player_turn)
                 _, reward, done = self.envs[player_turn].step(action)
 
                 action_opposite_player_perspective = (action + 4) % 8
@@ -70,7 +71,7 @@ class Runner(object):
             done = False
             while not done:
                 player_turn = self.envs[0].get_player_turn()
-                action = mcts[player_turn].select_action(player_turn)
+                action, _ = mcts[player_turn].select_action(player_turn)
 
                 if verbose == 2 and game % log_every_n_games == 0:
                     self.envs[0].print_board()

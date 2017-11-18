@@ -31,7 +31,7 @@ def main():
                 action = int(action)
             else:
                 _ = envs[player_turn].board.state
-                action = mcts.select_action(player_turn)
+                action, _ = mcts.select_action(player_turn)
 
             _, reward, done = envs[player_turn].step(action)
             action_opposite_player_perspective = (action + 4) % 8
