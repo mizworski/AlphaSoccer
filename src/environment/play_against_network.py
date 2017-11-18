@@ -22,16 +22,16 @@ def main():
         player = random.choice((0, 1))
         print(player)
         done = False
-        mcts = MCTS(envs[1 - player], model, temperature=temperature)
+        mcts = MCTS(envs, model, temperature=temperature)
         while not done:
             player_turn = envs[0].get_player_turn()
             envs[player].print_board()
             if player_turn == player:
-                action = input('Your turn')
+                action = input('Your turn ')
                 action = int(action)
             else:
                 _ = envs[player_turn].board.state
-                action = mcts.select_action()
+                action = mcts.select_action(player_turn)
 
             _, reward, done = envs[player_turn].step(action)
             action_opposite_player_perspective = (action + 4) % 8

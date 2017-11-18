@@ -1,5 +1,6 @@
-from src.environment.Board import Board
+import numpy as np
 from gym.spaces import Box, Discrete
+from src.environment.Board import Board
 
 
 class Soccer:
@@ -23,11 +24,11 @@ class Soccer:
         if verbose:
             self.board.print_board()
 
-        return self.board.state.reshape((1,) + self.observation_space.shape), reward, reward != 0
+        return np.expand_dims(self.board.state, axis=0), reward, reward != 0
 
     def reset(self, starting_game=0, verbose=0):
         self.board = Board(starting_game=starting_game)
         if verbose:
             self.board.print_board()
 
-        return self.board.state.reshape((1,) + self.observation_space.shape)
+        return np.expand_dims(self.board.state, axis=0)
