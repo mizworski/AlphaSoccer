@@ -43,6 +43,10 @@ class MCTS:
         # be careful here - it assumes you take this action afterward
         self.tree.play(action)
 
+        if player == 1:
+            action = (action + 4) % Soccer.action_space.n
+            pi = rotate_probabilities(pi)
+
         return action, pi
 
 
@@ -130,6 +134,7 @@ class MctsTree:
 
         if done:
             value = reward[last_player_turn]
+            tree_state_node = StateNode([], value, last_player_turn, [], terminal_state=True)
         else:
             state = np.expand_dims(rollout_envs[last_player_turn].board.state, axis=0)
             probs, value = self.model.step(state)
@@ -142,7 +147,8 @@ class MctsTree:
             legal_actions_sparse = rollout_envs[0].get_legal_moves()
             legal_actions = [i for i, val in enumerate(legal_actions_sparse) if val == 1]
             tree_state_node = StateNode(probs, value, last_player_turn, legal_actions, c_puct=self.c_puct)
-            parent_tree_state_node.transitions[action].state_node = tree_state_node
+
+        parent_tree_state_node.transitions[action].state_node = tree_state_node
 
         # backup
         values = [None, None]
@@ -158,8 +164,13 @@ class MctsTree:
         for i in range(self.n_rollouts):
             self.rollout()
 
-        actions = list(self.root.transitions.keys())
-        Ns = [self.root.transitions[action].N for action in self.root.transitions]
+        actions = list(range(Soccer.action_space.n))
+        Ns = [
+            self.root.transitions[action].N
+            if action in self.root.transitions
+            else 0
+            for action in range(Soccer.action_space.n)
+        ]
         NsT = [N ** (1 / self.temperature) for N in Ns]
         pi = [N / np.sum(NsT) for N in NsT]
         action = np.random.choice(actions, p=pi)
@@ -167,6 +178,8 @@ class MctsTree:
         return action, pi
 
     def play(self, action):
+        if self.root.transitions[action].state_node is None:
+            print('Node you are trying to reach is empty.')
         self.root = self.root.transitions[action].state_node
 
 
@@ -185,8 +198,6 @@ def main():
     tree.reset()
 
     tree.select_action(0)
-
-    print('dupa')
 
 
 if __name__ == '__main__':

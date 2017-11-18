@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from collections import namedtuple
 
-Transition = namedtuple('Transition', ('state', 'action', 'reward'))
+Transition = namedtuple('Transition', ('state', 'pi', 'reward'))
 
 schedules = {
     'constant': lambda p: 1,
@@ -36,19 +36,19 @@ class ReplayMemory(object):
 
 
 class Scheduler(object):
-    def __init__(self, v, nvalues, schedule):
+    def __init__(self, v, n_values, schedule):
         self.n = 0.
         self.v = v
-        self.nvalues = nvalues
+        self.n_values = n_values
         self.schedule = schedules[schedule]
 
     def value(self):
-        current_value = self.v * self.schedule(self.n / self.nvalues)
+        current_value = self.v * self.schedule(self.n / self.n_values)
         self.n += 1.
         return current_value
 
     def value_steps(self, steps):
-        return self.v * self.schedule(steps / self.nvalues)
+        return self.v * self.schedule(steps / self.n_values)
 
 
 def cat_entropy(logits):

@@ -23,7 +23,7 @@ def learn(batch_size=2048, n_games=int(4e3), n_replays=int(3e5), n_total_timeste
                 states, actions, rewards = runner.replay_memory.sample(batch_size)
                 policy_loss, value_loss, policy_entropy = model.train(states, actions, rewards)
 
-                if train % log_every_n_train_steps == log_every_n_train_steps - 1:
+                if n_training_steps == 1 or train % log_every_n_train_steps == log_every_n_train_steps - 1:
                     # ev = explained_variance(values, rewards)
                     print("policy_entropy", float(policy_entropy))
                     print("value_loss", float(value_loss))

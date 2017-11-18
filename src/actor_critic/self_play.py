@@ -46,12 +46,12 @@ class Runner(object):
                 action_opposite_player_perspective = (action + 4) % 8
                 _ = self.envs[1 - player_turn].step(action_opposite_player_perspective)
 
-                history[player_turn].append([np.squeeze(state), action,])
+                history[player_turn].append([np.squeeze(state), pi])
 
-            for state, action in history[player_turn]:
-                self.replay_memory.push(state, action, reward)
-            for state, action in history[1 - player_turn]:
-                self.replay_memory.push(state, action, -reward)
+            for state, pi in history[player_turn]:
+                self.replay_memory.push(state, pi, reward)
+            for state, pi in history[1 - player_turn]:
+                self.replay_memory.push(state, pi, -reward)
 
             if (game + 1) % (n_games // 10) == 0:
                 print("Completed {}% of self-play.".format(int(100 * (game + 1) / n_games)))
@@ -67,6 +67,7 @@ class Runner(object):
             starting_player = game % 2
             for i in range(2):
                 self.envs[i].reset(starting_game=abs(i - starting_player))
+                mcts[i].reset()
 
             done = False
             while not done:
