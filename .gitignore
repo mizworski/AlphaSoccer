@@ -1,7 +1,4 @@
-# IntelliJ project files
 .idea/
-
-# Jupyer Notebook
 notebooks/.ipynb_checkpoints/
-
-#data/
+data/
+__pycache__/

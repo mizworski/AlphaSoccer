@@ -28,7 +28,7 @@ class Runner(object):
         self.replay_memory = ReplayMemory(n_replays)
 
     def run(self, n_games=int(1e4), temperature=1):
-        mcts = [MCTS(self.envs[i], self.best_player, temperature=temperature) for i in range(2)]
+        mcts = MCTS(self.envs, self.best_player, temperature=temperature)
 
         for game in range(n_games):
             for i in range(2):
@@ -39,7 +39,7 @@ class Runner(object):
             while not done:
                 player_turn = self.envs[0].get_player_turn()
                 state = self.envs[player_turn].board.state
-                action = mcts[player_turn].select_action()
+                action = mcts.select_action(player_turn)
                 _, reward, done = self.envs[player_turn].step(action)
 
                 action_opposite_player_perspective = (action + 4) % 8
@@ -56,11 +56,11 @@ class Runner(object):
                 print("Completed {}% of self-play.".format(int(100 * (game + 1) / n_games)))
 
     def evaluate(self, model, temperature=0.25, new_best_model_threshold=0.55, verbose=0):
-        n_games = 256
+        n_games = 400
         log_every_n_games = n_games // 4
         n_wins = 0
-        mcts = [MCTS(self.envs[0], model, temperature=temperature),
-                MCTS(self.envs[1], self.best_player, temperature=temperature)]
+        mcts = [MCTS(self.envs, model, temperature=temperature),
+                MCTS(self.envs, self.best_player, temperature=temperature)]
 
         for game in range(n_games):
             starting_player = game % 2
@@ -70,7 +70,7 @@ class Runner(object):
             done = False
             while not done:
                 player_turn = self.envs[0].get_player_turn()
-                action = mcts[player_turn].select_action()
+                action = mcts[player_turn].select_action(player_turn)
 
                 if verbose == 2 and game % log_every_n_games == 0:
                     self.envs[0].print_board()
