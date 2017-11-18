@@ -122,18 +122,6 @@ class MctsTree:
             _, reward[0], _ = rollout_envs[0].step(action)
             _, reward[1], done = rollout_envs[1].step((action + 4) % 8)
 
-            if False:
-                print('action history')
-                print(actions_history)
-                print('board')
-                rollout_envs[0].print_board()
-                print('legal moves')
-                print(rollout_envs[0].get_legal_moves())
-                print('transitions')
-                print(parent_tree_state_node.transitions)
-                # actions_history.append(action)
-                # print("action={}".format(action))
-
         # expand and evaluate
         last_player_turn = rollout_envs[0].get_player_turn()
 
@@ -147,28 +135,6 @@ class MctsTree:
             if last_player_turn == 1:
                 probs = rotate_probabilities(probs)
                 value = -value
-
-            if False:
-                print("adding new state")
-                print("after player={}".format(last_player_turn))
-                print('after move={}'.format(action))
-                print("legal moves")
-                print(rollout_envs[0].get_legal_moves())
-                print("board")
-
-                print('parent transitions before')
-                print(parent_tree_state_node.transitions)
-                legal_actions_sparse = rollout_envs[0].get_legal_moves()
-                legal_actions = [i for i, val in enumerate(legal_actions_sparse) if val == 1]
-                tree_state_node = StateNode(probs, value, last_player_turn, legal_actions,
-                                            c_puct=self.c_puct)
-                parent_tree_state_node.transitions[action].state_node = tree_state_node
-                print('parent transitions after')
-                print(parent_tree_state_node.transitions)
-                print('new node transitions')
-                print(tree_state_node.transitions)
-                rollout_envs[0].print_board()
-                print('-' * 42)
 
         # backup
         values = [None, None]
