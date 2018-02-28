@@ -14,8 +14,9 @@ class Model(object):
         sess = tf.Session(config=config)
         n_act = ac_space.n
 
-        A = tf.placeholder(tf.int32, [batch_size], name='action')
-        ADV = tf.placeholder(tf.float32, [batch_size], name='advantage')
+        # A = tf.placeholder(tf.int32, [batch_size], name='action')
+        PI = tf.placeholder(tf.float32, [batch_size, 8], name='pi')
+        # ADV = tf.placeholder(tf.float32, [batch_size], name='advantage')
         R = tf.placeholder(tf.float32, [batch_size], name='reward')
         LR = tf.placeholder(tf.float32, [], name='learning_rate')
 
@@ -30,8 +31,8 @@ class Model(object):
             logits = train_model.logits
 
             with tf.variable_scope('actor_loss'):
-                cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=A)
-                pg_loss = tf.reduce_mean(ADV * cross_entropy)
+                cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=PI)
+                pg_loss = tf.reduce_mean(cross_entropy)
 
             with tf.variable_scope('critic_loss'):
                 vf_loss = tf.reduce_mean(mse(tf.squeeze(train_model.vf), R))
@@ -48,20 +49,19 @@ class Model(object):
             grads, grad_norm = tf.clip_by_global_norm(grads, max_grad_norm)
         grads = list(zip(grads, params))
 
-        trainer = tf.train.RMSPropOptimizer(learning_rate=LR, decay=alpha, epsilon=epsilon)
-        # trainer = tf.train.GradientDescentOptimizer(learning_rate=LR)
+        # trainer = tf.train.RMSPropOptimizer(learning_rate=LR, decay=alpha, epsilon=epsilon)
+        trainer = tf.train.GradientDescentOptimizer(learning_rate=LR)
         _train = trainer.apply_gradients(grads)
 
-        lr = Scheduler(v=lr, nvalues=training_timesteps, schedule=lrschedule)
+        lr = Scheduler(v=lr, n_values=training_timesteps, schedule=lrschedule)
 
         saver = tf.train.Saver()
         writer = tf.summary.FileWriter(model_dir, sess.graph)
 
         self.training_timestep = 0
-        def train(state, actions, rewards):
-            advs = rewards
+        def train(state, pi, rewards):
             cur_lr = lr.value()
-            td_map = {train_model.X: state, A: actions, ADV: advs, R: rewards, LR: cur_lr}
+            td_map = {train_model.X: state, PI: pi, R: rewards, LR: cur_lr}
 
             policy_loss, value_loss, policy_entropy, _ = sess.run(
                 [pg_loss, vf_loss, entropy, _train],

@@ -1,5 +1,6 @@
 import os
 import copy
+from time import sleep
 
 import numpy as np
 from recordclass import recordclass
@@ -34,20 +35,23 @@ class MCTS:
         self.n_rollouts = n_rollouts
         self.tree = MctsTree(envs, model, temperature, n_rollouts=n_rollouts, c_puct=c_puct)
 
-    def reset(self):
-        self.tree.reset()
+    def reset(self, player_number):
+        self.tree.reset(player_number)
 
     def select_action(self, player):
         action, pi = self.tree.select_action(player)
 
         # be careful here - it assumes you take this action afterward
-        self.tree.play(action)
-
-        if player == 1:
-            action = (action + 4) % Soccer.action_space.n
-            pi = rotate_probabilities(pi)
+        # self.tree.play(action)
+        #
+        # if player == 1:
+        #     action = (action + 4) % Soccer.action_space.n
+        #     pi = rotate_probabilities(pi)
 
         return action, pi
+
+    def step(self, action):
+        self.tree.play(action)
 
 
 def rotate_probabilities(probs):
@@ -80,10 +84,18 @@ class StateNode:
         Q_U = {a: self.transitions[a].Q + U[a] for a in self.transitions}
 
         action = max(Q_U, key=Q_U.get)
+        # try:
+        # except:
+        #     print('dupa')
+        #     action = 0
+
         return action
 
     def backup(self, actions, values):
-
+        # todo why passing list instead of value
+        print('backing up state')
+        print('player={}'.format(self.player))
+        print('value={}'.format(values[self.player]))
         action = actions[0]
         self.transitions[action].N += 1
         self.transitions[action].W += values[self.player]
@@ -100,22 +112,28 @@ class MctsTree:
         self.temperature = initial_temperature
         self.n_rollouts = n_rollouts
         self.c_puct = c_puct
+        self.player_number = None
 
-    def reset(self):
+    def reset(self, player_number):
         state = np.expand_dims(self.envs[0].board.state, axis=0)
         probs, value = self.model.step(state)
         probs, value = np.squeeze(probs), np.squeeze(value)
         self.root = StateNode(probs, value, player=0)
+        self.player_number = player_number
+        assert self.envs[0].get_player_turn() == 0
 
     def rollout(self):
-        rollout_envs = [copy.deepcopy(env) for env in self.envs]
+        if self.player_number == 0:
+            rollout_envs = [copy.deepcopy(env) for env in self.envs]
+        else:
+            rollout_envs = [copy.deepcopy(env) for env in reversed(self.envs)]
 
         tree_state_node = self.root
         parent_tree_state_node = tree_state_node
 
         action = None
         actions_history = []
-        reward = [None, None]
+        reward = None
         done = False
 
         # traversing game tree
@@ -124,36 +142,45 @@ class MctsTree:
             parent_tree_state_node = tree_state_node
             tree_state_node = parent_tree_state_node.transitions[action].state_node
 
-            _, reward[0], _ = rollout_envs[0].step(action)
-            _, reward[1], done = rollout_envs[1].step((action + 4) % 8)
-
+            _, reward, done = rollout_envs[0].step(action)
+            _ = rollout_envs[1].step((action + 4) % 8)
             actions_history.append(action)
 
         # expand and evaluate
-        last_player_turn = rollout_envs[0].get_player_turn()
+        new_state_player_turn = rollout_envs[0].get_player_turn()
 
         if done:
-            value = reward[last_player_turn]
-            tree_state_node = StateNode([], value, last_player_turn, [], terminal_state=True)
+            print('game finished, reward={}'.format(reward))
+            value = reward
+            player_reaching_state = parent_tree_state_node.player
+            tree_state_node = StateNode([], value, player_reaching_state, [], terminal_state=True)
         else:
-            state = np.expand_dims(rollout_envs[last_player_turn].board.state, axis=0)
+            # print("last player={}".format(new_state_player_turn))
+            print("player={}".format(self.player_number))
+            rollout_envs[0].print_board()
+            sleep(1)
+
+            state = np.expand_dims(rollout_envs[new_state_player_turn].board.state, axis=0)
             probs, value = self.model.step(state)
             probs, value = np.squeeze(probs), np.squeeze(value)
 
-            if last_player_turn == 1:
+            if new_state_player_turn == 1:  # opponent
                 probs = rotate_probabilities(probs)
                 value = -value
 
             legal_actions_sparse = rollout_envs[0].get_legal_moves()
             legal_actions = [i for i, val in enumerate(legal_actions_sparse) if val == 1]
-            tree_state_node = StateNode(probs, value, last_player_turn, legal_actions, c_puct=self.c_puct)
+            print('legal actions:')
+            print(legal_actions)
+            tree_state_node = StateNode(probs, value, player=new_state_player_turn, legal_actions=legal_actions,
+                                        c_puct=self.c_puct)
 
         parent_tree_state_node.transitions[action].state_node = tree_state_node
 
         # backup
         values = [None, None]
-        values[last_player_turn] = value
-        values[1 - last_player_turn] = -value
+        values[new_state_player_turn] = value
+        values[1 - new_state_player_turn] = -value
 
         self.root.backup(actions_history, values)
 
@@ -162,6 +189,8 @@ class MctsTree:
         assert player == player_turn
 
         for i in range(self.n_rollouts):
+            print(16 * '*')
+            print('rollout={}'.format(i))
             self.rollout()
 
         actions = list(range(Soccer.action_space.n))
@@ -171,16 +200,27 @@ class MctsTree:
             else 0
             for action in range(Soccer.action_space.n)
         ]
+        print(Ns)
         NsT = [N ** (1 / self.temperature) for N in Ns]
         pi = [N / np.sum(NsT) for N in NsT]
         action = np.random.choice(actions, p=pi)
-
+        print('action={}'.format(action))
+        print(16 * '*')
         return action, pi
 
     def play(self, action):
         if self.root.transitions[action].state_node is None:
             print('Node you are trying to reach is empty.')
-        self.root = self.root.transitions[action].state_node
+            state = np.expand_dims(self.envs[0].board.state, axis=0)
+            probs, value = self.model.step(state)
+            probs, value = np.squeeze(probs), np.squeeze(value)
+
+            player_turn = self.envs[0].get_player_turn()
+            legal_actions = self.envs[0].get_legal_moves()
+            print(legal_actions)
+            self.root = StateNode(probs, value, player=player_turn, legal_actions=legal_actions)
+        else:
+            self.root = self.root.transitions[action].state_node
 
 
 def main():
@@ -195,7 +235,7 @@ def main():
     for i in range(2):
         envs[i].reset(starting_game=i)
 
-    tree.reset()
+    tree.reset(0)
 
     tree.select_action(0)
 
