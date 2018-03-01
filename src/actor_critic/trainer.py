@@ -14,11 +14,14 @@ def learn(batch_size=2048, n_self_play_games=int(4e3), n_replays=int(3e5), n_tot
     model = Model(Soccer.observation_space, Soccer.action_space, batch_size=batch_size, lr=initial_lr,
                   training_timesteps=n_training_timesteps, model_dir=model_dir, verbose=verbose)
     runner = Runner(model, n_replays=n_replays, c_puct=c_puct)
-    temperature = Scheduler(initial_temperature, n_total_timesteps, 'linear')
+    temperature_scheduler = Scheduler(initial_temperature, n_total_timesteps, 'linear')
 
     model_iterations = 0
     for epoch in range(n_total_timesteps):
-        runner.run(n_games=n_self_play_games, temperature=temperature.value(), n_rollouts=n_rollouts)
+        # todo temperature should be decreasing as we are getting deeper into tree instead decreasing with epochs
+        # temperature = temperature_scheduler.value()
+        temperature = 1
+        runner.run(n_games=n_self_play_games, temperature=temperature, n_rollouts=n_rollouts)
         for _ in range(n_evaluations):
             for train in range(n_training_steps):
                 states, actions, rewards = runner.replay_memory.sample(batch_size)

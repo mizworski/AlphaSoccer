@@ -4,9 +4,11 @@ from src.actor_critic.mcts import MCTS
 from src.environment.PaperSoccer import Soccer
 from src.actor_critic.utils import ReplayMemory
 
+
 def playing_progress_bar(game, n_games):
     if (game + 1) % (n_games // 10) == 0:
         print("Completed {}% of self-play.".format(int(100 * (game + 1) / n_games)))
+
 
 class Runner(object):
     def __init__(self, initial_model, n_replays, c_puct):
@@ -18,26 +20,28 @@ class Runner(object):
     def run(self, n_games=int(1e4), temperature=1, n_rollouts=1600):
         mcts = [
             MCTS(self.envs, self.best_player, temperature=temperature, n_rollouts=n_rollouts, c_puct=self.c_puct)
-                for _ in range(2)
+            for _ in range(2)
         ]
 
         for game in range(n_games):
             history = [[], []]
-            winner = play_single_game(self.envs, mcts, history)
+            winner = play_single_game(self.envs, mcts, history, starting_player=0)
             save_memory(self.replay_memory, winner, history)
             playing_progress_bar(game, n_games)
 
     def evaluate(self, model, n_games=400, temperature=0.25, new_best_model_threshold=0.55, verbose=0):
         log_every_n_games = n_games // 16
         n_wins = 0
-        mcts = [MCTS(self.envs, model, temperature=temperature),
-                MCTS(self.envs, self.best_player, temperature=temperature)]
+        mcts = [
+            MCTS(self.envs, model, temperature=temperature),
+            MCTS(self.envs, self.best_player, temperature=temperature)
+        ]
 
         for game in range(n_games):
             starting_player = game % 2
             print_results = verbose if verbose and game % log_every_n_games == 0 else 0
 
-            winner = play_single_game(self.envs, mcts, starting_player, verbose=print_results)
+            winner = play_single_game(self.envs, mcts, starting_player=starting_player, verbose=print_results)
 
             if winner == 0:
                 n_wins += 1
@@ -54,8 +58,11 @@ class Runner(object):
 
 def play_single_game(envs, mcts, history=None, starting_player=0, verbose=0):
     for i in range(2):
-        envs[i].reset(starting_game=abs(i - starting_player))
-        mcts[i].reset(starting_player)
+        # each player treat themselves as player0
+        starting_player = abs(i - starting_player)
+        envs[i].reset(starting_game=starting_player)
+        player_number = starting_player
+        mcts[i].reset(player_number=player_number)
 
     done = False
     player_turn = None
@@ -67,12 +74,21 @@ def play_single_game(envs, mcts, history=None, starting_player=0, verbose=0):
         player_turn = envs[0].get_player_turn()
         state = envs[player_turn].board.state
         action, pi = mcts[player_turn].select_action(player_turn)
-        mcts[player_turn].step(action)
-        mcts[1 - player_turn].step((action + 4) % 8)
+        action_opposite_player_perspective = (action + 4) % 8
 
         _, reward, done = envs[player_turn].step(action)
-        action_opposite_player_perspective = (action + 4) % 8
         _ = envs[1 - player_turn].step(action_opposite_player_perspective)
+
+        print("*" * 16)
+        print("Action selected={}".format(action))
+        print("Board after action:")
+        envs[player_turn].print_board()
+        print("*" * 16)
+
+        print("stepping in player mcts")
+        mcts[player_turn].step(action)
+        print("stepping in opposite player mcts")
+        mcts[1 - player_turn].step(action_opposite_player_perspective)
 
         if history is not None:
             history[player_turn].append([np.squeeze(state), pi])
@@ -90,6 +106,7 @@ def play_single_game(envs, mcts, history=None, starting_player=0, verbose=0):
             print("Player lost")
 
     return winner
+
 
 def save_memory(replay_memory, winner, history):
     for state, pi in history[winner]:
