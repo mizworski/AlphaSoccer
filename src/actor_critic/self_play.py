@@ -29,12 +29,12 @@ class Runner(object):
             save_memory(self.replay_memory, winner, history)
             playing_progress_bar(game, n_games)
 
-    def evaluate(self, model, n_games=400, temperature=0.25, new_best_model_threshold=0.55, verbose=0):
+    def evaluate(self, model, n_games=400, temperature=0.25, n_rollouts=1600, new_best_model_threshold=0.55, verbose=0):
         log_every_n_games = n_games // 16
         n_wins = 0
         mcts = [
-            MCTS(self.envs, model, temperature=temperature),
-            MCTS(self.envs, self.best_player, temperature=temperature)
+            MCTS(self.envs, model, temperature=temperature, n_rollouts=n_rollouts),
+            MCTS(self.envs, self.best_player, temperature=temperature, n_rollouts=n_rollouts)
         ]
 
         for game in range(n_games):
@@ -59,10 +59,10 @@ class Runner(object):
 def play_single_game(envs, mcts, history=None, starting_player=0, verbose=0):
     for i in range(2):
         # each player treat themselves as player0
-        starting_player = abs(i - starting_player)
-        envs[i].reset(starting_game=starting_player)
-        player_number = starting_player
-        mcts[i].reset(player_number=player_number)
+        starting_from_i_perspective = abs(i - starting_player)
+        envs[i].reset(starting_game=starting_from_i_perspective)
+        player_number_from_i_perspective = starting_player
+        mcts[i].reset(player_number=player_number_from_i_perspective)
 
     done = False
     player_turn = None

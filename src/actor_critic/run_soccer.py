@@ -12,12 +12,12 @@ def main():
     initial_lr = 1e-2
     evaluation_temperature = 0.1
     n_training_steps = 2
-    n_evaluations = 32
+    n_evaluations = 16
     verbose = 1
     new_best_model_threshold = 0.55
     c_puct = 1
     n_evaluation_games = 64
-    n_rollouts = 2
+    n_rollouts = 64
 
     # todo better name
     n_total_timesteps = int(1e3)

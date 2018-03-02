@@ -32,7 +32,8 @@ def learn(batch_size=2048, n_self_play_games=int(4e3), n_replays=int(3e5), n_tot
                     print("value_loss", float(value_loss))
 
             new_best_player = runner.evaluate(model, n_games=n_evaluation_games, temperature=evaluation_temperature,
-                                              new_best_model_threshold=new_best_model_threshold, verbose=verbose)
+                                              n_rollouts=n_rollouts,    new_best_model_threshold=new_best_model_threshold,
+                                              verbose=verbose)
 
             if new_best_player:
                 model_iterations += 1

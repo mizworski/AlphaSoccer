@@ -11,10 +11,6 @@ from src.environment.PaperSoccer import Soccer
 ActionStatistics = recordclass('ActionStatistics', ('state_node', 'N', 'W', 'Q', 'P'))
 
 
-def rotate_probabilities(probs):
-    return [probs[(i + 4) % Soccer.action_space.n] for i in range(8)]
-
-
 def get_action_distribution(transitions, temperature, verbose=0):
     actions = list(range(Soccer.action_space.n))
     Ns = [
@@ -45,6 +41,10 @@ class StateNode:
             action: ActionStatistics(state_node=None, N=0, W=0, Q=0, P=probs[action])
             for action in range(len(legal_actions)) if legal_actions[action] == 1
         }
+
+        if len(self.transitions) == 0 and not terminal_state:
+            print('cc {}'.format(terminal_state))
+
         self.player = player
         self.terminal_state = terminal_state
         self.c_puct = c_puct
@@ -58,7 +58,10 @@ class StateNode:
 
         Q_U = {a: self.transitions[a].Q + U[a] for a in self.transitions}
 
-        action = max(Q_U, key=Q_U.get)
+        try:
+            action = max(Q_U, key=Q_U.get)
+        except:
+            print('dd')
 
         return action
 
@@ -79,7 +82,7 @@ class StateNode:
 
 
 class MCTS:
-    def __init__(self, envs, model, temperature, n_rollouts=1600, c_puct=1):
+    def     __init__(self, envs, model, temperature, n_rollouts=1600, c_puct=1):
         self.envs = envs
         self.model = model
         self.root = None
@@ -89,7 +92,7 @@ class MCTS:
         self.player_number = None
 
     def reset(self, player_number):
-        state = np.expand_dims(self.envs[0].board.state, axis=0)
+        state = np.expand_dims(self.envs[player_number].board.state, axis=0)
         probs, value = self.model.step(state)
         probs, value = np.squeeze(probs), np.squeeze(value)
         self.root = StateNode(probs, value, player=player_number)
@@ -97,11 +100,6 @@ class MCTS:
         # assert self.envs[0].get_player_turn() == 0
 
     def rollout(self):
-        # if self.player_number == 0:
-        #     rollout_envs = [copy.deepcopy(env) for env in self.envs]
-        # else:
-        #     rollout_envs = [copy.deepcopy(env) for env in reversed(self.envs)]
-
         rollout_envs = [copy.deepcopy(env) for env in self.envs]
         tree_state_node = self.root
         parent_tree_state_node = tree_state_node
@@ -122,17 +120,22 @@ class MCTS:
             _ = rollout_envs[1 - player_taking_action].step((action + 4) % 8)
             actions_history.append(action)
 
+            if not (tree_state_node is None or done == tree_state_node.terminal_state):
+                print('dasdsad')
+
         # expand and evaluate
         new_state_player_turn = rollout_envs[0].get_player_turn()
         last_player_turn = parent_tree_state_node.player
 
         if done:
-            print('game finished, reward={}'.format(reward))
+            # rollout_envs[last_player_turn].print_board()
+            # print('game finished, reward={}'.format(reward))
+            # print('player that made move = {}'.format(last_player_turn))
+            # print('action taken= {}'.format(action))
             value = reward
             tree_state_node = StateNode([], value, last_player_turn, legal_actions=[], terminal_state=True)
-            # sleep(2)
+            # sleep(3)
         else:
-            rollout_envs[0].print_board()
             # sleep(1)
 
             state = np.expand_dims(rollout_envs[new_state_player_turn].board.state, axis=0)
@@ -160,9 +163,7 @@ class MCTS:
 
         # todo function rollouts
         for i in range(self.n_rollouts):
-            print('rollout={}'.format(i))
             self.rollout()
-            # sleep(1)
 
         action, pi = get_action_distribution(self.root.transitions, self.temperature)
 
@@ -170,7 +171,7 @@ class MCTS:
 
     def step(self, action):
         if action not in self.root.transitions or self.root.transitions[action].state_node is None:
-            print('Node you are trying to reach is empty.')
+            # print('Node you are trying to reach is empty.')
             # warning: assuming action already has been made on envs
             player_turn = self.envs[0].get_player_turn()
 
