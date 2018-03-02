@@ -58,19 +58,21 @@ class Runner(object):
 
 def play_single_game(envs, mcts, history=None, starting_player=0, verbose=0):
     for i in range(2):
-        # each player treat themselves as player0
+        # is player0 starts then env1 has to set starting player as player1 (cause real player1 is not starting)
         starting_from_i_perspective = abs(i - starting_player)
         envs[i].reset(starting_game=starting_from_i_perspective)
-        player_number_from_i_perspective = starting_player
-        mcts[i].reset(player_number=player_number_from_i_perspective)
+    for i in range(2):
+        mcts[i].reset(starting_player=starting_player)
 
     done = False
     player_turn = None
     reward = None
+
     while not done:
         if verbose == 2:
             envs[0].print_board()
 
+        # env0 indicates player turn (env1 is reversed)
         player_turn = envs[0].get_player_turn()
         state = envs[player_turn].board.state
         action, pi = mcts[player_turn].select_action(player_turn)
@@ -81,6 +83,7 @@ def play_single_game(envs, mcts, history=None, starting_player=0, verbose=0):
 
         print("*" * 16)
         print("Action selected={}".format(action))
+        print("Player = {}".format(player_turn))
         print("Board after action:")
         envs[player_turn].print_board()
         print("*" * 16)
@@ -88,7 +91,7 @@ def play_single_game(envs, mcts, history=None, starting_player=0, verbose=0):
         print("stepping in player mcts")
         mcts[player_turn].step(action)
         print("stepping in opposite player mcts")
-        mcts[1 - player_turn].step(action_opposite_player_perspective)
+        mcts[1 - player_turn].step(action)
 
         if history is not None:
             history[player_turn].append([np.squeeze(state), pi])
