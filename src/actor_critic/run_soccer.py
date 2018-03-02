@@ -3,21 +3,21 @@ from src.actor_critic.trainer import learn
 
 
 def main():
-    batch_size = 16
+    batch_size = 64
     # n_self_play_games = int(2e3)
-    n_self_play_games = int(20)
-    # n_replays = int(2e4)
-    n_replays = int(4e2)
-    initial_temperature = 8
-    initial_lr = 1e-2
-    evaluation_temperature = 0.1
-    n_training_steps = 2
-    n_evaluations = 16
+    n_self_play_games = int(16)
+    n_replays = int(1e4)
+    # n_replays = int(1e3)
+    initial_temperature = 1
+    initial_lr = 1e-7
+    evaluation_temperature = 1
+    n_training_steps = 64
+    n_evaluations = 4
     verbose = 1
     new_best_model_threshold = 0.55
     c_puct = 1
-    n_evaluation_games = 64
-    n_rollouts = 2
+    n_evaluation_games = 16
+    n_rollouts = 16
 
     # todo better name
     n_total_timesteps = int(1e3)

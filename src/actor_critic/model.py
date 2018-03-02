@@ -49,14 +49,15 @@ class Model(object):
             grads, grad_norm = tf.clip_by_global_norm(grads, max_grad_norm)
         grads = list(zip(grads, params))
 
-        # trainer = tf.train.RMSPropOptimizer(learning_rate=LR, decay=alpha, epsilon=epsilon)
-        trainer = tf.train.GradientDescentOptimizer(learning_rate=LR)
+        trainer = tf.train.RMSPropOptimizer(learning_rate=LR, decay=alpha, epsilon=epsilon)
+        # trainer = tf.train.AdamOptimizer(learning_rate=LR)
+        # trainer = tf.train.GradientDescentOptimizer(learning_rate=LR)
         _train = trainer.apply_gradients(grads)
 
         lr = Scheduler(v=lr, n_values=training_timesteps, schedule=lrschedule)
 
         saver = tf.train.Saver()
-        writer = tf.summary.FileWriter(model_dir, sess.graph)
+        # writer = tf.summary.FileWriter(model_dir, sess.graph)
 
         self.training_timestep = 0
         def train(state, pi, rewards):

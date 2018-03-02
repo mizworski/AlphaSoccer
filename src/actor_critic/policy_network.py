@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 
 n_kernels = 128
-
+reg_fact = 1e-4
 
 def res_block(x, scope, reuse):
     with tf.variable_scope(scope, reuse=reuse):
@@ -23,17 +23,20 @@ class CnnPolicy:
             with slim.arg_scope(
                     [slim.conv2d, slim.fully_connected],
                     weights_initializer=tf.contrib.layers.xavier_initializer(),
-                    weights_regularizer=slim.l2_regularizer(0.001)
+                    weights_regularizer=slim.l2_regularizer(reg_fact)
             ):
-                conv1 = slim.conv2d(X, 128, [3, 3], padding='SAME', scope='conv1')
+                conv1 = slim.conv2d(X, n_kernels, [3, 3], padding='SAME', scope='conv1')
                 bn1 = slim.batch_norm(conv1, activation_fn=tf.nn.relu)
 
                 res1 = res_block(bn1, scope='res_block1', reuse=reuse)
                 res2 = res_block(res1, scope='res_block2', reuse=reuse)
                 res3 = res_block(res2, scope='res_block3', reuse=reuse)
+                res4 = res_block(res3, scope='res_block4', reuse=reuse)
+                res5 = res_block(res4, scope='res_block5', reuse=reuse)
+                res6 = res_block(res5, scope='res_block6', reuse=reuse)
 
-                flat = slim.flatten(res3)
-                fc = slim.fully_connected(flat, 256, scope='fc1')
+                flat = slim.flatten(res6)
+                fc = slim.fully_connected(flat, 512, scope='fc1')
                 with tf.variable_scope('policy_head', reuse=reuse):
                     logits = slim.fully_connected(fc, n_act, scope='logits', activation_fn=None)
                     probs = tf.nn.softmax(logits, name='probs')

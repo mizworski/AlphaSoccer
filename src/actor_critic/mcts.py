@@ -58,10 +58,7 @@ class StateNode:
 
         Q_U = {a: self.transitions[a].Q + U[a] for a in self.transitions}
 
-        try:
-            action = max(Q_U, key=Q_U.get)
-        except:
-            print('dd')
+        action = max(Q_U, key=Q_U.get)
 
         return action
 
@@ -82,21 +79,19 @@ class StateNode:
 
 
 class MCTS:
-    def __init__(self, envs, model, temperature, n_rollouts=1600, c_puct=1):
+    def __init__(self, envs, model, n_rollouts=1600, c_puct=1):
         self.envs = envs
         self.model = model
         self.root = None
-        self.temperature = temperature
+        # self.temperature = temperature
         self.n_rollouts = n_rollouts
         self.c_puct = c_puct
-        # self.player_number = None
 
     def reset(self, starting_player):
         state = np.expand_dims(self.envs[starting_player].board.state, axis=0)
         probs, value = self.model.step(state)
         probs, value = np.squeeze(probs), np.squeeze(value)
         self.root = StateNode(probs, value, player=starting_player)
-        # self.player_number = player_number
         assert self.envs[starting_player].get_player_turn() == 0
         assert self.envs[1 - starting_player].get_player_turn() == 1
 
@@ -122,17 +117,11 @@ class MCTS:
             actions_history.append(action)
 
             if not (tree_state_node is None or done == tree_state_node.terminal_state):
-                print('dasdsad')
+                print('Game is done but state node is not terminal.')
 
         # expand and evaluate
         new_state_player_turn = rollout_envs[0].get_player_turn()
         last_player_turn = parent_tree_state_node.player
-
-        rollout_envs[last_player_turn].print_board()
-        print('expanding state')
-        print('player that made move = {}'.format(last_player_turn))
-        print('action taken= {}'.format(action))
-        print('reward={} done={}'.format(reward, done))
 
         if done:
             value = reward
@@ -158,14 +147,14 @@ class MCTS:
 
         self.root.backup(actions_history, values)
 
-    def select_action(self, player):
+    def select_action(self, player, temperature=1):
         player_turn = self.envs[0].get_player_turn()
         assert player == player_turn
 
         for i in range(self.n_rollouts):
             self.rollout()
 
-        action, pi = get_action_distribution(self.root.transitions, self.temperature)
+        action, pi = get_action_distribution(self.root.transitions, temperature)
 
         return action, pi
 
@@ -180,36 +169,9 @@ class MCTS:
             probs, value = np.squeeze(probs), np.squeeze(value)
             legal_actions = self.envs[player_turn].get_legal_moves()
 
-            print('added new node')
-            print('player = {}'.format(player_turn))
-            self.envs[player_turn].print_board()
-            print(legal_actions)
-
             terminal_state = np.sum(legal_actions) == 0
 
             self.root = StateNode(probs, value, player=player_turn, legal_actions=legal_actions,
                                   terminal_state=terminal_state)
         else:
             self.root = self.root.transitions[action].state_node
-
-
-def main():
-    # envs = [Soccer(), Soccer()]
-    # model_dir = os.path.join('models', 'actor_critic')
-    # temperature = 0.5
-    #
-    # model = Model(Soccer.observation_space, Soccer.action_space, batch_size=None, lr=None,
-    #               training_timesteps=None, model_dir=model_dir, verbose=None)
-    #
-    # tree = MCTS(envs, model, temperature, n_rollouts=800)
-    # for i in range(2):
-    #     envs[i].reset(starting_game=i)
-    #
-    # tree.reset(0)
-    #
-    # tree.select_action(0)
-    pass
-
-
-if __name__ == '__main__':
-    main()

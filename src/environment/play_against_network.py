@@ -22,7 +22,7 @@ def main():
         player = random.choice((0, 1))
         print(player)
         done = False
-        mcts = MCTS(envs, model, temperature=temperature)
+        mcts = MCTS(envs, model)
         while not done:
             player_turn = envs[0].get_player_turn()
             envs[player].print_board()
