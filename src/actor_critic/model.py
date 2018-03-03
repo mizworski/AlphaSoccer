@@ -5,7 +5,7 @@ from src.actor_critic.utils import cat_entropy, mse, Scheduler
 
 
 class Model(object):
-    def __init__(self, ob_space, ac_space, batch_size, ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5, lr=1e-8,
+    def __init__(self, ob_space, ac_space, batch_size, vf_coef=0.5, max_grad_norm=0.5, lr=1e-8,
                  alpha=0.99, epsilon=1e-5, lrschedule='linear', training_timesteps=int(1e6),
                  model_dir='models/actor_critic', verbose=0):
         config = tf.ConfigProto(allow_soft_placement=True)
@@ -14,9 +14,7 @@ class Model(object):
         sess = tf.Session(config=config)
         n_act = ac_space.n
 
-        # A = tf.placeholder(tf.int32, [batch_size], name='action')
         PI = tf.placeholder(tf.float32, [batch_size, 8], name='pi')
-        # ADV = tf.placeholder(tf.float32, [batch_size], name='advantage')
         R = tf.placeholder(tf.float32, [batch_size], name='reward')
         LR = tf.placeholder(tf.float32, [], name='learning_rate')
 
@@ -38,10 +36,10 @@ class Model(object):
                 vf_loss = tf.reduce_mean(mse(tf.squeeze(train_model.vf), R))
 
             with tf.variable_scope('regularization_loss'):
-                entropy = tf.reduce_mean(cat_entropy(train_model.logits))
+                # entropy = tf.reduce_mean(cat_entropy(train_model.logits))
                 reg_loss = tf.losses.get_regularization_losses()
 
-            loss = pg_loss - entropy * ent_coef + vf_loss * vf_coef + reg_loss
+            loss = pg_loss + vf_loss * vf_coef + reg_loss
 
         params = tf.trainable_variables(scope=training_player_scope)
         grads = tf.gradients(loss, params)
@@ -64,12 +62,12 @@ class Model(object):
             cur_lr = lr.value()
             td_map = {train_model.X: state, PI: pi, R: rewards, LR: cur_lr}
 
-            policy_loss, value_loss, policy_entropy, _ = sess.run(
-                [pg_loss, vf_loss, entropy, _train],
+            policy_loss, value_loss, _ = sess.run(
+                [pg_loss, vf_loss, _train],
                 td_map
             )
 
-            return policy_loss, value_loss, policy_entropy
+            return policy_loss, value_loss
 
         def save_model(step=0):
             model_path = os.path.join(model_dir, 'model.ckpt')
