@@ -43,8 +43,8 @@ class CnnPolicy:
                 with tf.variable_scope('value_head', reuse=reuse):
                     vf = slim.fully_connected(fc, 1, scope='vf', activation_fn=tf.nn.tanh)
 
-        v0 = vf[:, 0]
-        pi0 = probs[:]
+        v0 = vf
+        pi0 = probs
 
         def step(ob, *_args, **_kwargs):
             pi, v = sess.run([pi0, v0], {X: ob})

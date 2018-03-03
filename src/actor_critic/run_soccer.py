@@ -4,10 +4,8 @@ from src.actor_critic.trainer import learn
 
 def main():
     batch_size = 64
-    # n_self_play_games = int(2e3)
-    n_self_play_games = int(16)
-    n_replays = int(1e4)
-    # n_replays = int(1e3)
+    n_self_play_games = int(64)
+    n_replays = int(5e3)
     initial_temperature = 1
     initial_lr = 1e-7
     evaluation_temperature = 1
@@ -16,11 +14,11 @@ def main():
     verbose = 1
     new_best_model_threshold = 0.55
     c_puct = 1
-    n_evaluation_games = 16
-    n_rollouts = 16
+    n_evaluation_games = 32
+    n_rollouts = 64
 
     # todo better name
-    n_total_timesteps = int(1e3)
+    n_total_timesteps = int(1e4)
 
     model_dir = os.path.join('models', 'actor_critic')
 
