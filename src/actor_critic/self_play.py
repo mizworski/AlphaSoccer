@@ -18,7 +18,8 @@ class Runner(object):
         self.replay_memory = ReplayMemory(n_replays)
         self.c_puct = c_puct
 
-    def run(self, n_games=int(1e4), initial_temperature=1.0, n_rollouts=1600):
+    def run(self, n_games=int(1e4), initial_temperature=1.0, n_rollouts=1600, temperature_decay_factor=0.95,
+            moves_before_dacaying=8):
         mcts = [
             MCTS(self.envs, self.best_player, n_rollouts=n_rollouts, c_puct=self.c_puct)
             for _ in range(2)
@@ -27,13 +28,14 @@ class Runner(object):
         for game in range(n_games):
             history = [[], []]
             winner = play_single_game(self.envs, mcts, history, initial_temperature=initial_temperature,
-                                      starting_player=0)
+                                      starting_player=0, temperature_decay_factor=temperature_decay_factor,
+                                      moves_before_dacaying=moves_before_dacaying)
             save_memory(self.replay_memory, winner, history)
             playing_progress_bar(game, n_games)
 
     def evaluate(self, model, n_games=400, initial_temperature=0.25, n_rollouts=1600, new_best_model_threshold=0.55,
-                 verbose=0):
-        log_every_n_games = n_games // 2
+                 temperature_decay_factor=0.95, moves_before_dacaying=8, verbose=0):
+        log_every_n_games = max(2, n_games // 4)
         n_wins = 0
         mcts = [
             MCTS(self.envs, model, n_rollouts=n_rollouts),
@@ -45,7 +47,9 @@ class Runner(object):
             print_results = verbose if verbose and game % log_every_n_games == 0 else 0
 
             winner = play_single_game(self.envs, mcts, starting_player=starting_player,
-                                      initial_temperature=initial_temperature, verbose=print_results)
+                                      initial_temperature=initial_temperature,
+                                      temperature_decay_factor=temperature_decay_factor,
+                                      moves_before_dacaying=moves_before_dacaying, verbose=print_results)
 
             if winner == 0:
                 n_wins += 1
@@ -61,7 +65,7 @@ class Runner(object):
 
 
 def play_single_game(envs, mcts, history=None, starting_player=0, initial_temperature=1.0,
-                     temperature_decay_factor=0.95, verbose=0):
+                     temperature_decay_factor=0.95, moves_before_dacaying=8, verbose=0):
     for i in range(2):
         # is player0 starts then env1 has to set starting player as player1 (cause real player1 is not starting)
         starting_from_i_perspective = abs(i - starting_player)
@@ -95,7 +99,7 @@ def play_single_game(envs, mcts, history=None, starting_player=0, initial_temper
             history[player_turn].append([np.squeeze(state), pi])
 
         moves += 1
-        if moves > 32 and temperature > 5e-2:
+        if moves > moves_before_dacaying and temperature > 5e-2:
             temperature *= temperature_decay_factor
 
     if (player_turn == 0 and reward > 0) or (player_turn == 1 and reward < 0):

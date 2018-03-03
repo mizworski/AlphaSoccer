@@ -39,18 +39,20 @@ class CnnPolicy:
                     net = res_block(net, scope='res_block_{}'.format(i), reuse=reuse)
 
                 with tf.variable_scope('policy_head', reuse=reuse):
-                    net = slim.conv2d(net, num_outputs=2, kernel_size=[1, 1])
-                    net = slim.batch_norm(net)
-                    net = tf.nn.relu(net)
+                    policy_net = slim.conv2d(net, num_outputs=2, kernel_size=[1, 1])
+                    policy_net = slim.batch_norm(policy_net)
+                    policy_net = tf.nn.relu(policy_net)
+                    policy_net = slim.flatten(policy_net)
 
-                    logits = slim.fully_connected(net, n_act, scope='logits', activation_fn=None)
+                    logits = slim.fully_connected(policy_net, n_act, scope='logits', activation_fn=None)
                     probs = tf.nn.softmax(logits, name='probs')
                 with tf.variable_scope('value_head', reuse=reuse):
-                    net = slim.conv2d(net, num_outputs=1, kernel_size=[1, 1])
-                    net = slim.batch_norm(net)
-                    net = tf.nn.relu(net)
+                    value_net = slim.conv2d(net, num_outputs=1, kernel_size=[1, 1])
+                    value_net = slim.batch_norm(value_net)
+                    value_net = tf.nn.relu(value_net)
+                    value_net = slim.flatten(value_net)
 
-                    vf = slim.fully_connected(net, num_outputs=1, activation_fn=tf.nn.tanh)
+                    vf = slim.fully_connected(value_net, num_outputs=1, activation_fn=tf.nn.tanh)
 
         v0 = vf
         pi0 = probs
