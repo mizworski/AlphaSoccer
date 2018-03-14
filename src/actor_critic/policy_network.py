@@ -1,9 +1,11 @@
+import os
 import tensorflow as tf
 from tensorflow.contrib import slim
 
 n_kernels = 128
 reg_fact = 1e-4
 n_residual_blocks = 8
+log_dir = 'models/logs/'
 
 
 def res_block(net_input, scope, reuse):
@@ -20,10 +22,25 @@ def res_block(net_input, scope, reuse):
     return net
 
 
+def variable_summaries(var):
+    """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+    with tf.name_scope('summaries'):
+        mean = tf.reduce_mean(var)
+        tf.summary.scalar('mean', mean)
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+        tf.summary.scalar('stddev', stddev)
+        tf.summary.scalar('max', tf.reduce_max(var))
+        tf.summary.scalar('min', tf.reduce_min(var))
+        tf.summary.histogram('histogram', var)
+
+
 class CnnPolicy:
-    def __init__(self, sess, ob_space, n_act, n_batch, scope, reuse=False):
-        ob_shape = (n_batch,) + ob_space.shape
+    def __init__(self, sess, ob_space, n_act, scope, reuse=False):
+        ob_shape = [None] + list(ob_space.shape)
         X = tf.placeholder(tf.float32, ob_shape, name='state')
+        step_writer = tf.summary.FileWriter(os.path.join(log_dir, scope), sess.graph)
+
         with tf.variable_scope(scope, reuse=reuse):
             with slim.arg_scope(
                     [slim.conv2d, slim.fully_connected],
@@ -56,6 +73,7 @@ class CnnPolicy:
 
         v0 = vf
         pi0 = probs
+        self.i = 0
 
         def step(ob, *_args, **_kwargs):
             pi, v = sess.run([pi0, v0], {X: ob})
@@ -64,6 +82,7 @@ class CnnPolicy:
         def value(ob, *_args, **_kwargs):
             return sess.run(v0, {X: ob})
 
+        # self.batch_size = batch_size
         self.X = X
         self.logits = logits
         self.pi = probs
