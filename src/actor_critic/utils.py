@@ -2,6 +2,7 @@ import random
 import numpy as np
 import tensorflow as tf
 from collections import namedtuple
+from src.environment.Board import print_board
 
 Transition = namedtuple('Transition', ('state', 'pi', 'reward'))
 
@@ -12,16 +13,25 @@ schedules = {
 
 
 class ReplayMemory(object):
-    def __init__(self, capacity):
+    def __init__(self, capacity, verbose=0):
         self.capacity = capacity
         self.memory = []
         self.position = 0
+        self.verbose = verbose
 
     def push(self, *args):
         """Saves a transition."""
         if len(self.memory) < self.capacity:
             self.memory.append(None)
         self.memory[self.position] = Transition(*args)
+
+        if self.verbose == 2:
+            print("Reward : {}".format(self.memory[self.position].reward))
+            print("Pi: {}".format(self.memory[self.position].pi))
+            print("State")
+            print_board(self.memory[self.position].state)
+            print("*" * 8)
+
         self.position = (self.position + 1) % self.capacity
 
     def sample_sarvs(self, batch_size):

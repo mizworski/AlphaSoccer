@@ -11,8 +11,8 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e5), n_tot
     log_every_n_train_steps = max(2, n_training_steps // 16)
 
     model = Model(Soccer.observation_space, Soccer.action_space, batch_size=batch_size, vf_coef=vf_coef, lr=initial_lr,
-                  training_timesteps=n_training_timesteps, lrschedule=lrschedule, model_dir=model_dir, verbose=verbose)
-    runner = Runner(model, n_replays=n_replays, c_puct=c_puct)
+                  training_timesteps=n_training_timesteps, lrschedule=lrschedule, model_dir=model_dir)
+    runner = Runner(model, n_replays=n_replays, c_puct=c_puct, verbose=verbose)
 
     model_iterations = model.initial_checkpoint_number
 

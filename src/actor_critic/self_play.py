@@ -1,8 +1,8 @@
 import numpy as np
 
 from src.actor_critic.mcts import MCTS
+from src.actor_critic.utils import ReplayMemory
 from src.environment.PaperSoccer import Soccer
-from src.actor_critic.utils import ReplayMemory, Scheduler
 
 
 def playing_progress_bar(game, n_games):
@@ -12,10 +12,10 @@ def playing_progress_bar(game, n_games):
 
 
 class Runner(object):
-    def __init__(self, initial_model, n_replays, c_puct):
+    def __init__(self, initial_model, n_replays, c_puct, verbose=0):
         self.envs = [Soccer(), Soccer()]
         self.best_player = initial_model
-        self.replay_memory = ReplayMemory(n_replays)
+        self.replay_memory = ReplayMemory(n_replays, verbose)
         self.c_puct = c_puct
 
     def run(self, n_games=int(1e4), initial_temperature=1.0, n_rollouts=1600, temperature_decay_factor=0.95,
@@ -26,10 +26,9 @@ class Runner(object):
         ]
 
         for game in range(n_games):
-            history = [[], []]
-            winner = play_single_game(self.envs, mcts, history, initial_temperature=initial_temperature,
-                                      starting_player=0, temperature_decay_factor=temperature_decay_factor,
-                                      moves_before_dacaying=moves_before_dacaying)
+            winner, history = play_single_game(self.envs, mcts, initial_temperature=initial_temperature,
+                                               starting_player=0, temperature_decay_factor=temperature_decay_factor,
+                                               moves_before_dacaying=moves_before_dacaying)
             save_memory(self.replay_memory, winner, history)
             playing_progress_bar(game, n_games)
 
@@ -46,10 +45,10 @@ class Runner(object):
             starting_player = game % 2
             print_results = verbose if verbose and game % log_every_n_games == 0 else 0
 
-            winner = play_single_game(self.envs, mcts, starting_player=starting_player,
-                                      initial_temperature=initial_temperature,
-                                      temperature_decay_factor=temperature_decay_factor,
-                                      moves_before_dacaying=moves_before_dacaying, verbose=print_results)
+            winner, _ = play_single_game(self.envs, mcts, starting_player=starting_player,
+                                         initial_temperature=initial_temperature,
+                                         temperature_decay_factor=temperature_decay_factor,
+                                         moves_before_dacaying=moves_before_dacaying, verbose=print_results)
 
             if winner == 0:
                 n_wins += 1
@@ -64,8 +63,10 @@ class Runner(object):
             return False
 
 
-def play_single_game(envs, mcts, history=None, starting_player=0, initial_temperature=1.0,
+def play_single_game(envs, mcts, starting_player=0, initial_temperature=1.0,
                      temperature_decay_factor=0.95, moves_before_dacaying=8, verbose=0):
+    history = [[], []]
+
     for i in range(2):
         # is player0 starts then env1 has to set starting player as player1 (cause real player1 is not starting)
         starting_from_i_perspective = abs(i - starting_player)
@@ -96,7 +97,7 @@ def play_single_game(envs, mcts, history=None, starting_player=0, initial_temper
         mcts[1 - player_turn].step(action)
 
         if history is not None:
-            history[player_turn].append([np.squeeze(state), pi])
+            history[player_turn].append([np.squeeze(state.copy()), pi])
 
         moves += 1
         if moves > moves_before_dacaying and temperature > 5e-2:
@@ -114,7 +115,7 @@ def play_single_game(envs, mcts, history=None, starting_player=0, initial_temper
         else:
             print("Player lost")
 
-    return winner
+    return winner, history
 
 
 def save_memory(replay_memory, winner, history):

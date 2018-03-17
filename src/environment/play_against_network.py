@@ -12,7 +12,7 @@ def play(batch_size=2048, n_total_timesteps=int(1e3),
          c_puct=1, verbose=1):
     n_training_timesteps = n_total_timesteps * n_training_steps
     model = Model(Soccer.observation_space, Soccer.action_space, batch_size=batch_size, lr=initial_lr,
-                  training_timesteps=n_training_timesteps, model_dir=model_dir, verbose=verbose)
+                  training_timesteps=n_training_timesteps, model_dir=model_dir)
     envs = [Soccer(), Soccer()]
 
     mcts = MCTS(envs, model, n_rollouts=n_rollouts, c_puct=c_puct)

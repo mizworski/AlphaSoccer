@@ -11,20 +11,21 @@ log_dir = 'models/logs/'
 
 class Model(object):
     def __init__(self, ob_space, ac_space, batch_size, vf_coef=0.5, max_grad_norm=0.5, lr=1e-8,
-                 alpha=0.99, epsilon=1e-5, lrschedule='linear', training_timesteps=int(1e6),
-                 model_dir='models/actor_critic', momentum=0.9, verbose=0):
+                 lrschedule='linear', training_timesteps=int(1e6),
+                 model_dir='models/actor_critic', momentum=0.9):
+
+        training_player_scope = 'training_player'
+        best_player_scope = 'best_player'
+
         config = tf.ConfigProto(allow_soft_placement=True)
-        # config.gpu_options.allow_growth = True
+        config.gpu_options.allow_growth = True
 
         sess = tf.Session(config=config)
         n_act = ac_space.n
 
-        PI = tf.placeholder(tf.float32, [batch_size, 8], name='pi')
+        PI = tf.placeholder(tf.float32, [batch_size, n_act], name='pi')
         R = tf.placeholder(tf.float32, [batch_size], name='reward')
         LR = tf.placeholder(tf.float32, [], name='learning_rate')
-
-        training_player_scope = 'training_player'
-        best_player_scope = 'best_player'
 
         step_model = CnnPolicy(sess, ob_space, n_act, best_player_scope, reuse=False)
         train_model = CnnPolicy(sess, ob_space, n_act, training_player_scope, reuse=False)
@@ -61,7 +62,6 @@ class Model(object):
 
         saver = tf.train.Saver()
 
-        # writer.flush()
         self.training_timestep = 0
 
         def train(state, pi, rewards):
@@ -92,8 +92,8 @@ class Model(object):
 
             sess.run(copy_vars)
 
-        writer = tf.summary.FileWriter(logdir='models/logs', graph=tf.Graph())
-        writer.flush()
+        # writer = tf.summary.FileWriter(logdir='models/logs', graph=tf.Graph())
+        # writer.flush()
 
         self.train = train
         self.train_model = train_model
@@ -104,9 +104,6 @@ class Model(object):
         self.update_best_player = update_best_player
 
         latest_checkpoint = tf.train.latest_checkpoint(model_dir)
-
-        # tf.contrib.layers.summarize_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-        # tf.contrib.layers.summarize_tensors()
 
         print('Loaded checkpoint {}'.format(latest_checkpoint))
         if latest_checkpoint is None:
