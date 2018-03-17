@@ -22,13 +22,13 @@ class Soccer:
     def step(self, action, verbose=0):
         reward = self.board.make_move(action)
         if verbose:
-            self.board.print_board()
+            self.print_board()
 
         return np.expand_dims(self.board.state, axis=0), reward, reward != 0
 
     def reset(self, starting_game=0, verbose=0):
         self.board = Board(starting_game=starting_game)
         if verbose:
-            self.board.print_board()
+            self.print_board()
 
         return np.expand_dims(self.board.state, axis=0)

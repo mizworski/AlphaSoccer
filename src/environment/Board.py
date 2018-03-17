@@ -147,7 +147,6 @@ class Board:
         if self.state[self.ball_pos[0], self.ball_pos[1], direction] == 1:
             return -1
 
-
         self.state[self.ball_pos[0], self.ball_pos[1], direction] = 1
         self.state[self.ball_pos[0] + x_delta, self.ball_pos[1] + y_delta, (direction + 4) % 8] = 1
 
@@ -157,7 +156,6 @@ class Board:
         if self.state[self.ball_pos[0], self.ball_pos[1], dots_layer] == 0:
             self.state[self.ball_pos[0], self.ball_pos[1], dots_layer] = 1
             self.state[:, :, turn_layer] = 1 - player_taking_action
-
 
         if (np.asarray(self.get_legal_moves()) == 0).all():
             return -1
@@ -169,47 +167,7 @@ class Board:
         print(layer)
 
     def print_board(self):
-        for row in range(int(self.length - 4)):
-            print(' ', end='')
-        print('+-+-+')
-
-        for row in range(self.length + 1):
-            for col in range(self.width + 1):
-                if self.state[row, col, ball_layer] == 1:
-                    print('O', end='')
-                elif self.state[row, col, dots_layer] == 1:
-                    print('+', end='')
-                else:
-                    print('.', end='')
-
-                if col != self.width and (self.state[row, col, 2] == 1):
-                    print('-', end='')
-                elif col != self.width:
-                    print(' ', end='')
-            print('')
-
-            if row != self.length:
-                for col in range(self.width + 1):
-                    if self.state[row, col, 4] == 1:
-                        print('|', end='')
-                    elif col != self.width:
-                        print(' ', end='')
-
-                    if col != self.width and self.state[row, col, 3] == 1:
-                        if self.state[row + 1, col, 1] == 1:
-                            print('X', end='')
-                        else:
-                            print('\\', end='')
-                    elif col != self.width and self.state[row + 1, col, 1] == 1:
-                        print('/', end='')
-                    elif col != self.width:
-                        print(' ', end='')
-
-                print('')
-
-        for row in range(int(self.length - 4)):
-            print(' ', end='')
-        print('+-+-+')
+        print_board(self.state, self.length, self.width)
 
     def get_legal_moves(self):
         ball_pos = self.get_pos()
@@ -219,3 +177,47 @@ class Board:
 
     def get_player_turn(self):
         return int(self.state[0, 0, turn_layer])
+
+
+def print_board(state, length=10, width=8):
+    for row in range(int(length - 4)):
+        print(' ', end='')
+    print('+-+-+')
+
+    for row in range(length + 1):
+        for col in range(width + 1):
+            if state[row, col, ball_layer] == 1:
+                print('O', end='')
+            elif state[row, col, dots_layer] == 1:
+                print('+', end='')
+            else:
+                print('.', end='')
+
+            if col != width and (state[row, col, 2] == 1):
+                print('-', end='')
+            elif col != width:
+                print(' ', end='')
+        print('')
+
+        if row != length:
+            for col in range(width + 1):
+                if state[row, col, 4] == 1:
+                    print('|', end='')
+                elif col != width:
+                    print(' ', end='')
+
+                if col != width and state[row, col, 3] == 1:
+                    if state[row + 1, col, 1] == 1:
+                        print('X', end='')
+                    else:
+                        print('\\', end='')
+                elif col != width and state[row + 1, col, 1] == 1:
+                    print('/', end='')
+                elif col != width:
+                    print(' ', end='')
+
+            print('')
+
+    for row in range(int(length - 4)):
+        print(' ', end='')
+    print('+-+-+')
