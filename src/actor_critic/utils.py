@@ -1,7 +1,12 @@
+import pickle
 import random
+import os
+from collections import namedtuple
+from datetime import datetime
+
 import numpy as np
 import tensorflow as tf
-from collections import namedtuple
+
 from src.environment.Board import print_board
 
 Transition = namedtuple('Transition', ('state', 'pi', 'reward'))
@@ -13,11 +18,16 @@ schedules = {
 
 
 class ReplayMemory(object):
-    def __init__(self, capacity, verbose=0):
+    def __init__(self, capacity, replay_checkpoint_dir=os.path.join('data', 'replays'),
+                 checkpoint_every_n_transitions=100, verbose=0):
         self.capacity = capacity
-        self.memory = []
-        self.position = 0
+        self.replay_checkpoint_dir = replay_checkpoint_dir
+        self.memory, self.position = load_replays(replay_checkpoint_dir, capacity)
         self.verbose = verbose
+        self.checkpoint_every_n_transitions = checkpoint_every_n_transitions
+
+        if verbose:
+            print("Loaded {} transitions from {}".format(len(self.memory), self.replay_checkpoint_dir))
 
     def push(self, *args):
         """Saves a transition."""
@@ -34,6 +44,17 @@ class ReplayMemory(object):
 
         self.position = (self.position + 1) % self.capacity
 
+        if self.position % self.checkpoint_every_n_transitions == 0:
+            time_str = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+            output_file_path = os.path.join(self.replay_checkpoint_dir, 'checkpoint_{}.pickle'.format(time_str))
+            with open(output_file_path, 'wb') as file:
+                if self.position == 0:
+                    memory_slice = self.memory[-self.checkpoint_every_n_transitions:]
+                else:
+                    memory_slice = self.memory[self.position - self.checkpoint_every_n_transitions:self.position]
+
+                pickle.dump(memory_slice, file)
+
     def sample_sarvs(self, batch_size):
         return random.sample(self.memory, batch_size)
 
@@ -43,6 +64,24 @@ class ReplayMemory(object):
 
     def __len__(self):
         return len(self.memory)
+
+def load_replays(checkpoint_dir, memory_capacity):
+    pickles = sorted(os.listdir(checkpoint_dir), reverse=True)
+    pickles_paths = [os.path.join(checkpoint_dir, picke_file_name) for picke_file_name in pickles[:memory_capacity]]
+
+    loaded_memory = []
+
+    for picked_memory in pickles_paths:
+        with open(picked_memory, 'rb') as file:
+            loaded_memory += pickle.load(file)
+        if len(loaded_memory) > memory_capacity:
+            break
+
+    loaded_memory = list(reversed(loaded_memory[:memory_capacity]))
+    position = len(loaded_memory) % memory_capacity
+
+    return loaded_memory, position
+
 
 
 class Scheduler(object):

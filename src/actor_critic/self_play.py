@@ -12,10 +12,13 @@ def playing_progress_bar(game, n_games):
 
 
 class Runner(object):
-    def __init__(self, initial_model, n_replays, c_puct, verbose=0):
+    def __init__(self, initial_model, n_replays, c_puct, replay_checkpoint_dir, checkpoint_every_n_transitions,
+                 verbose=0):
         self.envs = [Soccer(), Soccer()]
         self.best_player = initial_model
-        self.replay_memory = ReplayMemory(n_replays, verbose)
+        self.replay_memory = ReplayMemory(n_replays, replay_checkpoint_dir=replay_checkpoint_dir,
+                                          checkpoint_every_n_transitions=checkpoint_every_n_transitions,
+                                          verbose=verbose)
         self.c_puct = c_puct
 
     def run(self, n_games=int(1e4), initial_temperature=1.0, n_rollouts=1600, temperature_decay_factor=0.95,

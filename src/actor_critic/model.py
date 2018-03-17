@@ -105,13 +105,14 @@ class Model(object):
 
         latest_checkpoint = tf.train.latest_checkpoint(model_dir)
 
-        print('Loaded checkpoint {}'.format(latest_checkpoint))
         if latest_checkpoint is None:
             tf.global_variables_initializer().run(session=sess)
             self.initial_checkpoint_number = 1
+            print('No checkpoint found. Starting new model.')
         else:
             saver.restore(sess, save_path=latest_checkpoint)
             self.initial_checkpoint_number = int(re.findall(r'\d+', latest_checkpoint)[-1])
+            print('Loaded checkpoint {}'.format(latest_checkpoint))
 
         # initialize training player with current best player
         self.update_best_player()
