@@ -4,12 +4,12 @@ from src.actor_critic.trainer import learn
 
 def main():
     n_total_timesteps = 500
-    batch_size = 1024
-    n_training_steps = 256
-    n_rollouts = 16
+    batch_size = 512
+    n_training_steps = 1024
+    n_rollouts = 70
 
     vf_coef = 1
-    initial_lr = 1e-4
+    initial_lr = 1e-3
     lrschedule = 'constant'
     c_puct = 1
 
@@ -18,13 +18,15 @@ def main():
     temperature_decay_factor = 0.95
     moves_before_dacaying = 8
 
-    n_evaluation_games = 40
+    n_evaluation_games = 50
     n_evaluations = 4
     new_best_model_threshold = 0.55
 
-    n_self_play_games = int(100)
+    n_self_play_games = int(200)
     checkpoint_every_n_transitions = 200
-    n_replays = int(2e5)
+    n_replays = int(5e4)
+
+    skip_first_self_play=False
 
     verbose = 1
     model_dir = os.path.join('models', 'actor_critic')
@@ -37,7 +39,8 @@ def main():
           new_best_model_threshold=new_best_model_threshold, n_rollouts=n_rollouts, c_puct=c_puct,
           temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying,
           lrschedule=lrschedule, replay_checkpoint_dir=replay_checkpoint_dir,
-          checkpoint_every_n_transitions=checkpoint_every_n_transitions, verbose=verbose)
+          checkpoint_every_n_transitions=checkpoint_every_n_transitions, skip_first_self_play=skip_first_self_play,
+          verbose=verbose)
 
 
 if __name__ == '__main__':

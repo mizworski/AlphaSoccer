@@ -5,11 +5,12 @@ from src.actor_critic.self_play import Runner
 from src.environment.PaperSoccer import Soccer
 
 
-def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e5), n_total_timesteps=int(1e3),
+def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_total_timesteps=int(1e3),
           initial_temperature=1, vf_coef=1, initial_lr=1e-10, evaluation_temperature=0.5, n_training_steps=16,
           n_evaluation_games=400, n_evaluations=8, model_dir=None, new_best_model_threshold=0.55, n_rollouts=1600,
           c_puct=1, temperature_decay_factor=0.95, moves_before_dacaying=8, lrschedule='constant',
-          replay_checkpoint_dir=os.path.join('data', 'replays'), checkpoint_every_n_transitions=200, verbose=1):
+          replay_checkpoint_dir=os.path.join('data', 'replays'), checkpoint_every_n_transitions=200,
+          skip_first_self_play=False, verbose=1):
     n_training_timesteps = n_total_timesteps * n_training_steps
     log_every_n_train_steps = max(2, n_training_steps // 16)
 
@@ -21,8 +22,10 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e5), n_tot
     model_iterations = model.initial_checkpoint_number
 
     for epoch in range(n_total_timesteps):
-        runner.run(n_games=n_self_play_games, initial_temperature=initial_temperature, n_rollouts=n_rollouts,
-                   temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying)
+        if epoch != 0 or not skip_first_self_play:
+            runner.run(n_games=n_self_play_games, initial_temperature=initial_temperature, n_rollouts=n_rollouts,
+                       temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying)
+
         for _ in range(n_evaluations):
             for train in range(n_training_steps):
                 states, actions, rewards = runner.replay_memory.sample(batch_size)
@@ -44,5 +47,5 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e5), n_tot
                 model_iterations += 1
                 model.update_best_player()
                 model.save(model_iterations)
-                print('New best player saved iter ={}.'.format(model_iterations))
+                print('New best player saved iter = {}.'.format(model_iterations))
                 break
