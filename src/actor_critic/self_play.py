@@ -1,20 +1,16 @@
+import tqdm
 import numpy as np
 
 from src.actor_critic.mcts import MCTS
 from src.actor_critic.utils import ReplayMemory
 from src.environment.PaperSoccer import Soccer
 
-
-def playing_progress_bar(game, n_games):
-    log_every_n_games = max(2, n_games // 10)
-    if (game + 1) % log_every_n_games == 0:
-        print("Completed {}% of self-play.".format(int(100 * (game + 1) / n_games)))
+from multiprocessing.pool import ThreadPool
 
 
 class Runner(object):
     def __init__(self, initial_model, n_replays, c_puct, replay_checkpoint_dir, checkpoint_every_n_transitions,
                  verbose=0):
-        self.envs = [Soccer(), Soccer()]
         self.best_player = initial_model
         self.replay_memory = ReplayMemory(n_replays, replay_checkpoint_dir=replay_checkpoint_dir,
                                           checkpoint_every_n_transitions=checkpoint_every_n_transitions,
@@ -22,37 +18,45 @@ class Runner(object):
         self.c_puct = c_puct
 
     def run(self, n_games=int(1e4), initial_temperature=1.0, n_rollouts=1600, temperature_decay_factor=0.95,
-            moves_before_dacaying=8):
-        mcts = [
-            MCTS(self.envs, self.best_player, n_rollouts=n_rollouts, c_puct=self.c_puct)
-            for _ in range(2)
-        ]
+            moves_before_dacaying=8, verbose=0):
+        pool = ThreadPool()
+        progress_bar = tqdm.tqdm(total=n_games)
 
-        for game in range(n_games):
-            winner, history = play_single_game(self.envs, mcts, initial_temperature=initial_temperature,
-                                               starting_player=0, temperature_decay_factor=temperature_decay_factor,
-                                               moves_before_dacaying=moves_before_dacaying)
+        arguments = (
+            self.best_player, self.best_player, n_rollouts, self.c_puct, 0, initial_temperature,
+            temperature_decay_factor, moves_before_dacaying, progress_bar, verbose
+        )
+        iterable_arguments = [arguments] * n_games
+
+        res = pool.starmap(play_single_game, iterable_arguments)
+
+        progress_bar.close()
+
+        for (winner, history) in res:
             save_memory(self.replay_memory, winner, history)
-            playing_progress_bar(game, n_games)
 
     def evaluate(self, model, n_games=400, initial_temperature=0.25, n_rollouts=1600, new_best_model_threshold=0.55,
                  temperature_decay_factor=0.95, moves_before_dacaying=8, verbose=0):
         log_every_n_games = max(2, n_games // 4)
         n_wins = 0
-        mcts = [
-            MCTS(self.envs, model, n_rollouts=n_rollouts),
-            MCTS(self.envs, self.best_player, n_rollouts=n_rollouts)
+
+        pool = ThreadPool()
+        progress_bar = tqdm.tqdm(total=n_games)
+
+        iterable_arguments = [
+            (
+                self.best_player, self.best_player, n_rollouts, self.c_puct, (i % 2), initial_temperature,
+                temperature_decay_factor, moves_before_dacaying, progress_bar,
+                verbose if verbose and i % log_every_n_games == 0 else 0
+            )
+            for i in range(n_games)
         ]
 
-        for game in range(n_games):
-            starting_player = game % 2
-            print_results = verbose if verbose and game % log_every_n_games == 0 else 0
+        res = pool.starmap(play_single_game, iterable_arguments)
 
-            winner, _ = play_single_game(self.envs, mcts, starting_player=starting_player,
-                                         initial_temperature=initial_temperature,
-                                         temperature_decay_factor=temperature_decay_factor,
-                                         moves_before_dacaying=moves_before_dacaying, verbose=print_results)
+        progress_bar.close()
 
+        for (winner, _) in res:
             if winner == 0:
                 n_wins += 1
 
@@ -66,8 +70,15 @@ class Runner(object):
             return False
 
 
-def play_single_game(envs, mcts, starting_player=0, initial_temperature=1.0,
-                     temperature_decay_factor=0.95, moves_before_dacaying=8, verbose=0):
+def play_single_game(model0, model1=None, n_rollouts=800, c_puct=1, starting_player=0, initial_temperature=1.0,
+                     temperature_decay_factor=0.95, moves_before_dacaying=8, progress_bar=None, verbose=0):
+    if model1 is None:
+        model1 = model0
+    envs = [Soccer(), Soccer()]
+    mcts = [
+        MCTS(envs, model0, n_rollouts=n_rollouts, c_puct=c_puct),
+        MCTS(envs, model1, n_rollouts=n_rollouts, c_puct=c_puct)
+    ]
     history = [[], []]
 
     for i in range(2):
@@ -118,6 +129,7 @@ def play_single_game(envs, mcts, starting_player=0, initial_temperature=1.0,
         else:
             print("Player lost")
 
+    progress_bar.update(1)
     return winner, history
 
 
