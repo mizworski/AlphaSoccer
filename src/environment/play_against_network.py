@@ -1,4 +1,5 @@
 import os
+
 import numpy as np
 
 from src.actor_critic.mcts import MCTS
@@ -25,6 +26,7 @@ def play(batch_size=2048, n_total_timesteps=int(1e3),
         else:
             print("Player lost")
 
+
 def play_single_game(envs, mcts, starting_player=0, initial_temperature=1.0,
                      temperature_decay_factor=0.95):
     for i in range(2):
@@ -47,8 +49,20 @@ def play_single_game(envs, mcts, starting_player=0, initial_temperature=1.0,
 
             action, pi = mcts.select_action(player_turn, temperature=temperature)
         else:
-            action = input('Your turn ')
-            action = int(action)
+            legal_actions = envs[player_turn].get_legal_moves()
+            print(legal_actions)
+            while True:
+                try:
+                    action = input("Select action: ")
+                    action = int(action)
+                except ValueError:
+                    print("Please enter integer between 0 and 7.")
+                    continue
+                if legal_actions[action] == 0:
+                    print("Illegal move.")
+                    continue
+
+                break
 
         action_opposite_player_perspective = (action + 4) % 8
         _, reward, done = envs[player_turn].step(action)
@@ -65,8 +79,8 @@ def play_single_game(envs, mcts, starting_player=0, initial_temperature=1.0,
     else:
         winner = 1
 
-
     return winner
+
 
 if __name__ == '__main__':
     model_dir = os.path.join('models', 'actor_critic')
