@@ -1,5 +1,6 @@
 import os
 import re
+from multiprocessing import Pipe, Queue
 
 import tensorflow as tf
 
@@ -7,6 +8,33 @@ from src.actor_critic.policy_network import CnnPolicy
 from src.actor_critic.utils import mse, Scheduler
 
 log_dir = 'models/logs/'
+
+
+class ParallelModel(object):
+    def __init__(self, ob_space, ac_space, batch_size, vf_coef=0.5, max_grad_norm=0.5, lr=1e-8,
+                 lrschedule='linear', training_timesteps=int(1e6),
+                 model_dir='models/actor_critic', momentum=0.9):
+        self.model = Model(ob_space, ac_space, batch_size, vf_coef, max_grad_norm, lr, lrschedule, training_timesteps,
+                           model_dir, momentum)
+
+        self.training_timestep = self.model.training_timestep
+        self.train = self.model.train
+        self.train_model = self.model.train_model
+        self.step_model = self.model.step_model
+        self.value = self.model.step_model.value
+        self.save = self.model.save
+        self.update_best_player = self.model.update_best_player
+
+        self.queue = Queue()
+        self.initial_checkpoint_number = self.model.initial_checkpoint_number
+
+        def step(state):
+            parent_conn, child_conn = Pipe()
+            self.queue.put((child_conn, state))
+
+            return parent_conn.recv()
+
+        self.step = step
 
 
 class Model(object):

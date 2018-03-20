@@ -1,11 +1,35 @@
-import tqdm
+from multiprocessing.pool import ThreadPool
+
 import numpy as np
+import tqdm
 
 from src.actor_critic.mcts import MCTS
 from src.actor_critic.utils import ReplayMemory
 from src.environment.PaperSoccer import Soccer
 
-from multiprocessing.pool import ThreadPool
+
+def predict_batch_model(model, max_batch_size):
+    currently_in_batch = 0
+    connections = []
+    states = []
+    while currently_in_batch == 0 or (currently_in_batch < max_batch_size and not model.queue.empty()):
+        conn, state = model.queue.get()
+        connections.append(conn)
+        states.append(state)
+        currently_in_batch += 1
+
+    states_concatenated = np.concatenate(states, axis=0)
+
+    pis, vs = model.step_model.step(states_concatenated)
+
+    for conn, pi, v in zip(connections, pis, vs):
+        conn.send((pi, v))
+
+
+def batch_predict(model0, model1, max_batch_size=128):
+    while True:
+        for model in (model0, model1):
+            predict_batch_model(model, max_batch_size)
 
 
 class Runner(object):
@@ -28,11 +52,13 @@ class Runner(object):
         )
         iterable_arguments = [arguments] * n_games
 
-        res = pool.starmap(play_single_game, iterable_arguments)
+        res = pool.starmap_async(play_single_game, iterable_arguments)
+        batch_predict(self.best_player, self.best_player)
+        res.wait()
 
         progress_bar.close()
 
-        for (winner, history) in res:
+        for (winner, history) in res.get():
             save_memory(self.replay_memory, winner, history)
 
     def evaluate(self, model, n_games=400, initial_temperature=0.25, n_rollouts=1600, new_best_model_threshold=0.55,
@@ -52,11 +78,12 @@ class Runner(object):
             for i in range(n_games)
         ]
 
-        res = pool.starmap(play_single_game, iterable_arguments)
+        res = pool.starmap_async(play_single_game, iterable_arguments)
+        res.wait()
 
         progress_bar.close()
 
-        for (winner, _) in res:
+        for (winner, _) in res.get():
             if winner == 0:
                 n_wins += 1
 

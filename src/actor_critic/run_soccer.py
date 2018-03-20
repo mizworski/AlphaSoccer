@@ -6,7 +6,7 @@ def main():
     n_total_timesteps = 500
     batch_size = 512
     n_training_steps = 1024
-    n_rollouts = 70
+    n_rollouts = 100
 
     vf_coef = 1
     initial_lr = 1e-3
@@ -18,11 +18,11 @@ def main():
     temperature_decay_factor = 0.95
     moves_before_dacaying = 8
 
-    n_evaluation_games = 50
+    n_evaluation_games = 8
     n_evaluations = 4
     new_best_model_threshold = 0.55
 
-    n_self_play_games = int(200)
+    n_self_play_games = int(1000)
     checkpoint_every_n_transitions = 200
     n_replays = int(5e4)
 

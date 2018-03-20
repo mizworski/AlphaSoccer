@@ -1,6 +1,6 @@
 import os
 
-from src.actor_critic.model import Model
+from src.actor_critic.model import ParallelModel as Model
 from src.actor_critic.self_play import Runner
 from src.environment.PaperSoccer import Soccer
 

@@ -16,7 +16,7 @@ class Board:
         self.width = width
 
         # initialize board with zeros
-        self.state = np.zeros((length + 1, width + 1, depth), dtype=np.float32)
+        self.state = np.zeros((length + 1, width + 1, depth), dtype=np.int8)
         self.state[:, :, bias_layer] = 1
 
         # initial ball position in middle

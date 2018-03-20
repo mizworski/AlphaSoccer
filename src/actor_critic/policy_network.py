@@ -75,14 +75,13 @@ class CnnPolicy:
         pi0 = probs
         self.i = 0
 
-        def step(ob, *_args, **_kwargs):
-            pi, v = sess.run([pi0, v0], {X: ob})
+        def step(state):
+            pi, v = sess.run([pi0, v0], {X: state})
             return pi, v
 
         def value(ob, *_args, **_kwargs):
             return sess.run(v0, {X: ob})
 
-        # self.batch_size = batch_size
         self.X = X
         self.logits = logits
         self.pi = probs
