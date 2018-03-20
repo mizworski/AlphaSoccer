@@ -46,7 +46,9 @@ class ReplayMemory(object):
 
         if self.position % self.checkpoint_every_n_transitions == 0:
             time_str = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-            output_file_path = os.path.join(self.replay_checkpoint_dir, 'checkpoint_{}.pickle'.format(time_str))
+            output_file_name = 'checkpoint_{}_{}.pickle'.format(time_str, self.position)
+            output_file_path = os.path.join(self.replay_checkpoint_dir, output_file_name)
+
             with open(output_file_path, 'wb') as file:
                 if self.position == 0:
                     memory_slice = self.memory[-self.checkpoint_every_n_transitions:]

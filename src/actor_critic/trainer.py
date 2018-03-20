@@ -10,7 +10,7 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
           n_evaluation_games=400, n_evaluations=8, model_dir=None, new_best_model_threshold=0.55, n_rollouts=1600,
           c_puct=1, temperature_decay_factor=0.95, moves_before_dacaying=8, lrschedule='constant',
           replay_checkpoint_dir=os.path.join('data', 'replays'), checkpoint_every_n_transitions=200,
-          skip_first_self_play=False, verbose=1):
+          skip_first_self_play=False, double_first_self_play=False, verbose=1):
     n_training_timesteps = n_total_timesteps * n_training_steps
     log_every_n_train_steps = max(2, n_training_steps // 16)
 
@@ -23,6 +23,10 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
 
     for epoch in range(n_total_timesteps):
         if epoch != 0 or not skip_first_self_play:
+            runner.run(n_games=n_self_play_games, initial_temperature=initial_temperature, n_rollouts=n_rollouts,
+                       temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying)
+
+        if epoch == 0 and double_first_self_play:
             runner.run(n_games=n_self_play_games, initial_temperature=initial_temperature, n_rollouts=n_rollouts,
                        temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying)
 

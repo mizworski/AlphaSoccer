@@ -4,12 +4,12 @@ from src.actor_critic.trainer import learn
 
 def main():
     n_total_timesteps = 500
-    batch_size = 512
+    batch_size = 1024
     n_training_steps = 1024
     n_rollouts = 100
 
     vf_coef = 1
-    initial_lr = 1e-3
+    initial_lr = 1e-2
     lrschedule = 'constant'
     c_puct = 1
 
@@ -19,14 +19,17 @@ def main():
     moves_before_dacaying = 10
 
     n_evaluation_games = 100
-    n_evaluations = 5
+    n_evaluations = 10
     new_best_model_threshold = 0.55
 
-    n_self_play_games = int(250)
-    checkpoint_every_n_transitions = 200
-    n_replays = int(5e4)
+    n_self_play_games = 500
+    # around 200 transitions per game?
+    # then 100 000 transitions per single self play
+    checkpoint_every_n_transitions = 1000
+    n_replays = int(5e5)
 
     skip_first_self_play = False
+    double_first_self_play = True
 
     verbose = 1
     model_dir = os.path.join('models', 'actor_critic')
@@ -40,7 +43,7 @@ def main():
           temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying,
           lrschedule=lrschedule, replay_checkpoint_dir=replay_checkpoint_dir,
           checkpoint_every_n_transitions=checkpoint_every_n_transitions, skip_first_self_play=skip_first_self_play,
-          verbose=verbose)
+          double_first_self_play=double_first_self_play, verbose=verbose)
 
 
 if __name__ == '__main__':
