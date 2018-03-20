@@ -65,6 +65,7 @@ class ReplayMemory(object):
     def __len__(self):
         return len(self.memory)
 
+
 def load_replays(checkpoint_dir, memory_capacity):
     pickles = sorted(os.listdir(checkpoint_dir), reverse=True)
     pickles_paths = [os.path.join(checkpoint_dir, picke_file_name) for picke_file_name in pickles[:memory_capacity]]
@@ -81,7 +82,6 @@ def load_replays(checkpoint_dir, memory_capacity):
     position = len(loaded_memory) % memory_capacity
 
     return loaded_memory, position
-
 
 
 class Scheduler(object):

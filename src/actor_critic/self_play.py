@@ -8,30 +8,6 @@ from src.actor_critic.utils import ReplayMemory
 from src.environment.PaperSoccer import Soccer
 
 
-def predict_batch_model(model, max_batch_size):
-    currently_in_batch = 0
-    connections = []
-    states = []
-    while currently_in_batch == 0 or (currently_in_batch < max_batch_size and not model.queue.empty()):
-        conn, state = model.queue.get()
-        connections.append(conn)
-        states.append(state)
-        currently_in_batch += 1
-
-    states_concatenated = np.concatenate(states, axis=0)
-
-    pis, vs = model.step_model.step(states_concatenated)
-
-    for conn, pi, v in zip(connections, pis, vs):
-        conn.send((pi, v))
-
-
-def batch_predict(model0, model1, max_batch_size=128):
-    while True:
-        for model in (model0, model1):
-            predict_batch_model(model, max_batch_size)
-
-
 class Runner(object):
     def __init__(self, initial_model, n_replays, c_puct, replay_checkpoint_dir, checkpoint_every_n_transitions,
                  verbose=0):
@@ -53,7 +29,6 @@ class Runner(object):
         iterable_arguments = [arguments] * n_games
 
         res = pool.starmap_async(play_single_game, iterable_arguments)
-        batch_predict(self.best_player, self.best_player)
         res.wait()
 
         progress_bar.close()

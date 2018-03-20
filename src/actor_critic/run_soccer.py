@@ -16,17 +16,17 @@ def main():
     initial_temperature = 1
     evaluation_temperature = 1
     temperature_decay_factor = 0.95
-    moves_before_dacaying = 8
+    moves_before_dacaying = 10
 
-    n_evaluation_games = 8
-    n_evaluations = 4
+    n_evaluation_games = 100
+    n_evaluations = 5
     new_best_model_threshold = 0.55
 
-    n_self_play_games = int(1000)
+    n_self_play_games = int(250)
     checkpoint_every_n_transitions = 200
     n_replays = int(5e4)
 
-    skip_first_self_play=False
+    skip_first_self_play = False
 
     verbose = 1
     model_dir = os.path.join('models', 'actor_critic')
