@@ -107,6 +107,9 @@ class ReplayMemory(object):
 
 
 def load_replays(checkpoint_dir, memory_capacity):
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+
     pickles = sorted(os.listdir(checkpoint_dir), reverse=True)
     pickles_paths = [os.path.join(checkpoint_dir, picke_file_name) for picke_file_name in pickles[:memory_capacity]]
 

@@ -30,7 +30,7 @@ def main():
     n_games_in_replay_checkpoint = 128
     n_replays = 1024
 
-    skip_first_self_play = True
+    skip_first_self_play = False
     double_first_self_play = True
 
     verbose = 1
