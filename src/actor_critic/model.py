@@ -4,7 +4,7 @@ import re
 import tensorflow as tf
 
 from src.actor_critic.policy_network import CnnPolicy
-from src.actor_critic.utils import mse, Scheduler
+from src.actor_critic.utils import Scheduler
 
 log_dir = 'models/logs/'
 
@@ -27,25 +27,28 @@ class Model(object):
         R = tf.placeholder(tf.float32, [batch_size], name='reward')
         LR = tf.placeholder(tf.float32, [], name='learning_rate')
 
-        step_model = CnnPolicy(sess, ob_space, n_act, best_player_scope, reuse=False)
-        train_model = CnnPolicy(sess, ob_space, n_act, training_player_scope, reuse=False)
-        with tf.variable_scope('loss'):
-            logits = train_model.logits
+        basic_summaries_list = []
 
+        step_model = CnnPolicy(sess, ob_space, n_act, best_player_scope, reuse=False)
+        train_model = CnnPolicy(sess, ob_space, n_act, training_player_scope, reuse=False, histograms=True)
+        with tf.variable_scope('loss'):
             with tf.variable_scope('actor_loss'):
-                cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=PI)
+                cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(logits=train_model.logits, labels=PI)
                 pg_loss = tf.reduce_mean(cross_entropy)
-                tf.summary.scalar('actor cross_entropy', cross_entropy)
+                basic_summaries_list.append(tf.summary.scalar('policy_cross_entropy', pg_loss))
 
             with tf.variable_scope('critic_loss'):
-                vf_loss = tf.reduce_mean(mse(tf.squeeze(train_model.vf), R))
-                tf.summary.scalar('critic mse', vf_loss)
+                predictions = tf.squeeze(train_model.vf)
+                vf_loss = tf.reduce_mean(tf.losses.mean_squared_error(predictions=predictions, labels=R))
+                basic_summaries_list.append(tf.summary.scalar('critic_mse', vf_loss))
+
             with tf.variable_scope('regularization_loss'):
                 # entropy = tf.reduce_mean(cat_entropy(train_model.logits))
-                reg_loss = tf.losses.get_regularization_losses()
-                tf.summary.scalar('reg_loss', reg_loss)
+                reg_loss = tf.reduce_mean(tf.losses.get_regularization_losses(scope='training_player'))
+                basic_summaries_list.append(tf.summary.scalar('reg_loss', reg_loss))
 
             loss = pg_loss + vf_loss * vf_coef + reg_loss
+            basic_summaries_list.append(tf.summary.scalar('total_loss', loss))
 
         params = tf.trainable_variables(scope=training_player_scope)
         grads = tf.gradients(loss, params)
@@ -53,25 +56,41 @@ class Model(object):
             grads, grad_norm = tf.clip_by_global_norm(grads, max_grad_norm)
         grads = list(zip(grads, params))
 
+        basic_summaries = tf.summary.merge(basic_summaries_list)
+        detailed_summaries = tf.summary.merge_all()
+        self.train_writer = tf.summary.FileWriter(log_dir + '/train', sess.graph)
+
         trainer = tf.train.MomentumOptimizer(learning_rate=LR, momentum=momentum)
-        # trainer = tf.train.AdamOptimizer(learning_rate=LR)
-        # trainer = tf.train.GradientDescentOptimizer(learning_rate=LR)
         _train = trainer.apply_gradients(grads)
 
         lr = Scheduler(v=lr, n_values=training_timesteps, schedule=lrschedule)
 
         saver = tf.train.Saver()
 
-        self.training_timestep = 0
-
-        def train(state, pi, rewards):
+        def train(state, pi, rewards, train_iter=0):
             cur_lr = lr.value()
-            td_map = {train_model.X: state, PI: pi, R: rewards, LR: cur_lr}
+            td_map = {
+                train_model.X: state,
+                PI: pi,
+                R: rewards,
+                LR: cur_lr
+            }
 
-            policy_loss, value_loss, _ = sess.run(
-                [pg_loss, vf_loss, _train],
-                td_map
-            )
+            if train_iter % 128 == 127:  # Record execution stats
+                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                run_metadata = tf.RunMetadata()
+                summary, policy_loss, value_loss, _ = sess.run([detailed_summaries, pg_loss, vf_loss, _train],
+                                      feed_dict=td_map,
+                                      options=run_options,
+                                      run_metadata=run_metadata)
+                self.train_writer.add_run_metadata(run_metadata, 'step%03d' % train_iter)
+                self.train_writer.add_summary(summary, train_iter)
+            else:
+                summary, policy_loss, value_loss, _ = sess.run(
+                    [basic_summaries, pg_loss, vf_loss, _train],
+                    td_map
+                )
+                self.train_writer.add_summary(summary, train_iter)
 
             return policy_loss, value_loss
 
@@ -91,9 +110,6 @@ class Model(object):
                 copy_vars.append(copy_var)
 
             sess.run(copy_vars)
-
-        # writer = tf.summary.FileWriter(logdir='models/logs', graph=tf.Graph())
-        # writer.flush()
 
         self.train = train
         self.train_model = train_model
