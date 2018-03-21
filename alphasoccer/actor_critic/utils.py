@@ -5,7 +5,7 @@ from datetime import datetime
 
 import numpy as np
 
-from src.environment.Board import print_board
+from alphasoccer.environment.Board import print_board
 
 Transition = namedtuple('Transition', ('state', 'pi', 'reward'))
 

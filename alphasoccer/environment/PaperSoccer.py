@@ -1,6 +1,6 @@
 import numpy as np
 from gym.spaces import Box, Discrete
-from src.environment.Board import Board
+from alphasoccer.environment.Board import Board
 
 
 class Soccer:

@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from recordclass import recordclass
 
-from src.environment.PaperSoccer import Soccer
+from alphasoccer.environment.PaperSoccer import Soccer
 
 ActionStatistics = recordclass('ActionStatistics', ('state_node', 'N', 'W', 'Q', 'P'))
 

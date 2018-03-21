@@ -3,16 +3,14 @@ import re
 
 import tensorflow as tf
 
-from src.actor_critic.policy_network import CnnPolicy
-from src.actor_critic.utils import Scheduler
-
-log_dir = 'models/logs/'
+from alphasoccer.actor_critic.policy_network import CnnPolicy
+from alphasoccer.actor_critic.utils import Scheduler
 
 
 class Model(object):
     def __init__(self, ob_space, ac_space, batch_size, vf_coef=0.5, max_grad_norm=0.5, lr=1e-8,
-                 lrschedule='constant', training_timesteps=4096, model_dir='models/actor_critic', momentum=0.9,
-                 n_kernels=128, reg_fact=1e-3, residual_blocks=8):
+                 lrschedule='constant', training_timesteps=4096, model_dir='models/actor_critic',
+                 log_dir='models/logs/', momentum=0.9, n_kernels=128, reg_fact=1e-3, residual_blocks=8):
 
         training_player_scope = 'training_player'
         best_player_scope = 'best_player'

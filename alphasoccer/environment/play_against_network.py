@@ -2,9 +2,9 @@ import os
 
 import numpy as np
 
-from src.actor_critic.mcts import MCTS
-from src.actor_critic.model import Model
-from src.environment.PaperSoccer import Soccer
+from alphasoccer.actor_critic.mcts import MCTS
+from alphasoccer.actor_critic.model import Model
+from alphasoccer.environment.PaperSoccer import Soccer
 
 
 def play(batch_size=2048, initial_temperature=1, initial_lr=1e-10, n_training_steps=16,

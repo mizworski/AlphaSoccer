@@ -3,9 +3,9 @@ from multiprocessing.pool import ThreadPool
 import numpy as np
 import tqdm
 
-from src.actor_critic.mcts import MCTS
-from src.actor_critic.utils import ReplayMemory
-from src.environment.PaperSoccer import Soccer
+from alphasoccer.actor_critic.mcts import MCTS
+from alphasoccer.actor_critic.utils import ReplayMemory
+from alphasoccer.environment.PaperSoccer import Soccer
 
 
 class Runner(object):
