@@ -4,7 +4,7 @@ from src.actor_critic.trainer import learn
 
 def main():
     n_total_timesteps = 500
-    batch_size = 1024
+    batch_size = 512
     n_training_steps = 1024
     n_rollouts = 100
 
@@ -22,10 +22,10 @@ def main():
     n_evaluations = 10
     new_best_model_threshold = 0.55
 
-    n_self_play_games = 500
+    n_self_play_games = 256
     # around 200 transitions per game?
     # then 100 000 transitions per single self play
-    checkpoint_every_n_transitions = 1000
+    n_games_in_replay_checkpoint = 64
     n_replays = int(5e5)
 
     skip_first_self_play = False
@@ -42,7 +42,7 @@ def main():
           new_best_model_threshold=new_best_model_threshold, n_rollouts=n_rollouts, c_puct=c_puct,
           temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying,
           lrschedule=lrschedule, replay_checkpoint_dir=replay_checkpoint_dir,
-          checkpoint_every_n_transitions=checkpoint_every_n_transitions, skip_first_self_play=skip_first_self_play,
+          n_games_in_replay_checkpoint=n_games_in_replay_checkpoint, skip_first_self_play=skip_first_self_play,
           double_first_self_play=double_first_self_play, verbose=verbose)
 
 

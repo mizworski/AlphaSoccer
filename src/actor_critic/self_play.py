@@ -9,11 +9,11 @@ from src.environment.PaperSoccer import Soccer
 
 
 class Runner(object):
-    def __init__(self, initial_model, n_replays, c_puct, replay_checkpoint_dir, checkpoint_every_n_transitions,
+    def __init__(self, initial_model, n_replays, c_puct, replay_checkpoint_dir, n_games_in_replay_checkpoint,
                  verbose=0):
         self.best_player = initial_model
         self.replay_memory = ReplayMemory(n_replays, replay_checkpoint_dir=replay_checkpoint_dir,
-                                          checkpoint_every_n_transitions=checkpoint_every_n_transitions,
+                                          n_games_in_replay_checkpoint=n_games_in_replay_checkpoint,
                                           verbose=verbose)
         self.c_puct = c_puct
 
@@ -136,7 +136,11 @@ def play_single_game(model0, model1=None, n_rollouts=800, c_puct=1, starting_pla
 
 
 def save_memory(replay_memory, winner, history):
+    sars = []
+
     for state, pi in history[winner]:
-        replay_memory.push(state, pi, 1)
+        sars.append((state, pi, 1))
     for state, pi in history[1 - winner]:
-        replay_memory.push(state, pi, -1)
+        sars.append((state, pi, -1))
+
+    replay_memory.push_vector(sars)

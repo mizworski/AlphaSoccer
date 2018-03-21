@@ -1,6 +1,5 @@
-import pickle
-import random
 import os
+import pickle
 from collections import namedtuple
 from datetime import datetime
 
@@ -19,15 +18,15 @@ schedules = {
 
 class ReplayMemory(object):
     def __init__(self, capacity, replay_checkpoint_dir=os.path.join('data', 'replays'),
-                 checkpoint_every_n_transitions=100, verbose=0):
+                 n_games_in_replay_checkpoint=100, verbose=0):
         self.capacity = capacity
         self.replay_checkpoint_dir = replay_checkpoint_dir
         self.memory, self.position = load_replays(replay_checkpoint_dir, capacity)
         self.verbose = verbose
-        self.checkpoint_every_n_transitions = checkpoint_every_n_transitions
+        self.n_games_in_replay_checkpoint = n_games_in_replay_checkpoint
 
         if verbose:
-            print("Loaded {} transitions from {}".format(len(self.memory), self.replay_checkpoint_dir))
+            print("Loaded {} games from {}".format(len(self.memory), self.replay_checkpoint_dir))
 
     def push(self, *args):
         """Saves a transition."""
@@ -44,25 +43,64 @@ class ReplayMemory(object):
 
         self.position = (self.position + 1) % self.capacity
 
-        if self.position % self.checkpoint_every_n_transitions == 0:
+        if self.position % self.n_games_in_replay_checkpoint == 0:
             time_str = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
             output_file_name = 'checkpoint_{}_{}.pickle'.format(time_str, self.position)
             output_file_path = os.path.join(self.replay_checkpoint_dir, output_file_name)
 
             with open(output_file_path, 'wb') as file:
                 if self.position == 0:
-                    memory_slice = self.memory[-self.checkpoint_every_n_transitions:]
+                    memory_slice = self.memory[-self.n_games_in_replay_checkpoint:]
                 else:
-                    memory_slice = self.memory[self.position - self.checkpoint_every_n_transitions:self.position]
+                    memory_slice = self.memory[self.position - self.n_games_in_replay_checkpoint:self.position]
 
                 pickle.dump(memory_slice, file)
 
-    def sample_sarvs(self, batch_size):
-        return random.sample(self.memory, batch_size)
+    def push_vector(self, sars):
+        transitions = [Transition(*sar) for sar in sars]
+
+        if len(self.memory) < self.capacity:
+            self.memory.append(None)
+        self.memory[self.position] = transitions
+
+        if self.verbose == 2:
+            print("Transitions in history = {}".format(len(transitions)))
+
+            i = 0
+            for transition in self.memory[self.position]:
+                print("Transition {}".format(i))
+                print("Reward : {}".format(transition.reward))
+                print("Pi: {}".format(transition.pi))
+                print("State")
+                print_board(transition.state)
+                print("*" * 8)
+                i += 1
+                if i >= 8:
+                    break
+
+        self.position = (self.position + 1) % self.capacity
+
+        if self.position % self.n_games_in_replay_checkpoint == 0:
+            time_str = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+            output_file_name = 'checkpoint_{}_{}.pickle'.format(time_str, self.position)
+            output_file_path = os.path.join(self.replay_checkpoint_dir, output_file_name)
+
+            with open(output_file_path, 'wb') as file:
+                if self.position == 0:
+                    memory_slice = self.memory[-self.n_games_in_replay_checkpoint:]
+                else:
+                    memory_slice = self.memory[self.position - self.n_games_in_replay_checkpoint:self.position]
+
+                pickle.dump(memory_slice, file)
 
     def sample(self, batch_size):
-        sarvs = random.sample(self.memory, batch_size)
-        return (np.asarray(data) for data in zip(*sarvs))
+        replace = len(self.memory) < batch_size
+        games = np.take(self.memory,
+                        indices=np.random.choice(len(self.memory), size=batch_size, replace=replace),
+                        axis=0)
+        transitions = [np.take(game, np.random.choice(len(game)), axis=0) for game in games]
+
+        return (np.asarray(data) for data in zip(*transitions))
 
     def __len__(self):
         return len(self.memory)
