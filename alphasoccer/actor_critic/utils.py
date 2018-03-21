@@ -5,8 +5,6 @@ from datetime import datetime
 
 import numpy as np
 
-from alphasoccer.environment.Board import print_board
-
 Transition = namedtuple('Transition', ('state', 'pi', 'reward'))
 
 schedules = {
@@ -38,7 +36,7 @@ class ReplayMemory(object):
             print("Reward : {}".format(self.memory[self.position].reward))
             print("Pi: {}".format(self.memory[self.position].pi))
             print("State")
-            print_board(self.memory[self.position].state)
+            print(self.memory[self.position].state)
             print("*" * 8)
 
         self.position = (self.position + 1) % self.capacity
@@ -72,7 +70,7 @@ class ReplayMemory(object):
                 print("Reward : {}".format(transition.reward))
                 print("Pi: {}".format(transition.pi))
                 print("State")
-                print_board(transition.state)
+                print(transition.state)
                 print("*" * 8)
                 i += 1
                 if i >= 8:

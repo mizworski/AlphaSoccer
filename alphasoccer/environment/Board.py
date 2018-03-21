@@ -166,8 +166,11 @@ class Board:
         layer = np.dsplit(self.state, self.state.shape[2])[k].reshape((self.state.shape[0], self.state.shape[1]))
         print(layer)
 
+    def __str__(self):
+        to_string(self.state, self.length, self.width)
+
     def print_board(self):
-        print_board(self.state, self.length, self.width)
+        print(to_string(self.state, self.length, self.width))
 
     def get_legal_moves(self):
         ball_pos = self.get_pos()
@@ -179,45 +182,49 @@ class Board:
         return int(self.state[0, 0, turn_layer])
 
 
-def print_board(state, length=10, width=8):
+def to_string(state, length=10, width=8):
+    board_string = ''
     for row in range(int(length - 4)):
-        print(' ', end='')
-    print('+-+-+')
-
+        board_string += ' '
+    board_string += '+-+-+\n'
     for row in range(length + 1):
         for col in range(width + 1):
             if state[row, col, ball_layer] == 1:
-                print('O', end='')
+                board_string += 'O'
             elif state[row, col, dots_layer] == 1:
-                print('+', end='')
+                board_string += '+'
             else:
-                print('.', end='')
+                board_string += '.'
 
             if col != width and (state[row, col, 2] == 1):
-                print('-', end='')
+                board_string += '-'
             elif col != width:
-                print(' ', end='')
-        print('')
+                board_string += ' '
+        board_string += '\n'
 
         if row != length:
             for col in range(width + 1):
                 if state[row, col, 4] == 1:
-                    print('|', end='')
+                    board_string += '|'
                 elif col != width:
-                    print(' ', end='')
+                    board_string += ' '
 
                 if col != width and state[row, col, 3] == 1:
                     if state[row + 1, col, 1] == 1:
-                        print('X', end='')
-                    else:
-                        print('\\', end='')
-                elif col != width and state[row + 1, col, 1] == 1:
-                    print('/', end='')
-                elif col != width:
-                    print(' ', end='')
+                        board_string += 'X'
 
-            print('')
+                    else:
+                        board_string += '\\'
+
+                elif col != width and state[row + 1, col, 1] == 1:
+                    board_string += '/'
+                elif col != width:
+                    board_string += ' '
+
+            board_string += '\n'
 
     for row in range(int(length - 4)):
-        print(' ', end='')
-    print('+-+-+')
+        board_string += ' '
+
+    board_string += '+-+-+\n'
+    return board_string
