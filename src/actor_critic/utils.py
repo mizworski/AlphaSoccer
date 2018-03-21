@@ -4,7 +4,6 @@ from collections import namedtuple
 from datetime import datetime
 
 import numpy as np
-import tensorflow as tf
 
 from src.environment.Board import print_board
 
@@ -12,7 +11,8 @@ Transition = namedtuple('Transition', ('state', 'pi', 'reward'))
 
 schedules = {
     'constant': lambda p: 1,
-    'linear': lambda p: 1 - p
+    'linear': lambda p: 1 - p,
+    'staircase': lambda p: 10 ** -int(p * 3)
 }
 
 
@@ -139,30 +139,5 @@ class Scheduler(object):
     def value_steps(self, steps):
         return self.v * self.schedule(steps / self.n_values)
 
-
-def cat_entropy(logits):
-    a0 = logits - tf.reduce_max(logits, 1, keepdims=True)
-    ea0 = tf.exp(a0)
-    z0 = tf.reduce_sum(ea0, 1, keepdims=True)
-    p0 = ea0 / z0
-    return tf.reduce_sum(p0 * (tf.log(z0) - a0), 1)
-
-
-def mse(pred, target):
-    return tf.square(pred - target) / 2.
-
-
-def explained_variance(ypred, y):
-    """
-    Computes fraction of variance that ypred explains about y.
-    Returns 1 - Var[y-ypred] / Var[y]
-
-    interpretation:
-        ev=0  =>  might as well have predicted zero
-        ev=1  =>  perfect prediction
-        ev<0  =>  worse than just predicting zero
-
-    """
-    assert y.ndim == 1 and ypred.ndim == 1
-    vary = np.var(y)
-    return np.nan if vary == 0 else 1 - np.var(y - ypred) / vary
+    def reset_steps(self):
+        self.n = 0

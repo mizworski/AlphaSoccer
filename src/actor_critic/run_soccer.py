@@ -10,8 +10,12 @@ def main():
 
     vf_coef = 1
     initial_lr = 1e-2
-    lrschedule = 'constant'
+    lrschedule = 'staircase'
     c_puct = 1
+
+    n_kernels=128
+    reg_fact=1e-3
+    residual_blocks=10
 
     initial_temperature = 1
     evaluation_temperature = 1
@@ -23,12 +27,10 @@ def main():
     new_best_model_threshold = 0.55
 
     n_self_play_games = 256
-    # around 200 transitions per game?
-    # then 100 000 transitions per single self play
-    n_games_in_replay_checkpoint = 64
-    n_replays = int(5e5)
+    n_games_in_replay_checkpoint = 128
+    n_replays = 1024
 
-    skip_first_self_play = False
+    skip_first_self_play = True
     double_first_self_play = True
 
     verbose = 1
@@ -43,7 +45,8 @@ def main():
           temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying,
           lrschedule=lrschedule, replay_checkpoint_dir=replay_checkpoint_dir,
           n_games_in_replay_checkpoint=n_games_in_replay_checkpoint, skip_first_self_play=skip_first_self_play,
-          double_first_self_play=double_first_self_play, verbose=verbose)
+          double_first_self_play=double_first_self_play, n_kernels=n_kernels, reg_fact=reg_fact,
+          residual_blocks=residual_blocks, verbose=verbose)
 
 
 if __name__ == '__main__':

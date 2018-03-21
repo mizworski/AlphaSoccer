@@ -1,13 +1,8 @@
 import tensorflow as tf
 from tensorflow.contrib import slim
 
-n_kernels = 128
-reg_fact = 1e-3
-n_residual_blocks = 8
-log_dir = 'models/logs/'
 
-
-def res_block(net_input, scope, reuse, histograms):
+def res_block(net_input, scope, reuse, histograms, n_kernels):
     with tf.variable_scope(scope, reuse=reuse):
         net_conv1 = slim.conv2d(net_input, n_kernels, [3, 3], padding='SAME', scope='conv_1')
         net_bn1 = slim.batch_norm(net_conv1)
@@ -31,21 +26,9 @@ def res_block(net_input, scope, reuse, histograms):
     return net_relu2
 
 
-def variable_summaries(var):
-    """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
-    with tf.name_scope('summaries'):
-        mean = tf.reduce_mean(var)
-        tf.summary.scalar('mean', mean)
-        with tf.name_scope('stddev'):
-            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
-        tf.summary.scalar('stddev', stddev)
-        tf.summary.scalar('max', tf.reduce_max(var))
-        tf.summary.scalar('min', tf.reduce_min(var))
-        tf.summary.histogram('histogram', var)
-
-
 class CnnPolicy:
-    def __init__(self, sess, ob_space, n_act, scope, reuse=False, histograms=False):
+    def __init__(self, sess, ob_space, n_act, scope, reuse=False, histograms=False, n_kernels=128, reg_fact=1e-3,
+                 residual_blocks=8):
         input_layer_shape = [None] + list(ob_space.shape)
         X = tf.placeholder(tf.float32, input_layer_shape, name='input_layer')
 
@@ -64,9 +47,9 @@ class CnnPolicy:
                         tf.summary.histogram("{}/conv_block/batch_norm".format(scope), net_bn)
                         tf.summary.histogram("{}/conv_block/relu".format(scope), net)
 
-                for i in range(n_residual_blocks):
+                for i in range(residual_blocks):
                     block_scope = 'res_block_{}'.format(i)
-                    net = res_block(net, scope=block_scope, reuse=reuse, histograms=histograms)
+                    net = res_block(net, n_kernels=n_kernels, scope=block_scope, reuse=reuse, histograms=histograms)
 
                 with tf.variable_scope('policy_head', reuse=reuse):
                     policy_net = slim.conv2d(net, num_outputs=2, kernel_size=[1, 1])
