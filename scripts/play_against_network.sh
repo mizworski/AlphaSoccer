@@ -2,4 +2,4 @@
 
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
-python3 src/environment/play_against_network.py
+python3 alphasoccer/environment/play_against_network.py
