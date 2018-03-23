@@ -6,6 +6,7 @@ import tqdm
 
 from alphasoccer.actor_critic.mcts import MCTS
 from alphasoccer.actor_critic.utils import ReplayMemory
+from alphasoccer.environment.Board import to_string
 from alphasoccer.environment.PaperSoccer import Soccer
 
 
@@ -47,6 +48,7 @@ class Runner(object):
                  temperature_decay_factor=0.95, moves_before_dacaying=8, eval_iter=0, verbose=0):
         # log_every_n_games = max(2, n_games // 4)
         log_n_games = 8
+        log_n_games_detailed = 1
         n_wins = 0
 
         pool = ThreadPool()
@@ -56,9 +58,9 @@ class Runner(object):
             (
                 self.model.train_model, self.model.step_model, n_rollouts, self.c_puct, (i % 2), initial_temperature,
                 temperature_decay_factor, moves_before_dacaying, progress_bar,
-                eval_iter, i, model.sess, model.summary_writer,
+                eval_iter, i, self.model.sess, self.model.summary_writer,
                 # verbose if verbose and i % log_every_n_games == 0 else 0
-                1 if i < log_n_games else 0
+                2 if i < log_n_games_detailed else 1 if i < log_n_games else 0
             )
             for i in range(n_games)
         ]
@@ -72,6 +74,7 @@ class Runner(object):
             if winner == 0:
                 n_wins += 1
 
+        print("win_ratio={}".format(100 * n_wins / n_games))
         win_ratio_summary = model.sess.run(self.win_ratio_summary_op,
                                            feed_dict={self.n_wins_ph: n_wins, self.n_games_ph: n_games})
         model.summary_writer.add_summary(win_ratio_summary, eval_iter)
@@ -104,10 +107,8 @@ def play_single_game(model0, model1=None, n_rollouts=800, c_puct=1, starting_pla
     temperature = initial_temperature
 
     moves = 0
+    states_after_moves = []
     while not done:
-        if verbose == 2:
-            envs[0].print_board()
-
         # env0 indicates player turn (env1 is reversed)
         player_turn = envs[0].get_player_turn()
         state = envs[player_turn].board.state
@@ -123,6 +124,10 @@ def play_single_game(model0, model1=None, n_rollouts=800, c_puct=1, starting_pla
         if history is not None:
             history[player_turn].append([np.squeeze(state.copy()), pi])
 
+        if verbose == 2:
+            action = action if player_turn == 0 else action_opposite_player_perspective
+            states_after_moves.append((envs[0].board.state.copy(), action, player_turn))
+
         moves += 1
         if moves > moves_before_dacaying and temperature > 5e-2:
             temperature *= temperature_decay_factor
@@ -132,29 +137,39 @@ def play_single_game(model0, model1=None, n_rollouts=800, c_puct=1, starting_pla
     else:
         winner = 1
 
-    if verbose:
-        board_str = str(envs[0].board)
-        text_tensor = tf.make_tensor_proto(board_str, dtype=tf.string)
-        meta = tf.SummaryMetadata()
-        meta.plugin_data.plugin_name = "text"
-
-        summary = tf.Summary()
+    if verbose == 1:
         summary_tag = 'eval_{}'.format(epoch_iter)
-        summary.value.add(tag=summary_tag, metadata=meta, tensor=text_tensor)
+        board_str = str(envs[0].board).replace('\n', '\n\t')
+        log_board(board_str, summary_writer, summary_tag, step=game_iter)
 
-        # summary_op = tf.summary.text(, tf.convert_to_tensor(board_str))
-        # text = sess.run(summary_op)
-        summary_writer.add_summary(summary, game_iter)
+    if verbose == 2:
+        summary_tag = 'eval_detailed_{}'.format(epoch_iter)
+        all_boards = ""
 
-    if verbose:
-        envs[0].print_board()
-        if winner == 0:
-            print("Player won")
-        else:
-            print("Player lost")
+        for i, (state, action, player_turn) in enumerate(states_after_moves):
+            all_boards += "# ***********\n"
+            all_boards += "# Turn={}\n".format(i)
+            all_boards += "# Player={}\n".format(player_turn)
+            all_boards += "# Action={}\n".format(action)
+            board_str = to_string(state)
+            board_str = board_str.replace('\n', '\n\t')
+            all_boards += board_str
+
+        log_board(all_boards, summary_writer, summary_tag, step=game_iter)
 
     progress_bar.update(1)
     return winner, history
+
+
+def log_board(board_str, summary_writer, summary_tag, step=0):
+    board_str = board_str.replace('\n', '\n\t')
+    text_tensor = tf.make_tensor_proto(board_str, dtype=tf.string)
+    meta = tf.SummaryMetadata()
+    meta.plugin_data.plugin_name = "text"
+    summary = tf.Summary()
+    summary.value.add(tag=summary_tag, metadata=meta, tensor=text_tensor)
+    summary_writer.add_summary(summary, step)
+    summary_writer.flush()
 
 
 def save_memory(replay_memory, winner, history):

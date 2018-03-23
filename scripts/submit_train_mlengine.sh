@@ -9,6 +9,7 @@ PACKAGE_STAGING_PATH="gs://alphasoccer/package/"
 now=$(date +"%Y%m%d_%H%M%S")
 JOB_NAME="training_$now"
 JOB_DIR=gs://alphasoccer/jobs/${JOB_NAME}
+LOG_DIR=gs://alphasoccer/logs/${JOB_NAME}
 
 
 gcloud ml-engine jobs submit training ${JOB_NAME} \
@@ -27,5 +28,5 @@ gcloud ml-engine jobs submit training ${JOB_NAME} \
     --new_best_model_threshold 0.30 \
     --n_games_in_replay_checkpoint 2 \
     --model_dir ${JOB_DIR}/models/test/model/ \
-    --log_dir ${JOB_DIR}/models/test/logs/ \
+    --log_dir ${LOG_DIR} \
     --replay_dir ${JOB_DIR}/models/test/replays
