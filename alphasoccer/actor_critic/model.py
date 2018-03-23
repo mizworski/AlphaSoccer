@@ -57,7 +57,7 @@ class Model(object):
 
         basic_summaries = tf.summary.merge(basic_summaries_list)
         detailed_summaries = tf.summary.merge_all()
-        self.train_writer = tf.summary.FileWriter(log_dir + '/train', sess.graph)
+        self.summary_writer = tf.summary.FileWriter(log_dir, sess.graph)
 
         trainer = tf.train.MomentumOptimizer(learning_rate=LR, momentum=momentum)
         _train = trainer.apply_gradients(grads)
@@ -75,21 +75,21 @@ class Model(object):
                 LR: cur_lr
             }
 
-            if train_iter % 128 == 127:  # Record execution stats
+            if train_iter % 128 == 0:  # Record execution stats
                 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
                 run_metadata = tf.RunMetadata()
                 summary, policy_loss, value_loss, _ = sess.run([detailed_summaries, pg_loss, vf_loss, _train],
                                                                feed_dict=td_map,
                                                                options=run_options,
                                                                run_metadata=run_metadata)
-                self.train_writer.add_run_metadata(run_metadata, 'step%03d' % train_iter)
-                self.train_writer.add_summary(summary, train_iter)
+                self.summary_writer.add_run_metadata(run_metadata, 'step%03d' % train_iter)
+                self.summary_writer.add_summary(summary, train_iter)
             else:
                 summary, policy_loss, value_loss, _ = sess.run(
                     [basic_summaries, pg_loss, vf_loss, _train],
                     td_map
                 )
-                self.train_writer.add_summary(summary, train_iter)
+                self.summary_writer.add_summary(summary, train_iter)
 
             return policy_loss, value_loss
 
@@ -115,8 +115,10 @@ class Model(object):
         self.step_model = step_model
         self.step = step_model.step
         self.value = step_model.value
+
         self.save = save_model
         self.update_best_player = update_best_player
+        self.sess = sess
 
         latest_checkpoint = tf.train.latest_checkpoint(model_dir)
 

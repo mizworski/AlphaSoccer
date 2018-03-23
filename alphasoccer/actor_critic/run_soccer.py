@@ -5,6 +5,9 @@ from alphasoccer.actor_critic.trainer import learn
 
 def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--job-dir', type=str,
+                        default=None,
+                        help='Not being used now. I have to catch it while training on google cloud')
     parser.add_argument('--model_dir', type=str,
                         default=os.path.join('models', 'actor_critic'),
                         help='Directory where model will be saved.')
@@ -83,11 +86,13 @@ def main():
                         default=1e-3,
                         help='Regularization parameter.')
 
-    parser.add_argument('--skip_first_self_play', type=bool,
+    parser.add_argument('--skip_first_self_play',
                         default=False,
+                        action='store_true',
                         help='Skip first self play phase. Start with training.')
-    parser.add_argument('--double_first_self_play', type=bool,
-                        default=True,
+    parser.add_argument('--double_first_self_play',
+                        default=False,
+                        action='store_true',
                         help='Play twice as many games in first epoch.')
 
     parser.add_argument('--verbose', type=int,

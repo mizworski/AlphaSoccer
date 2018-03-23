@@ -167,7 +167,7 @@ class Board:
         print(layer)
 
     def __str__(self):
-        to_string(self.state, self.length, self.width)
+        return to_string(self.state, self.length, self.width)
 
     def print_board(self):
         print(to_string(self.state, self.length, self.width))

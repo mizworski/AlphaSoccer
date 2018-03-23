@@ -25,8 +25,9 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
 
     model_iterations = model.initial_checkpoint_number
     train_iter = 0
-
+    eval_iter = 0
     for epoch in range(n_total_timesteps):
+        print("Training epoch = {}".format(epoch))
         if epoch != 0 or not skip_first_self_play:
             runner.run(n_games=n_self_play_games, initial_temperature=initial_temperature, n_rollouts=n_rollouts,
                        temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying)
@@ -49,9 +50,9 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
                                             initial_temperature=evaluation_temperature,
                                             n_rollouts=n_rollouts, new_best_model_threshold=new_best_model_threshold,
                                             temperature_decay_factor=temperature_decay_factor,
-                                            moves_before_dacaying=moves_before_dacaying,
+                                            moves_before_dacaying=moves_before_dacaying, eval_iter=eval_iter,
                                             verbose=verbose)
-
+            eval_iter += 1
             if new_model_won:
                 model_iterations += 1
                 model.update_best_player()
@@ -59,4 +60,4 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
                 print('New best player saved iter={}.'.format(model_iterations))
                 break
 
-    model.train_writer.close()
+    model.summary_writer.close()

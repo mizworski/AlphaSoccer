@@ -4,13 +4,14 @@ from collections import namedtuple
 from datetime import datetime
 
 import numpy as np
+import tensorflow as tf
 
 Transition = namedtuple('Transition', ('state', 'pi', 'reward'))
 
 schedules = {
     'constant': lambda p: 1,
     'linear': lambda p: 1 - p,
-    'staircase': lambda p: 10 ** -int(p * 3)
+    'stairs': lambda p: 10 ** -int(p * 3)
 }
 
 
@@ -25,34 +26,6 @@ class ReplayMemory(object):
 
         if verbose:
             print("Loaded {} games from {}".format(len(self.memory), self.replay_checkpoint_dir))
-
-    def push(self, *args):
-        """Saves a transition."""
-        if len(self.memory) < self.capacity:
-            self.memory.append(None)
-        self.memory[self.position] = Transition(*args)
-
-        if self.verbose == 2:
-            print("Reward : {}".format(self.memory[self.position].reward))
-            print("Pi: {}".format(self.memory[self.position].pi))
-            print("State")
-            print(self.memory[self.position].state)
-            print("*" * 8)
-
-        self.position = (self.position + 1) % self.capacity
-
-        if self.position % self.n_games_in_replay_checkpoint == 0:
-            time_str = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-            output_file_name = 'checkpoint_{}_{}.pickle'.format(time_str, self.position)
-            output_file_path = os.path.join(self.replay_checkpoint_dir, output_file_name)
-
-            with open(output_file_path, 'wb') as file:
-                if self.position == 0:
-                    memory_slice = self.memory[-self.n_games_in_replay_checkpoint:]
-                else:
-                    memory_slice = self.memory[self.position - self.n_games_in_replay_checkpoint:self.position]
-
-                pickle.dump(memory_slice, file)
 
     def push_vector(self, sars):
         transitions = [Transition(*sar) for sar in sars]
@@ -83,13 +56,17 @@ class ReplayMemory(object):
             output_file_name = 'checkpoint_{}_{}.pickle'.format(time_str, self.position)
             output_file_path = os.path.join(self.replay_checkpoint_dir, output_file_name)
 
-            with open(output_file_path, 'wb') as file:
-                if self.position == 0:
-                    memory_slice = self.memory[-self.n_games_in_replay_checkpoint:]
-                else:
-                    memory_slice = self.memory[self.position - self.n_games_in_replay_checkpoint:self.position]
+            if self.position == 0:
+                memory_slice = self.memory[-self.n_games_in_replay_checkpoint:]
+            else:
+                memory_slice = self.memory[self.position - self.n_games_in_replay_checkpoint:self.position]
 
-                pickle.dump(memory_slice, file)
+            if output_file_path.startswith('gs://'):
+                with tf.gfile.GFile(output_file_path, 'wb') as file:
+                    pickle.dump(memory_slice, file)
+            else:
+                with open(output_file_path, 'wb') as file:
+                    pickle.dump(memory_slice, file)
 
     def sample(self, batch_size):
         replace = len(self.memory) < batch_size
@@ -113,9 +90,14 @@ def load_replays(checkpoint_dir, memory_capacity):
 
     loaded_memory = []
 
-    for picked_memory in pickles_paths:
-        with open(picked_memory, 'rb') as file:
-            loaded_memory += pickle.load(file)
+    for pickled_memory in pickles_paths:
+        if pickled_memory.startswith('gs://'):
+            with tf.gfile.GFile(pickled_memory, 'wb') as file:
+                loaded_memory += pickle.load(file)
+        else:
+            with open(pickled_memory, 'rb') as file:
+                loaded_memory += pickle.load(file)
+
         if len(loaded_memory) > memory_capacity:
             break
 
