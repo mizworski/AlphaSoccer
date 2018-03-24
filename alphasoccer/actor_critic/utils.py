@@ -1,4 +1,5 @@
 import os
+import sys
 import pickle
 from collections import namedtuple
 from datetime import datetime
@@ -25,7 +26,7 @@ class ReplayMemory(object):
         self.n_games_in_replay_checkpoint = n_games_in_replay_checkpoint
 
         if verbose:
-            print("Loaded {} games from {}".format(len(self.memory), self.replay_checkpoint_dir))
+            print("Loaded {} games from {}".format(len(self.memory), self.replay_checkpoint_dir), file=sys.stderr)
 
     def push_vector(self, sars):
         transitions = [Transition(*sar) for sar in sars]
@@ -35,7 +36,7 @@ class ReplayMemory(object):
         self.memory[self.position] = transitions
 
         if self.verbose == 2:
-            print("Transitions in history = {}".format(len(transitions)))
+            print("Transitions in history = {}".format(len(transitions)), file=sys.stderr)
 
             i = 0
             for transition in self.memory[self.position]:

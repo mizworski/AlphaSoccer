@@ -2,9 +2,9 @@
 
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
-#mkdir -p models/test/
-#rm -r models/test/logs
-#rm -r models/test/*
+mkdir -p models/test/
+rm -r models/test/logs
+rm -r models/test/*
 
 now=$(date +"%Y%m%d_%H%M%S")
 JOB_NAME="training_$now"
@@ -21,4 +21,4 @@ python3 alphasoccer/actor_critic/run_soccer.py \
     --model_dir models/test/model/ \
     --log_dir models/test/logs/${JOB_NAME} \
     --replay_dir models/test/replays \
-    --skip_first_self_play
+#    --skip_first_self_play

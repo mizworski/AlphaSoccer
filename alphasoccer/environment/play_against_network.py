@@ -81,6 +81,6 @@ def play_single_game(envs, mcts, starting_player=0, initial_temperature=1.0,
 
 
 if __name__ == '__main__':
-    model_dir = os.path.join('models', 'actor_critic')
+    model_dir = os.path.join('models', 'model_512')
     n_rollouts = 1600
     play(n_rollouts=n_rollouts, model_dir=model_dir)

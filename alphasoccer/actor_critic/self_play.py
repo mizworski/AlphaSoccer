@@ -3,6 +3,7 @@ from multiprocessing.pool import ThreadPool
 import numpy as np
 import tensorflow as tf
 import tqdm
+import sys
 
 from alphasoccer.actor_critic.mcts import MCTS
 from alphasoccer.actor_critic.utils import ReplayMemory
@@ -74,7 +75,7 @@ class Runner(object):
             if winner == 0:
                 n_wins += 1
 
-        print("win_ratio={}".format(100 * n_wins / n_games))
+        print("win_ratio={}".format(100 * n_wins / n_games), file=sys.stderr)
         win_ratio_summary = model.sess.run(self.win_ratio_summary_op,
                                            feed_dict={self.n_wins_ph: n_wins, self.n_games_ph: n_games})
         model.summary_writer.add_summary(win_ratio_summary, eval_iter)

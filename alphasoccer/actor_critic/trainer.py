@@ -1,5 +1,6 @@
 import os
 
+import sys
 from tqdm import tqdm
 
 from alphasoccer.actor_critic.model import Model
@@ -27,7 +28,7 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
     train_iter = 0
     eval_iter = 0
     for epoch in range(n_total_timesteps):
-        print("Training epoch = {}".format(epoch))
+        print("Training epoch = {}".format(epoch), file=sys.stderr)
         if epoch != 0 or not skip_first_self_play:
             runner.run(n_games=n_self_play_games, initial_temperature=initial_temperature, n_rollouts=n_rollouts,
                        temperature_decay_factor=temperature_decay_factor, moves_before_dacaying=moves_before_dacaying)
@@ -57,7 +58,7 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
                 model_iterations += 1
                 model.update_best_player()
                 model.save(model_iterations)
-                print('New best player saved iter={}.'.format(model_iterations))
+                print('New best player saved iter={}.'.format(model_iterations), file=sys.stderr)
                 break
 
     model.summary_writer.close()

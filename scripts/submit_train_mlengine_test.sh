@@ -10,8 +10,6 @@ now=$(date +"%Y%m%d_%H%M%S")
 JOB_NAME="training_$now"
 JOB_DIR=gs://alphasoccer/jobs/${JOB_NAME}
 LOG_DIR=gs://alphasoccer/logs/${JOB_NAME}
-MODEL_DIR=gs://alphasoccer/models/${JOB_NAME}
-REPLAY_DIR=gs://alphasoccer/replays/${JOB_NAME}
 
 
 gcloud ml-engine jobs submit training ${JOB_NAME} \
@@ -22,16 +20,13 @@ gcloud ml-engine jobs submit training ${JOB_NAME} \
     --config config.yaml \
     --runtime-version 1.5 \
     -- \
-    --n_total_timesteps 100 \
-    --n_evaluation_games 50 \
-    --n_evaluations 10 \
-    --n_training_steps 1024 \
-    --batch_size 512 \
-    --n_games_in_replay_checkpoint 128 \
-    --model_dir ${MODEL_DIR} \
+    --n_total_timesteps 1 \
+    --n_self_play_games 8 \
+    --n_evaluation_games 8 \
+    --n_training_steps 32 \
+    --batch_size 32 \
+    --new_best_model_threshold 0.30 \
+    --n_games_in_replay_checkpoint 2 \
+    --model_dir ${JOB_DIR}/models/test/model/ \
     --log_dir ${LOG_DIR} \
-    --replay_dir ${REPLAY_DIR} \
-    --learning_rate 1e-3 \
-    --n_rollouts 150 \
-    --n_replays 768 \
-    --n_self_play_games 512
+    --replay_dir ${JOB_DIR}/models/test/replays

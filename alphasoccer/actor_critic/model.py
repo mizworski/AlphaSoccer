@@ -1,11 +1,11 @@
 import os
+import sys
 import re
 
 import tensorflow as tf
 
 from alphasoccer.actor_critic.policy_network import CnnPolicy
 from alphasoccer.actor_critic.utils import Scheduler
-
 
 class Model(object):
     def __init__(self, ob_space, ac_space, batch_size, vf_coef=0.5, max_grad_norm=0.5, lr=1e-8,
@@ -125,11 +125,11 @@ class Model(object):
         if latest_checkpoint is None:
             tf.global_variables_initializer().run(session=sess)
             self.initial_checkpoint_number = 1
-            print('No checkpoint found. Starting new model.')
+            print('No checkpoint found. Starting new model.', file=sys.stderr)
         else:
             saver.restore(sess, save_path=latest_checkpoint)
             self.initial_checkpoint_number = int(re.findall(r'\d+', latest_checkpoint)[-1])
-            print('Loaded checkpoint {}'.format(latest_checkpoint))
+            print('Loaded checkpoint {}'.format(latest_checkpoint), file=sys.stderr)
 
         # initialize training player with current best player
         self.update_best_player()
