@@ -25,7 +25,7 @@ class Runner(object):
         self.win_ratio_summary_op = tf.summary.scalar('win_ratio', 100 * self.n_wins_ph / self.n_games_ph)
 
     def run(self, n_games=int(1e4), initial_temperature=1.0, n_rollouts=1600, temperature_decay_factor=0.95,
-            moves_before_dacaying=8, verbose=0):
+            moves_before_decaying=8, verbose=0):
         pool = ThreadPool()
         progress_bar = tqdm.tqdm(total=n_games)
 
@@ -33,7 +33,7 @@ class Runner(object):
 
         arguments = (
             self.model.step_model, self.model.step_model, n_rollouts, self.c_puct, 0, initial_temperature,
-            temperature_decay_factor, moves_before_dacaying, progress_bar, None, None, None, None, verbose
+            temperature_decay_factor, moves_before_decaying, progress_bar, None, None, None, None, verbose
         )
         iterable_arguments = [arguments] * n_games
 
@@ -46,7 +46,7 @@ class Runner(object):
             save_memory(self.replay_memory, winner, history)
 
     def evaluate(self, model, n_games=400, initial_temperature=0.25, n_rollouts=1600, new_best_model_threshold=0.55,
-                 temperature_decay_factor=0.95, moves_before_dacaying=8, eval_iter=0, verbose=0):
+                 temperature_decay_factor=0.95, moves_before_decaying=8, eval_iter=0, verbose=0):
         # log_every_n_games = max(2, n_games // 4)
         log_n_games = 8
         log_n_games_detailed = 1
@@ -58,7 +58,7 @@ class Runner(object):
         iterable_arguments = [
             (
                 self.model.train_model, self.model.step_model, n_rollouts, self.c_puct, (i % 2), initial_temperature,
-                temperature_decay_factor, moves_before_dacaying, progress_bar,
+                temperature_decay_factor, moves_before_decaying, progress_bar,
                 eval_iter, i, self.model.sess, self.model.summary_writer,
                 # verbose if verbose and i % log_every_n_games == 0 else 0
                 2 if i < log_n_games_detailed else 1 if i < log_n_games else 0
@@ -84,7 +84,7 @@ class Runner(object):
 
 
 def play_single_game(model0, model1=None, n_rollouts=800, c_puct=1, starting_player=0, initial_temperature=1.0,
-                     temperature_decay_factor=0.95, moves_before_dacaying=8, progress_bar=None, epoch_iter=0,
+                     temperature_decay_factor=0.95, moves_before_decaying=8, progress_bar=None, epoch_iter=0,
                      game_iter=0, sess=None, summary_writer=None, verbose=0):
     if model1 is None:
         model1 = model0
@@ -130,7 +130,7 @@ def play_single_game(model0, model1=None, n_rollouts=800, c_puct=1, starting_pla
             states_after_moves.append((envs[0].board.state.copy(), action, player_turn))
 
         moves += 1
-        if moves > moves_before_dacaying and temperature > 5e-2:
+        if moves > moves_before_decaying and temperature > 5e-2:
             temperature *= temperature_decay_factor
 
     if (player_turn == 0 and reward > 0) or (player_turn == 1 and reward < 0):

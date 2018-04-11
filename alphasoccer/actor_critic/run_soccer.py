@@ -4,7 +4,7 @@ from alphasoccer.actor_critic.trainer import learn
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Training AlphaSoccer.')
     parser.add_argument('--job-dir', type=str,
                         default=None,
                         help='Not being used now. I have to catch it while training on google cloud')
@@ -56,7 +56,7 @@ def main():
     parser.add_argument('--temperature_decay_factor', type=float,
                         default=0.95,
                         help='Decay factor of temperature.')
-    parser.add_argument('--moves_before_dacaying', type=int,
+    parser.add_argument('--moves_before_decaying', type=int,
                         default=10,
                         help='Number of moves before temperature starts to drop.')
 
@@ -107,7 +107,7 @@ def main():
           n_training_steps=args.n_training_steps, n_evaluation_games=args.n_evaluation_games,
           n_evaluations=args.n_evaluations, model_dir=args.model_dir,
           new_best_model_threshold=args.new_best_model_threshold, n_rollouts=args.n_rollouts, c_puct=args.c_puct,
-          temperature_decay_factor=args.temperature_decay_factor, moves_before_dacaying=args.moves_before_dacaying,
+          temperature_decay_factor=args.temperature_decay_factor, moves_before_decaying=args.moves_before_decaying,
           lrschedule=args.lrschedule, replay_checkpoint_dir=args.replay_dir, log_dir=args.log_dir,
           n_games_in_replay_checkpoint=args.n_games_in_replay_checkpoint,
           skip_first_self_play=args.skip_first_self_play, double_first_self_play=args.double_first_self_play,
