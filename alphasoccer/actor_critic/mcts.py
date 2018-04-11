@@ -27,6 +27,7 @@ def get_action_distribution(transitions, temperature, verbose=0):
 
     return action, pi
 
+debug=False
 
 class StateNode:
     def __init__(self, probs, value, player, legal_actions=None, terminal_state=False, c_puct=1):
@@ -54,6 +55,17 @@ class StateNode:
         }
 
         Q_U = {a: self.transitions[a].Q + U[a] for a in self.transitions}
+
+        if debug:
+            N = {a: self.transitions[a].N for a in self.transitions}
+            Q = {a: self.transitions[a].Q for a in self.transitions}
+            P = {a: self.transitions[a].P for a in self.transitions}
+
+            print("N={}".format(N))
+            print("Q={}".format(Q))
+            print("P={}".format(P))
+            print("U={}".format(U))
+            print("v={}".format(self.v))
 
         action = max(Q_U, key=Q_U.get)
 
@@ -113,6 +125,14 @@ class MCTS:
             probs = np.squeeze(probs)
             value = value.item()
 
+            if debug:
+                print("End of rollout, last state.")
+                print("Probs={}".format(probs))
+                print("Value={}".format(value))
+                print(rollout_envs[player_turn_after_action].board)
+                print("player={}".format(player_turn_after_action))
+                input()
+
             legal_actions = rollout_envs[player_turn_after_action].get_legal_moves()
             new_state_node = StateNode(probs, value, player=player_turn_after_action, legal_actions=legal_actions,
                                        c_puct=self.c_puct)
@@ -134,6 +154,16 @@ class MCTS:
             self.rollout()
 
         action, pi = get_action_distribution(self.root.transitions, temperature)
+
+        if debug:
+            N = {a: self.root.transitions[a].N for a in self.root.transitions}
+            Q = {a: self.root.transitions[a].Q for a in self.root.transitions}
+            P = {a: self.root.transitions[a].P for a in self.root.transitions}
+
+            print("N={}".format(N))
+            print("Q={}".format(Q))
+            print("P={}".format(P))
+            print("v={}".format(self.root.v))
 
         return action, pi
 
@@ -168,6 +198,13 @@ def traverse_tree(state_node, envs):
     while state_node is not None and not done:
         action = state_node.select_next_action()
         player_taking_action = state_node.player
+
+        if debug:
+            print("player={}".format(player_taking_action))
+            print("env")
+            print(envs[player_taking_action])
+            input()
+
         parent_state_node = state_node
         state_node = parent_state_node.transitions[action].state_node
 
