@@ -6,9 +6,11 @@ dots_layer = ball_layer + 1
 turn_layer = dots_layer + 1
 bias_layer = turn_layer + 1
 
+length = 6
+width = 4
 
 class Board:
-    def __init__(self, starting_game=0, length=10, width=8):
+    def __init__(self, starting_game=0, length=length, width=width):
         assert length % 2 == 0 and width % 2 == 0
         depth = bias_layer + 1
 
@@ -182,7 +184,7 @@ class Board:
         return int(self.state[0, 0, turn_layer])
 
 
-def to_string(state, length=10, width=8):
+def to_string(state, length=length, width=width):
     board_string = ''
     for row in range(int(length - 4)):
         board_string += ' '

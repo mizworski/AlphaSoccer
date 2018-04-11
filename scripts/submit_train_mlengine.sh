@@ -7,12 +7,17 @@ MAIN_TRAINER_MODULE="alphasoccer.actor_critic.run_soccer"
 PACKAGE_STAGING_PATH="gs://alphasoccer/package/"
 
 now=$(date +"%Y%m%d_%H%M%S")
-JOB_NAME="training_$now"
+base=training_20180325_130527
+JOB_NAME=training_${now}_base_${base}
+
+
 JOB_DIR=gs://alphasoccer/jobs/${JOB_NAME}
 LOG_DIR=gs://alphasoccer/logs/${JOB_NAME}
 MODEL_DIR=gs://alphasoccer/models/${JOB_NAME}
 REPLAY_DIR=gs://alphasoccer/replays/${JOB_NAME}
 
+gsutil -m cp gs://alphasoccer/models/${base}/* ${MODEL_DIR}/
+gsutil -m cp gs://alphasoccer/replays/${base}/* ${REPLAY_DIR}/
 
 gcloud ml-engine jobs submit training ${JOB_NAME} \
     --job-dir ${JOB_DIR} \
@@ -27,11 +32,12 @@ gcloud ml-engine jobs submit training ${JOB_NAME} \
     --n_evaluations 10 \
     --n_training_steps 1024 \
     --batch_size 512 \
-    --n_games_in_replay_checkpoint 128 \
+    --n_games_in_replay_checkpoint 256 \
     --model_dir ${MODEL_DIR} \
     --log_dir ${LOG_DIR} \
     --replay_dir ${REPLAY_DIR} \
-    --learning_rate 1e-3 \
-    --n_rollouts 150 \
+    --learning_rate 2e-3 \
+    --n_rollouts 750 \
     --n_replays 768 \
-    --n_self_play_games 512
+    --n_self_play_games 512 \
+    --c_puct 5.0
