@@ -76,13 +76,11 @@ class Model(object):
             }
 
             if train_iter % 128 == 0:  # Record execution stats
-                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-                run_metadata = tf.RunMetadata()
+                # run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                # run_metadata = tf.RunMetadata()
                 summary, policy_loss, value_loss, _ = sess.run([detailed_summaries, pg_loss, vf_loss, _train],
-                                                               feed_dict=td_map,
-                                                               options=run_options,
-                                                               run_metadata=run_metadata)
-                self.summary_writer.add_run_metadata(run_metadata, 'step%03d' % train_iter)
+                                                               feed_dict=td_map)
+                # self.summary_writer.add_run_metadata(run_metadata, 'step%03d' % train_iter)
                 self.summary_writer.add_summary(summary, train_iter)
             else:
                 summary, policy_loss, value_loss, _ = sess.run(
