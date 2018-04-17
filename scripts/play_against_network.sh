@@ -3,7 +3,7 @@
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
 now=$(date +"%Y%m%d_%H%M%S")
-JOB_NAME="april_training"
+JOB_NAME="resnet"
 LOG_DIR=models/logs/${JOB_NAME}${now}
 MODEL_DIR=models/${JOB_NAME}
 #MODEL_DIR=models/smaller_board

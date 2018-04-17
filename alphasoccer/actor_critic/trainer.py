@@ -45,18 +45,19 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
         progress_bar.update(1)
 
       progress_bar.close()
-      new_model_won = runner.evaluate(model, n_games=n_evaluation_games,
-                                      initial_temperature=evaluation_temperature,
-                                      n_rollouts=n_rollouts, new_best_model_threshold=new_best_model_threshold,
-                                      temperature_decay_factor=temperature_decay_factor,
-                                      moves_before_decaying=moves_before_decaying, eval_iter=eval_iter,
-                                      verbose=verbose)
-      eval_iter += 1
-      if new_model_won:
-        model_iterations += 1
-        model.update_best_player()
-        model.save(model_iterations)
-        print('New best player saved iter={}.'.format(model_iterations), file=sys.stderr)
-        break
+      if n_evaluation_games > 0:
+        new_model_won = runner.evaluate(model, n_games=n_evaluation_games,
+                                        initial_temperature=evaluation_temperature,
+                                        n_rollouts=n_rollouts, new_best_model_threshold=new_best_model_threshold,
+                                        temperature_decay_factor=temperature_decay_factor,
+                                        moves_before_decaying=moves_before_decaying, eval_iter=eval_iter,
+                                        verbose=verbose)
+        eval_iter += 1
+        if new_model_won:
+          model_iterations += 1
+          model.update_best_player()
+          model.save(model_iterations)
+          print('New best player saved iter={}.'.format(model_iterations), file=sys.stderr)
+          break
 
   model.summary_writer.close()

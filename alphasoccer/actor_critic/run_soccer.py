@@ -73,7 +73,7 @@ def main():
                         default=1.0,
                         help='PUCT constant.')
     parser.add_argument('--lrschedule', type=str,
-                        default='stairs',
+                        default='constant',
                         help='Schedule for learning rate (constant, linear, stairs).')
 
     parser.add_argument('--n_kernels', type=int,
