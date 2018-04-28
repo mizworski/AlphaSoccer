@@ -2,10 +2,9 @@
 
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 now=$(date +"%Y%m%d_%H%M%S")
-JOB_NAME="resnet_v1"
+JOB_NAME="resnet_standard_size"
 LOG_DIR=models/logs/${JOB_NAME}_${now}
 MODEL_DIR=models/${JOB_NAME}
-#MODEL_DIR=models/smaller_board
 REPLAY_DIR=data/replays/${JOB_NAME}
 
 python3 alphasoccer/actor_critic/run_soccer.py \
@@ -17,14 +16,14 @@ python3 alphasoccer/actor_critic/run_soccer.py \
     --n_evaluations 10 \
     --n_training_steps 1024 \
     --batch_size 512 \
-    --n_games_in_replay_checkpoint 512 \
+    --n_games_in_replay_checkpoint 256 \
     --learning_rate 1e-4 \
     --n_rollouts 500 \
     --n_replays 2048 \
     --n_self_play_games 2048 \
     --c_puct 10.0 \
-    --n_kernels 96 \
-    --residual_blocks 7 \
+    --n_kernels 128 \
+    --residual_blocks 8 \
     --vf_coef 1.5 \
     --moves_before_decaying 3
 

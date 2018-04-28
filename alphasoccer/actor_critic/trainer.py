@@ -14,7 +14,7 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
           c_puct=1, temperature_decay_factor=0.95, moves_before_decaying=8, lrschedule='constant',
           replay_checkpoint_dir=os.path.join('data', 'replays'), log_dir=os.path.join('models', 'logs'),
           n_games_in_replay_checkpoint=200,
-          skip_first_self_play=False, double_first_self_play=False, n_kernels=128, reg_fact=1e-3,
+          skip_first_self_play=False, n_kernels=128, reg_fact=1e-3,
           residual_blocks=8, verbose=1):
   n_training_timesteps = n_evaluations * n_training_steps
 
@@ -30,9 +30,9 @@ def learn(batch_size=1024, n_self_play_games=int(4e3), n_replays=int(3e6), n_tot
   for epoch in range(n_total_timesteps):
     print("Training epoch = {}".format(epoch), file=sys.stderr)
     if (epoch != 0 or not skip_first_self_play) and n_self_play_games > 0:
-      runner.run(n_games=(n_self_play_games // 2), initial_temperature=initial_temperature, n_rollouts=n_rollouts,
-                 temperature_decay_factor=temperature_decay_factor, moves_before_decaying=moves_before_decaying)
-      runner.run(n_games=(n_self_play_games // 2), initial_temperature=initial_temperature, n_rollouts=n_rollouts,
+      playing_turns = n_self_play_games // n_games_in_replay_checkpoint
+      for _ in range(playing_turns):
+        runner.run(n_games=n_games_in_replay_checkpoint, initial_temperature=initial_temperature, n_rollouts=n_rollouts,
                  temperature_decay_factor=temperature_decay_factor, moves_before_decaying=moves_before_decaying)
 
     model.lr.reset_steps()

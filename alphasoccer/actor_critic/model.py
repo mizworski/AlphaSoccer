@@ -47,8 +47,8 @@ class Model(object):
         reg_loss = tf.reduce_mean(tf.losses.get_regularization_losses(scope='training_player'))
         basic_summaries_list.append(tf.summary.scalar('reg_loss', reg_loss))
 
-      # loss = pg_loss + vf_loss * vf_coef + reg_loss
-      loss = vf_loss
+      loss = pg_loss + vf_loss * vf_coef + reg_loss
+      # loss = vf_loss
       basic_summaries_list.append(tf.summary.scalar('total_loss', loss))
 
     params = tf.trainable_variables(scope=training_player_scope)
@@ -60,8 +60,8 @@ class Model(object):
     detailed_summaries = tf.summary.merge_all()
     self.summary_writer = tf.summary.FileWriter(log_dir, sess.graph)
 
-    # trainer = tf.train.MomentumOptimizer(learning_rate=LR, momentum=momentum)
-    trainer = tf.train.AdamOptimizer(learning_rate=LR)
+    trainer = tf.train.MomentumOptimizer(learning_rate=LR, momentum=momentum)
+    # trainer = tf.train.AdamOptimizer(learning_rate=LR)
     _train = trainer.apply_gradients(grads)
 
     self.lr = Scheduler(v=lr, n_values=training_timesteps, schedule=lrschedule)

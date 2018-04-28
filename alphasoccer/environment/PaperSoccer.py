@@ -2,8 +2,8 @@ import numpy as np
 from gym.spaces import Box, Discrete
 from alphasoccer.environment.Board import Board
 
-length=6
-width=4
+length=10
+width=8
 
 class Soccer:
     observation_space = Box(0, 1, shape=[length + 1, width + 1, 12])

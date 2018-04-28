@@ -110,8 +110,7 @@ def main():
           temperature_decay_factor=args.temperature_decay_factor, moves_before_decaying=args.moves_before_decaying,
           lrschedule=args.lrschedule, replay_checkpoint_dir=args.replay_dir, log_dir=args.log_dir,
           n_games_in_replay_checkpoint=args.n_games_in_replay_checkpoint,
-          skip_first_self_play=args.skip_first_self_play, double_first_self_play=args.double_first_self_play,
-          n_kernels=args.n_kernels, reg_fact=args.reg_factor, residual_blocks=args.residual_blocks,
+          skip_first_self_play=args.skip_first_self_play, n_kernels=args.n_kernels, reg_fact=args.reg_factor, residual_blocks=args.residual_blocks,
           verbose=args.verbose)
 
 

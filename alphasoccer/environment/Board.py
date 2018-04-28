@@ -6,8 +6,8 @@ dots_layer = ball_layer + 1
 turn_layer = dots_layer + 1
 bias_layer = turn_layer + 1
 
-length = 6
-width = 4
+length = 10
+width = 8
 
 class Board:
     def __init__(self, starting_game=0, length=length, width=width):

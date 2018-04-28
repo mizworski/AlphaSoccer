@@ -104,10 +104,10 @@ def _block_layer(net, kernels, num_blocks, name, building_block_type='resnet_v2'
 
   return net
 
-
+# todo move block_sizes to params
 class ResNetPolicy:
   def __init__(self, sess, ob_space, n_act, scope, reuse=False, histograms=False, n_kernels=128, reg_fact=1e-4,
-               residual_blocks=8, block_sizes=(7, )):
+               residual_blocks=8, block_sizes=(10, )):
     input_layer_shape = [None] + list(ob_space.shape)
     X = tf.placeholder(tf.float32, input_layer_shape, name='input_layer')
 
