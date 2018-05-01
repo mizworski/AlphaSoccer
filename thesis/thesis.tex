@@ -92,6 +92,13 @@
 \graphicspath{ {img/} }
 \usepackage{amsfonts}
 \usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
 
 % koniec definicji
 
@@ -130,22 +137,14 @@ W ten sam sposób uczymy się przez całe życie, jednocześnie poznając otacza
 
 \section{Piłkarzyki na kartce}
 
-\begin{wrapfigure}{r}{0.25\textwidth} %this figure will be at the right
-    \centering
-    \includegraphics[width=0.2\textwidth]{board}
-    \caption{Pusta plansza}
-    
-    \centering
-    \includegraphics[width=0.2\textwidth]{odbicie}
-    \caption{Odbicie (kolor czerwony)}
-    
-    \centering
-    \includegraphics[width=0.2\textwidth]{zablokowanie}
-    \caption{Zablokowanie bramki}
-\end{wrapfigure}
-
 Piłkarzyki na kartce to gra strategiczna, odbywającą się na prostokątnym boisku, rysowanym zazwyczaj na kartce w kratę.
 Gracze na przemian wykonują ruchy polegające na przemieszczeniu piłki na sąsiednie pola, aż znajdzie się ona w jednej z bramek lub nie będzie możliwe wykonanie kolejnego ruchu.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.2\textwidth]{board}
+  \caption{Pusta plansza}
+\end{figure}
 
 Najczęściej stosowanym wymiarem planszy jest 8x10 kratek.
 Przy krótszych bokach narysowane są dwie bramki o szerokości 2 kratek, w których gracze muszą umieścić piłkę.
@@ -155,21 +154,28 @@ Rozgrywka toczy się jedynie na przecięciach linii.
 Ruchy nie mogą odbywać się po brzegu planszy ani wzdłuż odcinków, po których wcześniej piłka była już prowadzona.
 Możliwe jest odbijanie się, które polega na wykonaniu przez gracza dodatkowego ruchu. Następuje ono gdy ruch zostanie zakończony w miejscu, w którym kończy się już linia narysowana przez jednego z graczy lub na brzegu boiska. 
 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.2\textwidth]{odbicie}
+  \caption{Odbicie (kolor czerwony)}
+\end{figure}
+
 Gra kończy się w momencie gdy piłka znajdzie się w jednej z bramek.
 Wówczas gracz, do którego należy dana bramka, przegrywa. 
 Gracz może również przegrać w wypadku gdy nie jest w stanie wykonać żadnego ruchu.
- 
+
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.2\textwidth]{zablokowanie}
+  \caption{Zablokowana bramka}
+\end{figure}
  
 \chapter{Uczenie ze Wzmocnieniem}\label{r:rl}
 
 \section{Wprowadzenie}
 
-Uczenie ze wzmocnieniem (ang. Reinforcement Learning, RL) jest działem uczenia maszynowego, zajmującym się sekwencyjnym podejmowaniem decyzji. Na proces uczenia składa się agent oraz środowisko, z którym wchodzi on w interakcje. 
-
-todo dopisać o tym że akcje wykonujemy krok po kroku w czasie. napisać czym jest epizod
-
-Po każdej wykonanej akcji, agent obserwuje jaką nagrodę otrzymał. Jest to jedyny sposób w jaki może on oceniać jakość podjętych przez siebie decyzji. 
-Zadaniem agenta jest wyuczenie się optymalnej polityki - funkcji która każdemu stanowi przyporządkowuje akcję, która maksymalizuje wartość oczekiwaną sumy wszystkich przyszłych nagród. 
+Uczenie ze wzmocnieniem (ang. Reinforcement Learning, RL) jest działem uczenia maszynowego, zajmującym się sekwencyjnym podejmowaniem decyzji. Na proces uczenia składa się \emph{agent}, który uczy się podejmować decyzje oraz \emph{środowisko}, które stanowi cały świat zewnętrzy dla agenta. Interakcja między nimi polega na naprzemiennym wykonywaniu akcji przez agenta oraz prezentowaniu nowej sytuacji, w której on się znalazł i nagrody jaką otrzymał przez środowisko. Celem agenta jest maksymalizacja nagród, które otrzymuje.
 Podczas procesu uczenia się, nigdy nie wskazujemy agentowi którą akcje powinien on wykonać, co stanowi główną różnice pomiędzy uczeniem ze wzmocnieniem a uczeniem nadzorowanym (ang. Supervised Learning). 
 
 \section{Dyskretny Proces Markowa}
@@ -187,31 +193,39 @@ $$ R(s, a, s') = \mathbb{E}(r_{t+1} \mid s_t = s, a_t = a, s_{t+1} = s') $$
 \item współczynnik dyskontującego wartości nagród otrzymywanych w przyszłości $ \gamma \in [0, 1] $
 \end{itemize}
 
-Funkcja nagrody oraz prawdopodobieństwo przejścia są najbardziej istotnymi elementami MDP i są zazwyczaj nieznane podczas rozwiązywania problemu uczenia ze wzmocnieniem.
+
+\section{Wynik oraz epizody}
+
+Interakcja między agentem a środowiskiem zachodzi w każdym, dyskretnym punkcie czasu $ t = 0, 1, 2, ... $. Znajdując się w punkcie czasu $t$, agent obserwuje stan $ s_t \in \mathcal{S} $, w którym się znajduję, na jego podstawie wykonuje akcję $ a_t \in \mathcal{A}(s) $, gdzie $ \mathcal{A}(s) $ jest zbiorem wszystkich akcji, które można wykonać znajdując się w stanie $s$. W kolejnym kroku dowiaduje się on jaką nagrodę $ r_{t+1} \in \mathbb{R} $ otrzymał i do jakiego stanu $ s_t{t+1} $ się przeniósł. W wyniku otrzymujemy następujący ciąg stanów, akcji oraz nagród, zwany \emph{trajektorią}:
+
+$$ s_0, a_0, r_1, s_1, a_1, r_2, ... $$
+
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.5\textwidth]{agent_env_interaction}
+  \caption{Interakcja między agentem a środowiskiem jako Dyskretny Proces Markowa}
+\end{figure}
+
+Najprostszym typem środowisk są te w których ilość kroków jest z góry ograniczona. Pojedynczy ciąg interakcji nazywamy wówczas \emph{epizodem}, a ostatni stan obserwowany przez agenta -- \emph{stanem terminalnym}. W tym wypadku epizody są od siebie niezależne, mogą się one kończyć w różnych stanach oraz po różnej ilości kroków. 
+
+Celem naszego agenta jest maksymalizacja wartości oczekiwanej sumy nagród, które zdobędzie on w przyszłości. Określmy ją jako \emph{wynik}, $ G_t $, który zdefiniowany jest następująco:
+
+$$ G_t = r_{t+1} + r_{t+2} + r_{t+3} + ... + r_{T-1} = r_{t+1} + G_{t+1} $$
+
+gdzie $T$ jest końcem epizodu, a $t$ indeksem czasu. Sam problem nauczenia naszego agenta w jaki sposób powinien on podejmować decyzje, aby osiągnąć najwyższy wynik, nazywamy \emph{epizodycznym zadaniem}.
+
+Możemy również spotkać się ze środowiskami, z którymi interakcja przebiega nieprzerwanie. Mamy wówczas do czynienia z \emph{ciągłym zadaniem}. Wprowadzamy wówczas koncepcje \emph{dyskontowania} wyniku, który definiujemy następująco:
+
+$$ G_t = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + ... = 
+\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} $$
+
+gdzie $ \gamma \in [0, 1) $.
+
 
 \section{Polityka}
 
 Polityka jest funkcją która każdemu stanowi przyporządkowuje akcję. Może być ona deterministyczna, $ \pi(s) $, bądź też stochastyczna, $ \pi(a \mid s) $, i wówczas stanowić rozkład prawdopodobieństwa wszystkich akcji dla ustalonego stanu. Metody uczenia ze wzmocnieniem określają w jaki sposób polityka jest modyfikowana na podstawie doświadczenia zbieranego przez agenta.
-
-\section{Zakumulowana Nagroda}
-
-Naszym celem jest znalezienie polityki, która będzie maksymalizować wartość oczekiwaną sumy nagród, które nasz agent otrzyma w przyszłości. Sumę nagród określmy mianem \emph{zakumulowanej nagrody}, $ G_t $, która zdefiniowana jest następująco:
-
-$$ G_t = r_{t+1} + r_{t+2} + r_{t+3} + ... + r_{T-1} = r_{t+1} + G_{t+1} $$
-
-gdzie $T$ jest końcem epizodu, a $t$ indeksem czasu.
-
-Możemy również skorzystać z \emph{zdyskontowanej zakumulowanej nagrody}, która zdefiniowana jest następująco:
-
-$$ G_t = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + ... + \gamma^{T-1}r_{T} = 
-\sum_{k=0}^{T-1} \gamma^k r_{t+k+1} $$
-
-Szczególnie przydatna jest ona w przypadku nieograniczonych epizodów, wówczas:
-
-$$ G_t = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + ...  = 
-\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} $$
-
-wtedy $ \gamma \in [0, 1) $.
 
 \section{Funkcja Wartości}
 
@@ -267,22 +281,91 @@ q_{\ast}(s, a) &= \mathbb{E}[r_{t+1} + \gamma \max_{a'} q_{\ast} (S_{t+1}, a') \
 &= \sum_{s', r} p(s', r \mid s, a) \Big[r + \gamma \max_{a'} q_{\ast} (s', a') \Big]
 \end{align}
 
+\section{Metody uczenia ze wzmocnieniem}
 
-\section{Metody nie uwzględniające Modelu}
+Metody rozwiązywania problemu uczenia ze wzmocnieniem możemy podzielić ze względu na to, czy wykorzystują one model środowiska. Metody \emph{model-based} wymagają od nas \emph{modelu} środowiska, z którego nasz agent będzie korzystał podczas aby przewidzieć w jaki sposób środowisko będzie zachowywało się w odpowiedzi na wykonywane przez niego akcje.
+Dzięki temu możliwe jest \emph{planowanie}, które pozwala na przewidywanie zachowania środowiska wiele kroków wprzód. Tego typu problemy możemy spotkać przy okazji nauki naszego agenta w Go, gdzie środowisko imitowane jest przez niego samego, podczas gdy gra on sam ze sobą. 
+Drugą klasą algorytmów są metody \emph{model-free}, w których agent posiada jedynie politykę oraz funkcję wartości, a samo zachowanie środowiska jest dla niego nieznane i może on obserwować jedynie bezpośrednie skutki swoich działań. Z takimi problemami spotykamy się np. w przypadku gry naszego agenta na Atari, gdzie nie próbujemy dowiedzieć się jakie prawa rządzą poszczególnymi grami, a zamiast tego po prostu dajemy naszemu agentowi grać.
 
+\subsection{Metody Monte Carlo}
 
+Metody Monte Carlo korzystają z idei \emph{uogólnionej iteracji polityki}, która składa się z dwóch, przeplatających się ze sobą procesów. Pierwszy krok, nazywany \emph{krokiem ewaluacji polityki}, polega na aproksymacji funkcji wartości na podstawie polityki, wykorzystywanej przez agenta. Z kolei w drugim kroku ulepszamy obecną politykę, przy użyciu wcześniej uzyskanej funkcji wartości. Nazywamy go \emph{krokiem ulepszania polityki}.
 
-\subsection{Metody bazujące na Funkcji Wartości} 
+W przypadku metod Monte Carlo, ewaluacje polityki wykonujemy poprzez próbkowanie kolejnych trajektorii, a następnie wyliczanie średniego wyniku dla każdego ze stanów, bądź każdej pary stan-akcja. Zbierana przez nas historia akcji w postaci trajektorii nazywamy \emph{doświadczeniem} agenta. Najprostszy sposób aktualizacji funkcji wartości może wyglądać następująco:
 
-\subsection{Metody bazujące na Polityce} 
+$$ v(s_t) \leftarrow v(s_t) + \alpha \big[G_t - v(s_t)\big] $$
 
-\subsection{Metody Aktor-Krytyk}
+gdzie $G_t$ oznacza wynik agenta następujący po czasie $t$, a $\alpha$ parametrem wpływającym na szybkość uczenia się.
+
+Ulepszanie polityki następuje poprzez zachłanny wybór najlepszej akcji dla każdego ze stanów, przy pomocy funkcji wartości akcji. Jednak w przypadku takiego doboru polityki, skazujemy się na deterministyczną politykę, która nie jest w stanie odkrywać nowych, potencjalnie lepszych akcji, gdyż cały czas wybierać będzie ona te same akcje. 
+
+Aby utrzymać eksploracje nowych akcji oraz stanów, wprowadzamy pojęcie \emph{$\epsilon$--zachłannej} polityki, która z wysokim prawdopodobieństwem wykonuje akcję, która maksymalizuje wartość funkcji wartości akcji, a od czasu do czasu wykonuje losową akcję. Dzięki temu utrzymujemy stały poziom eksploracji, a przy niewielkich założeniach dla epsilona polityka zbiega do optymalnej.
+
+$$
+\pi(a \mid s) =
+\begin{cases}
+    1 - \epsilon + \epsilon/\lvert \mathcal{A}(s) \rvert & \text{if } a = a^\ast \\
+    \epsilon/\lvert \mathcal{A}(s),              & \text{if } a\neq a^\ast
+\end{cases}
+$$
+
+Metody Monte Carlo cierpią z powodu wysokiej wariancji podczas uczenia, przez co potrzeba bardzo wielu iteracji, aby agent mógł wyuczyć się sensownej polityki. Są one przykładem metod model-free.
+
+\subsection{Temporal-Difference Learning} 
+
+Prawdopodobnie najważniejszą ideą wykorzystywaną  w uczeniu ze wzmocnieniem jest \emph{temporal-difference} (TD) learning. Podobnie do metod Monte Carlo wykorzystuje ono doświadczenie agenta, bez użycia modelu środowiska. Nie jest wymagane jednak oczekiwanie na zakończenie epizodu, aby zaktualizować wartość funkcji wartości, a zamiast tego aktualizacje mogą następować po wykonaniu pojedynczego kroku. Aktualizacja funkcji wartości w przypadku TD learning może wyglądać następująco:
+
+$$ V(S_t) \leftarrow V(S_t) + \alpha \big[R_{t+1} + \gamma V(S_{t+1}) - V(S_t) \big] $$
+
+Sposób tej aktualizacji nazywany jest \emph{TD(0)} lub też \emph{jedno--krokowym} TD, a sam wyraz o który aktualizowana jest wartość:
+
+$$ \delta_t = R_{t+1} + \gamma V(S_{t+1}) - V(S_t) $$
+
+nazywamy \emph{błędem TD}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=1.0\textwidth]{mc_td}
+  \caption{Porównanie aktualizacji funkcji wartości w przypadku metod Monte Carlo (po lewej) oraz metod TD (po prawej)}
+\end{figure}
+
+Metody w uczeniu ze wzmocnieniem dzielimy również ze względu na to czy ewaluacja polityki przebiega przy użyciu polityki, która została wykorzystana podczas generowania trajektorii. Metody ewaluujące tę samą politykę nazywamy \emph{on-policy}, natomiast te które działają na różnych politykach nazywamy \emph{off-policy}.
+
+Dwoma podstawowymi algorytmami zaliczającymi się do TD learning jest \emph{SARSA (State-Action-Reward-State-Action} oraz \emph{Q-Learning}.
+
+SARSA jest przykładem metody on-policy, która wykorzystuje funkcję wartości akcji, zamiast funkcji wartości stanu. Algorytm aktualizacji funkcji wartości oraz wyboru polityki wygląda następująco:
+
+\begin{algorithm}
+\caption{SARSA}\label{sarsa}
+\begin{algorithmic}[1]
+\State $\textit{Zainicjalizuj } Q(s, a) \textit{ losowo oraz } Q(\textit{\emph{stan-terminalny}}, \cdot ) = 0$
+
+\Repeat $ \textit{ (dla każdego epizodu)} $
+\State $\textit{Zainicjalizuj } S$
+\State $\textit{Wybierz akcję A dla stanu S korzystając z polityki pochodzącej z Q (np. } \epsilon \textit{-zachłanną)} $
+
+\Repeat $\textit{ (dla każdego kroku w epizodzie)} $
+
+\State $ \textit{Wykonaj akcję A, zaobserwuj R, S'} $
+\State $ \textit{Wybierz akcję A' dla stanu S' korzystając z polityki pochodzącej z Q (np. } \epsilon \textit{-zachłanną)} $
+\State $ Q(S, A) \gets Q(S,A) + \alpha \big[ R + \gamma Q(S', A') - Q(S, A) \big] $
+\State $ S \gets S'; A \gets A'; $
+
+\Until $ S \textit{ jest stanem terminalnym} $
+
+\Until $ \textit{(koniec epizodów)}$ 
+\end{algorithmic}
+\end{algorithm}
 
 \section{Podsumowanie}
 
 \chapter{Głębokie Sieci Neuronowe}
 
 \chapter{Głębokie Uczenie ze Wzmocnieniem}
+
+\chapter{Gra w piłkarzyki na kartce}
+
+\chapter{Wnioski}
 
 \begin{thebibliography}{99}
 \addcontentsline{toc}{chapter}{Bibliografia}
