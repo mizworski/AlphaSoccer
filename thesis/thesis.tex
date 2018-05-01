@@ -171,6 +171,14 @@ Gracz może również przegrać w wypadku gdy nie jest w stanie wykonać żadneg
   \caption{Zablokowana bramka}
 \end{figure}
  
+\section{Cel badawczy} 
+ 
+\section{Podejście} 
+
+\section{Wkład własny}
+
+\section{Zarys pracy}
+ 
 \chapter{Uczenie ze Wzmocnieniem}\label{r:rl}
 
 \section{Wprowadzenie}
@@ -235,7 +243,7 @@ $$ v_{\pi}(s) = \mathbb{E}_{\pi}[G_t \mid S_t = s] = \mathbb{E}_{\pi} \Bigg[ \su
 
 gdzie $ \mathbb{E}_{\pi} $ jest wartością oczekiwaną przy założeniu że agent kieruje się polityką $\pi$, z kolei $t$ jest dowolnym punktem w czasie. 
 
-Podobnie definiujemy wartość wybrania akcji $a$, gdy znajdujemy się w stanie $s$ oraz podążamy zgodnie z polityką $\pi$, oznaczaną jako $q_{\pi}(s, a)$. Jest ona wartością oczekiwaną z sytuacji w której rozpoczynamy w stanie $s$, wykonujemy akcję $a$, po czym wszystkie kolejne akcje wykonujemy zgodnie z polityką $\pi$. Funkcję tę nazywamy \emph{funkcją wartości akcji}.
+Podobnie definiujemy wartość wybrania akcji $a$, gdy znajdujemy się w stanie $s$ oraz podążamy zgodnie z polityką $\pi$, oznaczaną jako $q_{\pi}(s, a)$. Jest ona wartością oczekiwaną z sytuacji w której rozpoczynamy w stanie $s$, wykonujemy akcję $a$, po czym wszystkie kolejne akcje wykonujemy zgodnie z polityką $\pi$. Funkcję tę nazywamy \emph{funkcją wartości akcji} lub \emph{Q-funkcją}.
 
 $$ q_{\pi}(s, a) = \mathbb{E}_{\pi}[G_t \mid S_t = s, A_t = a] = \mathbb{E}_{\pi} \Bigg[ \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \bigg| S_t = s, A_t = a \Bigg] $$
 
@@ -333,82 +341,118 @@ Metody w uczeniu ze wzmocnieniem dzielimy również ze względu na to czy ewalua
 
 Dwoma podstawowymi algorytmami zaliczającymi się do TD learning jest \emph{SARSA (State-Action-Reward-State-Action} oraz \emph{Q-Learning}.
 
-SARSA jest przykładem metody on-policy, która wykorzystuje funkcję wartości akcji, zamiast funkcji wartości stanu. Algorytm aktualizacji funkcji wartości oraz wyboru polityki wygląda następująco:
+SARSA jest przykładem metody on-policy, która wykorzystuje funkcję wartości akcji, zamiast funkcji wartości stanu. W przypadku tej metody aktualizacja funkcji wartości akcji jest następująca:
 
-\begin{algorithm}
-\caption{SARSA}\label{sarsa}
-\begin{algorithmic}[1]
-\State $\textit{Zainicjalizuj } Q(s, a) \textit{ losowo oraz } Q(\textit{\emph{stan-terminalny}}, \cdot ) = 0$
+$$ Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha \big[R_{t+1} + \gamma Q(S_{t+1}, A_{t+1}) - Q(S_t, A_t) \big] $$
 
-\Repeat $ \textit{ (dla każdego epizodu)} $
-\State $\textit{Zainicjalizuj } S$
-\State $\textit{Wybierz akcję A dla stanu S korzystając z polityki pochodzącej z Q (np. } \epsilon \textit{-zachłanną)} $
+Aktualizacja ta zachodzi dla każdego nieterminalnego stanu $S_t$, a w przypadku gdy $S_{t+1}$ jest terminalny, to $ Q(S_{t+1}, A_{t+1}) $ definiujemy jako zero. Cały proces zależny jest od piątki $ (S_t, A_t, R_{t+1}, S_{t+1}, A_{t+1}) $, skąd pochodzi nazwa algorytmu \emph{SARSA}.
 
-\Repeat $\textit{ (dla każdego kroku w epizodzie)} $
+Q-Learning natomiast jest przykładem metody off-policy, w której aktualizacja Q-funkcji przebiega następująco:
 
-\State $ \textit{Wykonaj akcję A, zaobserwuj R, S'} $
-\State $ \textit{Wybierz akcję A' dla stanu S' korzystając z polityki pochodzącej z Q (np. } \epsilon \textit{-zachłanną)} $
-\State $ Q(S, A) \gets Q(S,A) + \alpha \big[ R + \gamma Q(S', A') - Q(S, A) \big] $
-\State $ S \gets S'; A \gets A'; $
+$$ Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha \big[R_{t+1} + \gamma \max_a Q(S_{t+1}, a) - Q(S_t, A_t) \big] $$
 
-\Until $ S \textit{ jest stanem terminalnym} $
+W ten sposób uczona się przez nas funkcja $Q$ bezpośrednio aproksymuje $Q_\ast$, niezależnie od tego jaka polityka jest przez nas wykorzystywana do wybierania kolejnych akcji.
 
-\Until $ \textit{(koniec epizodów)}$ 
-\end{algorithmic}
-\end{algorithm}
+\subsection{Rollout Algorithms}
+
+Metody wykorzystujące model do podejmowania decyzji, nazywane metodami \emph{model-based}, opierają się na planowaniu kolejnych ruchów, które w przyszłości podejmie nasz agent. Główną metodą planowania jest \emph{planowanie w momencie podjęcia decyzji}, które skupia się na podejmowaniu decyzji po znalezieniu się w konkretnym stanie $S_t$, a więc wyborze akcji $A_t$. Najważniejszy dla nas wówczas jest stan, w którym się znaleźliśmy, mniej natomiast te odległe bądź już odwiedzone, do których już nigdy nie powrócimy. Niezwykle użyteczne okazują się one w przypadku gdy na podjęcie decyzji możemy poświęcić trochę czasu, jak np. w przypadku szachów czy Go, mniej przydatne będzie ono jeśli nasz program będzie musiał bardzo szybko podejmować decyzje. 
+
+Algorytmy typu rollout są algorytmami planowania w momencie podjęcia decyzji  i bazują na bardzo podobnej zasadzie co metody Monte Carlo. Przybliżają one funkcję wartości akcji dla stanu, w którym się znajdują, za pomocą symulowania kolejnych trajektorii, podobnie jak w przypadku ewaluacji polityki w Monte Carlo. Ich celem jednak nie jest znalezienie optymalnej polityki $\pi_\ast$ czy też funkcji $q_\ast$, a zamiast tego służą nam do stworzenia \emph{rollout polityki} za każdym razem gdy znajdziemy się w jakimś stanie. Okazuje się że polityki otrzymane w ten sposób radzą sobie nadzwyczaj dobrze.
+
+\subsection{Monte Carlo Tree Search}
+
+Przeszukiwanie drzew metodą Monte Carlo, czyli \emph{Monte Carlo Tree Search (MCTS)} jest dość nowym podejściem w uczeniu ze wzmocnieniem, wykorzystanym między innymi w takich programach jak AlphaGo. 
+
+MCTS jako algorytm rollout symuluje kolejne trajektorie rozpoczynające się w obecnym stanie, a kończące na stanie terminalnym. Rozszerza on ten pomysł poprzez przechowywanie i aktualizację funkcji wartości akcji dla kolejnych ruchów, zamiast jak to było w poprzednim przypadku, tylko dla stanu w którym się on znajduje. Tworzone jest wówczas drzewo, ukorzenione w obecnym stanie, które wraz z kolejnymi symulacjami się rozszerza i dokładniej aproksymuje Q funkcję. Dla stanów obecnych w drzewie, decyzję podejmujemy na podstawie funkcji wartości zawartej w węzłach drzewa, a politykę wytworzoną w ten sposób nazywamy \emph{polityką drzewa}. Gdy podczas symulowania trajektorii dochodzimy do liścia w naszym drzewie, to dalsza symulacja wykonywana jest na podstawie rollout polityki. Eksporacja zapewniona jest na poziomie polityki drzewa, na przykład za pomocą zastosowania polityki $\epsilon$-zachłannej.
+
+Pojedyncza iteracja MCTS dzieli się na cztery kroki:
+
+\begin{enumerate}
+\item \textbf{Wybór.} Wybierane są kolejne stany należące do drzewa na podstawie polityki utworzonej z wartości funkcji akcji, która zdefiniowana jest przez krawędzie grafu. Przejście przez drzewo rozpoczyna się w korzeniu, a kończy w liściu drzewa.
+\item \textbf{Rozwinięcie.} Drzewo jest rozszerzane w liściu, który został osiągnięty w poprzednim kroku, poprzez dodanie nowych węzłów jako dzieci dla tego liścia. Nowe węzły reprezentują stany, które wcześniej nie były obecne w drzewie.
+\item \textbf{Symulacja.} Zaczynając w węźle wybranym w pierwszym punkcie, rozpoczynana jest symulacja na podstawie polityki rollout. W wyniku otrzymujemy trajektorię, której pierwsze ruchy zostały wybrane za pomocą polityki drzewa, a pozostałe -- polityki rollout.
+\item \textbf{Propagacja wsteczna.} Wynik agenta jest propagowany wstecz do aktualizacji istniejących węzłów, bądź utworzenia nowych. Proces ten dotyczy jedynie stanów, które znajdują się w drzewie.
+\end{enumerate}
+
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=0.85\textwidth]{mcts}
+  \caption{Kolejne kroki podczas rozwijania drzewa w MCTS}
+\end{figure}
+
 
 \section{Podsumowanie}
 
+W tym rozdziale zaprezentowane zostały podstawowe podejścia oraz koncepcje stosowane w uczeniu ze wzmocnieniem. Podczas tworzenia programów rozwiązujących gry strategiczne na planszy, jakimi są piłkarzyki na kartce czy Go, będziemy ze sobą łączyć te techniki, wzbogacając je dodatkowo o sieci neuronowe. W kolejnym rozdziale bliżej przyjrzymy się sieciom neuronowym, aby zrozumieć w jaki sposób one działają i jak możemy zastosować je do rozwiązania naszego problemu.
+
 \chapter{Głębokie Sieci Neuronowe}
+
+\section{Wprowadzenie}
+
+\section{Sieci jednokierunkowe}
+
+\section{Funkcje aktywacji}
+
+\section{Funkcja kosztu}
+
+\section{Algorytm propagacji wstecznej}
+
+\section{Regularyzacja}
+
+\section{Normalizacja batchów}
+
+\section{Konwolucyjne Sieci Neuronowe}
+
+\section{Głębokie Rezydualne Uczenie}
+
+\section{Podsumowanie}
 
 \chapter{Głębokie Uczenie ze Wzmocnieniem}
 
+\section{Wprowadzenie}
+
+\section{Deep Q-Learning}
+
+\section{Policy Gradient}
+
+\section{Actor Critic-Methods}
+
+\section{Podsumowanie}
+
 \chapter{Gra w piłkarzyki na kartce}
+
+\section{Wprowadzenie}
+
+\section{Metoda uczenia poprzez grę z samym sobą}
+
+\subsection{Rozgrywanie gier}
+
+\subsection{Trenowanie na zebranym doświadczeniu}
+
+\subsection{Ewaluacja wyuczonej polityki}
+
+\section{Algorytm przeszukujący drzewo gry}
+
+\subsection{Wybór ścieżki w drzewie}
+
+\subsection{Rozwinięcie i ewaluacja nowego węzła}
+
+\subsection{Propagacja wsteczna}
+
+\subsection{Wybór akcji}
+
+\section{Architektura sieci}
+
+\section{Pierwsze testy na zmniejszonej planszy}
+
+\section{Wyniki dla gry standardowych rozmiarów}
+
+\section{Podsumowanie}
 
 \chapter{Wnioski}
 
 \begin{thebibliography}{99}
-\addcontentsline{toc}{chapter}{Bibliografia}
-
-\bibitem[Bea65]{beaman} Juliusz Beaman, \textit{Morbidity of the Jolly
-    function}, Mathematica Absurdica, 117 (1965) 338--9.
-
-\bibitem[Blar16]{eb1} Elizjusz Blarbarucki, \textit{O pewnych
-    aspektach pewnych aspektów}, Astrolog Polski, Zeszyt 16, Warszawa
-  1916.
-
-\bibitem[Fif00]{ffgg} Filigran Fifak, Gizbert Gryzogrzechotalski,
-  \textit{O blabalii fetorycznej}, Materiały Konferencji Euroblabal
-  2000.
-
-\bibitem[Fif01]{ff-sr} Filigran Fifak, \textit{O fetorach
-    $\sigma$-$\rho$}, Acta Fetorica, 2001.
-
-\bibitem[Głomb04]{grglo} Gryzybór Głombaski, \textit{Parazytonikacja
-    blabiczna fetorów --- nowa teoria wszystkiego}, Warszawa 1904.
-
-\bibitem[Hopp96]{hopp} Claude Hopper, \textit{On some $\Pi$-hedral
-    surfaces in quasi-quasi space}, Omnius University Press, 1996.
-
-\bibitem[Leuk00]{leuk} Lechoslav Leukocyt, \textit{Oval mappings ab ovo},
-  Materiały Białostockiej Konferencji Hodowców Drobiu, 2000.
-
-\bibitem[Rozk93]{JR} Josip A.~Rozkosza, \textit{O pewnych własnościach
-    pewnych funkcji}, Północnopomorski Dziennik Matematyczny 63491
-  (1993).
-
-\bibitem[Spy59]{spyrpt} Mrowclaw Spyrpt, \textit{A matrix is a matrix
-    is a matrix}, Mat. Zburp., 91 (1959) 28--35.
-
-\bibitem[Sri64]{srinis} Rajagopalachari Sriniswamiramanathan,
-  \textit{Some expansions on the Flausgloten Theorem on locally
-    congested lutches}, J. Math.  Soc., North Bombay, 13 (1964) 72--6.
-
-\bibitem[Whi25]{russell} Alfred N. Whitehead, Bertrand Russell,
-  \textit{Principia Mathematica}, Cambridge University Press, 1925.
-
-\bibitem[Zen69]{heu} Zenon Zenon, \textit{Użyteczne heurystyki
-    w~blabalizie}, Młody Technik, nr~11, 1969.
 
 \end{thebibliography}
 
