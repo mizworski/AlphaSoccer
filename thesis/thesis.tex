@@ -388,9 +388,19 @@ W tym rozdziale zaprezentowane zostały podstawowe podejścia oraz koncepcje sto
 
 \chapter{Głębokie Sieci Neuronowe}
 
-\section{Wprowadzenie}
+Ostatnio bardzo często mamy okazję słyszeć o Sztucznych Sieciach Neuronowych. Ponownie stały się one popularne wśród społeczności sztucznej inteligencji i obecnie osiągają najlepsze wyniki w bardzo wielu dziedzinach. Pozwalają nam one nam na tworzenie autonomicznych pojazdów, rozpoznawać obrazy lepiej od ludzi czy pokonać mistrza świata w Go. 
+
+Głębokie Sieci Neuronowe mają zdolność do tworzenia aproksymacji nieliniowych funkcji na podstawie danych. Ponadto, w porównaniu do innych modeli uczenia maszynowego, nie wymagają one ręcznego tworzenia istotnych cech na podstawie danych, a zamiast tego same tworzą własną reprezentacje. Dzięki temu ograniczają one wymaganą interakcje z modelem, przy jednoczesnej poprawie jakości uzyskiwanych cech.
 
 \section{Sieci jednokierunkowe}
+
+Głębokie sieci jednokierunkowe (ang. Deep Feedforward Networks), zwane również wielowarstwowym perceptronem (ang. Multilayer Perceptron), są podstawowym modelem głebokiego uczenia. Ich zadaniem jest przybliżanie funkcji $ y = f^{\ast}(x) $, która dla danych wejściowych $x$ przyporządkowuje konkretną decyzję $y$ np. kategorię. Sieć jest wówczas funkcją $ y = f(x; \theta) $ parametryzowaną przez wektor $\theta$, który uczy się na podstawie danych.
+
+Sieci neuronowe nazywane są sieciami, gdyż są one złożeniem wielu funkcji ze sobą, przez co informacje przepływają kolejno przez wszystkie z nich. Możemy je reprezentować jako acykliczny graf, który definiuje kolejne kroki wykonywanych obliczeń. Przykładowo możemy złożyć ze sobą dwie funkcje $ f(x) = f^{(2)}(f^{(1)}(x)) $, otrzymując sieć w której $f^{(1)} $ jest pierwszą warstwą sieci, a $ f^{(2)} $ -- drugą. Ilość składanych ze sobą sieci nazywamy \emph{głębokością} sieci, ostatnią warstwę -- \emph{warstwą wyjściową}, a pozostałe warstwy -- \emph{ukrytymi warstwami}. 
+
+Sieci jednokierunkowe zawdzięczają swoją nazwę temu, iż przepływ informacji w nich występuje jedynie w jednym kierunku, a więc każda z warstw jest zależna jedynie od poprzednich. Nie występuje w żadne nich sprzężenie zwrotne, które jest charakterystyczne dla rekurencyjnych sieci neuronowych.
+
+Sztuczne sieci neuronowe swoją budową bazują na prawdziwych sieci neuronowych, które występują w mózgu, przez co nawiązują w nich w swojej nazwie. Warstwy sieci scharakteryzowane są przez \emph{szerokość}, która mówi o rozmiarze wektora produkowanego przez odpowiadającą jej funkcję. Każdy element wektora może pełnić wówczas funkcję analogiczną do neurona, który zbiera wszystkie informacje z poprzedniego wektora i tworzy na ich podstawie pewną wartość. Wszystkie neurony w warstwie działają niezależnie od siebie. Pomimo jednak iż głębokie uczenie posiadają swoje korzenie w neuronaukach, to obecnie funkcje są dobierane przez inżynierów na podstawie ich własności matematycznych, a ich głównym celem nie jest już naśladowanie działania mózgu.
 
 \section{Funkcje aktywacji}
 
