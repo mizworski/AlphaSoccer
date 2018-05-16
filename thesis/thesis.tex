@@ -90,11 +90,9 @@
 \usepackage{wrapfig}
 \usepackage{graphicx}
 \graphicspath{ {img/} }
-\usepackage{amsfonts}
-\usepackage{amsmath}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
-
+\usepackage{amsmath,amsfonts}
 
 \makeatletter
 \def\BState{\State\hskip-\ALG@thistlm}
@@ -398,25 +396,151 @@ Głębokie sieci jednokierunkowe (ang. Deep Feedforward Networks), zwane równie
 
 Sieci neuronowe nazywane są sieciami, gdyż są one złożeniem wielu funkcji ze sobą, przez co informacje przepływają kolejno przez wszystkie z nich. Możemy je reprezentować jako acykliczny graf, który definiuje kolejne kroki wykonywanych obliczeń. Przykładowo możemy złożyć ze sobą dwie funkcje $ f(x) = f^{(2)}(f^{(1)}(x)) $, otrzymując sieć w której $f^{(1)} $ jest pierwszą warstwą sieci, a $ f^{(2)} $ -- drugą. Ilość składanych ze sobą sieci nazywamy \emph{głębokością} sieci, ostatnią warstwę -- \emph{warstwą wyjściową}, a pozostałe warstwy -- \emph{ukrytymi warstwami}. 
 
-Sieci jednokierunkowe zawdzięczają swoją nazwę temu, iż przepływ informacji w nich występuje jedynie w jednym kierunku, a więc każda z warstw jest zależna jedynie od poprzednich. Nie występuje w żadne nich sprzężenie zwrotne, które jest charakterystyczne dla rekurencyjnych sieci neuronowych.
+W sieciach jednokierunkowych przepływ informacji występuje w jednym kierunku, a więc każda z warstw jest zależna jedynie od poprzednich. Nie występuje w nich sprzężenie zwrotne, które jest charakterystyczne dla rekurencyjnych sieci neuronowych.
 
-Sztuczne sieci neuronowe swoją budową bazują na prawdziwych sieci neuronowych, które występują w mózgu, przez co nawiązują w nich w swojej nazwie. Warstwy sieci scharakteryzowane są przez \emph{szerokość}, która mówi o rozmiarze wektora produkowanego przez odpowiadającą jej funkcję. Każdy element wektora może pełnić wówczas funkcję analogiczną do neurona, który zbiera wszystkie informacje z poprzedniego wektora i tworzy na ich podstawie pewną wartość. Wszystkie neurony w warstwie działają niezależnie od siebie. Pomimo jednak iż głębokie uczenie posiadają swoje korzenie w neuronaukach, to obecnie funkcje są dobierane przez inżynierów na podstawie ich własności matematycznych, a ich głównym celem nie jest już naśladowanie działania mózgu.
+Sztuczne sieci neuronowe swoją budową bazują na prawdziwych sieci neuronowych, które występują w mózgu. Warstwy sieci scharakteryzowane są przez \emph{szerokość}, która mówi o rozmiarze wektora produkowanego przez odpowiadającą jej funkcję. Każdy element wektora może pełnić wówczas funkcję analogiczną do neurona, który zbiera wszystkie informacje z poprzedniego wektora i tworzy na ich podstawie pewną wartość. Wszystkie neurony w warstwie działają niezależnie od siebie. Pomimo jednak iż głębokie uczenie posiadają swoje korzenie w neuronaukach, to obecnie funkcje są dobierane przez inżynierów na podstawie ich własności matematycznych, a ich głównym celem nie jest już naśladowanie działania mózgu.
 
-\section{Funkcje aktywacji}
+\section{Budowa neuronu}
 
-\section{Funkcja kosztu}
+Każdy z neuronów na wejściu przyjmuje wektor $x$, który odpowiada poprzedzającej mu warstwie. Następnie liczony jest jego iloczyn skalarny z wektorem wag $w$ i dodawane jest obciążenie $b$. Otrzymana wartość przekazywana jest do funkcji aktywacji $f$, a na końcu wyniki ze wszystkich neuronów są ze sobą konkatenowane w wektor, którego długość jest równa ilości neuronów w danej warstwie.
 
-\section{Algorytm propagacji wstecznej}
+$$ y_i = f(\mathbf{x}^{T}\mathbf{w} + b) $$
+
+Rolą funkcji aktywacji w sieciach neuronowych jest wprowadzenie nieliniowości do funkcji, dzięki którym możemy aproksymować dowolne funkcje. Najpopularniejszymi z nich są:
+
+\begin{itemize}
+\item Sigmoid:
+
+$$ f(x) = \sigma(x) = \frac{1}{1 + e^{-x}}$$
+
+\item Rectified Linear Unit (ReLU):
+
+$$ f(x) = 
+\begin{cases}
+    x,              & \text{dla } x \geq 0\\
+    0,              & \text{dla } x < 0
+\end{cases}
+$$
+
+\item Tangens hiperboliczny:
+
+$$ f(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}} $$
+
+\end{itemize}
+
+W przypadku klasyfikacji, w której występuje wiele kategorii, wykorzystywana jest funkcja Softmax, która aplikowana jest od razu do całego wyjściowego wektora:
+
+
+$$ f_i(x) = \frac{e^x}{\sum_j e^j} $$
+
+
+\section{Uczenie sieci neuronowej}
+
+Uczenie sieci neuronowej jest procesem optymalizacji, która polega na minimalizacji bądź maksymalizacji pewnej funkcji $ f(x; \theta) $ za pomocą zmieniania wartośći $ \theta $. Funkcja $ f $ jest przez nas nazywana \emph{funkcją celu}, w przypadku minimalizacji często nazywana jest również \emph{funkcją kosztu}, \emph{funkcją straty} lub \emph{funkcją błędu}.
+
+Optymalizacja przebiega przy użyciu gradientu funkcji $ f $. Znając jego wartość możemy zmodyfikować $\theta$ o niewielki krok $ \alpha $, zwany \emph{szybkością uczenia} (ang. learning rate), aby odpowiednio zmniejszyć bądź zwiększyć wartość funkcji $ f $. 
+
+$$ \theta_{i+1} = \theta_i - \alpha f'(x; \theta_i) $$
+
+Metoda ta nazywana jest \emph{metodą gradientu prostego} (ang. Stochastic Gradient Descent. SGD), a najczęściej stosowaną jej odmianą jest \emph{mini-batch SGD}, gdzie gradient liczony jest dla kilkudziesięciu przykładów z danych jednocześnie, po czym jest uśredniany. Przykłady pokazywane w jednym momencie sieci nazywane są \emph{partią} (ang. batch), a jedna iteracja w której siec widzi dokładnie wszystkie partie raz, nazywana jest epoką.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.5\textwidth]{sgd}
+  \caption{Metoda stochastycznego gradientu prostego.}
+\end{figure}
+
+W zależności od rozwiązywanego przez nas zadania, dobiera się różne funkcje celu, a najpopularniejszymi z nich jest cross entropia (ang. Cross Entropy) w przypadku klasyfikacji:
+
+$$ L_{log}(y, \hat{y}) = -\log\mathbb{P}(y | \hat{y}) = 
+-\frac{1}{N} \sum_{i = 1}^N \sum_{k = 1}^M y_{i, k} \log \hat{y}_{i, k}
+$$
+
+gdzie $N$ to rozmiar danych treningowych, a $M$ to liczba różnych klas. Dla modeli regresyjnych najczęściej wybieraną funkcją jest \emph{błąd średniokwadratowy} (ang. Mean Squared Error, MSE):
+
+$$ L_{MSE}(y, \hat{y}) = \sum_{i = 1}^N (y_i - \hat{y}_i)^2$$
+
+Różnica pomiędzy wykorzystaniem metod gradientowych optymalizacji w głębokim uczeniu maszynowym i klasycznym uczeniu maszynowym, jest fakt iż nieliniowość sieci neuronowych powoduje iż funkcje straty w większości przypadków nie są wypukłe. Z tego powodu zbieżność danych metod nie jest gwarantowana, a jakość otrzymanego modelu jest zależna od parametrów początkowych modelu. Powstało wiele metod aby unikać lokalne minima funkcji celu, a powszechnie stosowanymi oraz dającymi najlepsze rezultaty są obecnie \emph{Adam} oraz \emph{RMSprop}. 
+
+\section{Propagacja wsteczna}
+
+W celu wykonania predykcji przy użyciu naszego modelu, musimy przekazać mu przykład, dla którego utworzy on estymację. Informacja o nim zostaje przekazywana przez kolejne warstwy, aby ostatecznie zwrócić jakiś wynik. Każdy kolejny krok wykonywanych obliczeń możemy utożsamić z grafem, który definiuje w jaki sposób wygląda przepływ przez naszą sieć. Przetworzenie przykładu przez naszą sieć nazywamy wówczas \emph{propagacją} (ang. forward propagation). Otrzymana przez nas estymacja jest później wykorzystana w funkcji błędu. 
+
+Algorytm propagacji wstecznej polega na przepływie sieci w przeciwnym kierunku, zaczynając od funkcji kosztu. Kolejne pochodne składające się na gradient liczone są przy pomocy metody łańcuchowej.
+
+$$ \frac{dz}{dx} = \frac{dz}{dy} \frac{dy}{dx} $$
+ 
 
 \section{Regularyzacja}
 
+Częstym problemem występującym podczas uczenia sieci neuronowych oraz ogólnie modeli uczenia maszynowego jest problem zbytniego dopasowania do danych. Występuje on gdy funkcja błędu na zbiorze treningowym osiąga znacząco niższy poziom niż na zbiorze testowym, który nie był obecny podczas uczenia się sieci. Podejmowane są różne kroki w celu zmniejszenia różnicy pomiędzy błędami obserwowanymi na obu tych zbiorach, a najpopularniejszym i najprostszym z nich jest regularyzacja parametrów.
+
+Regularyzacja parametrów wykorzystywana jest również w prostszych modelach statystycznych, takich jak regresja liniowa czy logistyczna. Zmniejsza ona teoretyczną pojemność modelu, co pozytywnie wpływa na jego jakość. Polega ona na dodaniu dodatkowego składnika do funkcji błędu, który odpowiada za zwiększanie jej wartości w zależności od parametrów sieci. Zmodyfikowana funkcja straty jest wówczas postaci:
+
+$$ L'(y, \hat{y}) = L'(y, f(x; \theta)) = L(y, f(x; \theta)) + \alpha \Omega(\theta) $$, 
+
+gdzie $ \Omega(\theta) $ jest pewną normą wektora $ \theta $. Najpopularniejszą wyborem jest norma $ L^2 $.
+
+Innymi znanymi metodami regularyzacji są takie rzeczy jak augmentacja danych czy dropout.
+
 \section{Normalizacja batchów}
+
+Uczenie głębokich sieci neuronowych okazuje się bardzo trudnym zadaniem. Aktualizacje warstw następują jednocześnie dla całej sieci, natomiast same gradienty liczone są przy założeniu że pozostałe warstwy pozostaną takie same. Zmiana parametrów powoduje iż rozkład wartości dla każdej z warstw cały czas ulega zmianie, przez co musimy korzystać z małych learning rate, gdyż cały proces jest mocno niestabilny. Problem ten nazywany jest \emph{internal covariate shift} i rozwiązywany jest przez normalizację wyników z każdej warstwy. 
+
+Normalizacja batchów (ang. Batch normalization) polega na reparametryzacji wyniku każdej z warstw, która wykonuje się przy każdej kolejnej propagacji partii. Po jej wykonaniu rozkład wartości z każdej z warstw ma zawsze tę samą średnią oraz wariancję.
+
+$$ \mathbf{H'} = \frac{\mathbf{H} - \mathbf{\mu}}{\mathbf{\sigma}} $$
+
+gdzie $ \mathbf{H} $ to wyjście z warstwy przed reparametryzacją, a $ \mathbf{H'} $ -- po reparametryzacji. Normalizacja batchów okazuje się również skuteczną metodą regularyzacji.
 
 \section{Konwolucyjne Sieci Neuronowe}
 
-\section{Głębokie Rezydualne Uczenie}
+Konwolucyjne sieci neuronowe są specjalnym typem architektury sieci, które wykorzystują specyficzną topologię danych, które można reprezentować na pewnych kratach. Najpopularniejszym przykładem są zdjęcia, które można przedstawić jako 2-wymiarowe macierze pikseli oraz szeregi czasowe, które opisują pomiary oddalone od siebie jednakowymi interwałami czasowymi. Obecnie stanowią one state-of-the-art w wielu dziedzinach uczenia maszynowego, a w szczególności we wszelkich zadaniach związanych z wizją komputerową. 
+
+\subsection{Operacja Konwolucji}
+
+Konwolucyjne sieci swoją nazwę zawdzięczają matematycznej operacji konwolucji, która w naszym wypadku jest wykonywana na dyskretnych wartościach:
+
+$$ s(t) = (x * w)(t) = \sum_{a = -\infty}^{\infty} x(a)w(t - a) $$
+
+Standardową terminologią dla sieci konwolucyjnych jest określanie funkcji $x$ jako \emph{wejścia}, funkcji $w$ jako \emph{filtr} lub \emph{jądro}, a wynik operacji jako \emph{mapa cech}.
+
+Często chcemy wykonywać operację konwolucji na wejściu o większej ilości wymiarów. W przpadku dwuwymiarowym wzór jest następujący:
+
+$$ S(i, j) = (I * K)(i, j) = \sum_m \sum_n I(m, n) K(i - m, j - n) $$
+
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=0.85\textwidth]{konwolucja}
+  \caption{Przykładowe wykonanie operacji konwolucji przy użyciu filtra 2 x 2}
+\end{figure}
+
+\section{Głębokie Uczenie Rezydualne}
+
+Pogłębianie sieci neuronowych czyni je trudniejszymi do wyuczenia. Popularnym rozwiązaniem tego problemu jest wykorzystanie rezydualnych bloków, które umożliwiły trenowanie głębszych sieci, niż to było możliwe przed ich powstaniem. Obecnie wszystkie czołowe modele wykorzystywane podczas rozpoznawania obrazów wykorzystują tę architekturę.
+
+Przypuśćmy że oczekiwanym przez nas mapowaniem z warstwy konwolucyjnej byłaby funkcja $ \mathcal{H}(x) $. Rezydalne mapowanie polega na tym, aby bezpośrednie wyjście z warstwy starało się dopasować do funkcji $ \mathcal{F}(x) = \mathcal{H}(x) - x $, po czym do niego jest dodawane $x$, uzyskując oczekiwaną wartość. Architektura ta okazuje się zdecydowanie poprawiać wyniki uczenia się sieci. Autorzy rezydualnego uczenia przypuszczają że sieciom neuronowym dużo łatwiej jest nauczyć się rezydualnego mapowania, zamiast tego standardowego. W skrajnym przypadku gdyby optymalnym mapowaniem była identyczność, to wówczas dużo łatwiej jest wyuczyć się przekształcenia o zerowym wyjściu, niż identyczności.
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=0.6\textwidth]{res_block}
+  \caption{Blok rezydualny}
+\end{figure}
+
+Rezydualne uczenie zazwyczaj jest aplikowane do kilku ustawionych po sobie warstw. Razem z połączeniem od wejścia nazywamy je blokiem budującym i definiujemy go jako:
+
+$$ y = \mathcal{F}(x; \theta) + x $$.
+
+Połączenie to nazywamy \emph{połączeniem skrótowym} (ang. shortcut connection). W przypadku gdy wymiar wejścia oraz wyjścia nie są sobie równe, to wykonujemy liniowe przekształcenie na wejściu, a blok definiujemy jako:
+
+$$ y = \mathcal{F}(x; \theta) + W_sx $$,
+
+gdzie $W_s$ to macierz wag odpowiadających za projekcje na wymiar wyjściowy.
 
 \section{Podsumowanie}
+
+Głębokie sieci neuronowe obecnie są najlepszym typem modeli do aproksymacji dowolnych funkcji, gdyż możemy je tworzyć jedynie na podstawie surowych danych i nie jest wymagane ręczne tworzenie cech ani nie jest potrzebna specjalistyczna wiedza z zakresu problemu, który staramy się przy ich użyciu rozwiązać. Z tego powodu są one również bardzo popularne wśród metod uczenia ze wzmocnieniem, jako przybliżenia funkcji wartości oraz polityki, a ich zastosowanie w tej dziedzinie zostanie opisane w kolejnym rozdziale.
 
 \chapter{Głębokie Uczenie ze Wzmocnieniem}
 
