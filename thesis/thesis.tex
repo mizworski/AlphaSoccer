@@ -170,12 +170,41 @@ Gracz może również przegrać w wypadku gdy nie jest w stanie wykonać żadneg
 \end{figure}
  
 \section{Cel badawczy} 
- 
-\section{Podejście} 
+
+% todo napisz wczesniej cos o AlphaGo
+
+Celem mojej pracy jest zastosowanie algorytmu wykorzystanego w AlpaGo, do wyuczenia agenta zdolnego do gry w piłkarzyki na kartce. Postaram się w niej dowiedzieć w jaki sposób hiperparametry wykorzystane w AlphaGo powinny zostać zaadaptowane do mojego problemu. 
+
+Ponadto maszyny wykorzystywane podczas uczenia AlphaGo są rzędy wielkości większe od typowych komputerów, które są dostępne dla przeciętnego studenta. Moje eksperymenty będą skupiały się również na tym jak hiperparametry modelu mogą być redukowane, aby jednocześnie uzyskać wyniki w sensownym czasie oraz aby były one dla nas satysfakcjonujące.
+
 
 \section{Wkład własny}
 
+Za mój wkład uważam:
+
+\begin{itemize}
+
+\item Rozwinięcie tematyki uczenia ze wzmocnieniem w grze piłkarzyki na papierze, do której nie mogłem znaleźć żadnego agenta opartego na współczesnych metodach,
+
+\item Implementacja algorytmu AlphaGo, którego dostępny jest jedynie opis słowny,
+
+\item Wyznaczenie które hiperparametry mogą zostać zredukowane, aby móc przeprowadzić eksperyment na przeciętnej maszynie oraz wyznaczenie tych hiperparametrów, które zostały pominięte.
+
+\end{itemize}
+
 \section{Zarys pracy}
+
+Pozostała część pracy została podzielona na następujące rozdziały:
+
+W rozdziale drugim postaram wprowadzić czytelnika w zagadnienie uczenia ze wzmocnieniem, wyprowadzając podstawowe definicje oraz pojęcia, które wykorzystywane będą w późniejszych rozdziałach pracy.
+
+W rozdziale trzecim zaznajomię czytelnika z tematem głębokich sieci neuronowych, które stanowią dziś ogromną część uczenia maszynowego i cieszą się ogromną popularnością ze względu na swoje znakomite osiągnięcia.
+
+W rozdziale czwartym wytłumaczę w jaki sposób połączyć ze sobą światy uczenia ze wzmocnieniem oraz głębokich sieci neuronowych, otrzymując w ten sposób głębokie uczenie ze wzmocnieniem, które odpowiedzialne jest obecnie za czołowe osiągnięcie w dziedzinie uczenia ze wzmocnieniem, takie jak autonomiczne samochody czy AlphaGo.
+
+W rozdziale piątym opowiem o wykonanym przeze mnie eksperymencie uczenia się gry w piłkarzyki na kartce. Wyjaśnię w jaki sposób algorytm zdobywa doświadczenie potrzebne mu podczas uczenia się oraz w jaki sposób wygląda proces podejmowania decyzji oraz uczenia się.
+
+Ostatni rozdział podsumowuje wykonaną pracę i zawiera moje wnioski wyciągnięte podczas tej pracy.
  
 \chapter{Uczenie ze Wzmocnieniem}\label{r:rl}
 
@@ -311,7 +340,7 @@ $$
 \pi(a \mid s) =
 \begin{cases}
     1 - \epsilon + \epsilon/\lvert \mathcal{A}(s) \rvert & \text{if } a = a^\ast \\
-    \epsilon/\lvert \mathcal{A}(s),              & \text{if } a\neq a^\ast
+    \epsilon/\lvert \mathcal{A}(s) \rvert,              & \text{if } a\neq a^\ast
 \end{cases}
 $$
 
@@ -436,13 +465,15 @@ $$ f_i(x) = \frac{e^x}{\sum_j e^j} $$
 
 \section{Uczenie sieci neuronowej}
 
-Uczenie sieci neuronowej jest procesem optymalizacji, która polega na minimalizacji bądź maksymalizacji pewnej funkcji $ f(x; \theta) $ za pomocą zmieniania wartośći $ \theta $. Funkcja $ f $ jest przez nas nazywana \emph{funkcją celu}, w przypadku minimalizacji często nazywana jest również \emph{funkcją kosztu}, \emph{funkcją straty} lub \emph{funkcją błędu}.
+Uczenie sieci neuronowej jest procesem optymalizacji, która polega na minimalizacji bądź maksymalizacji pewnej funkcji $ f(x; \theta) $ za pomocą zmieniania wartośći $ \theta $. Funkcja $ f $ jest przez nas nazywana \emph{funkcją celu}, w przypadku minimalizacji często nazywana jest również \emph{funkcją kosztu}, \emph{funkcją straty} lub \emph{funkcją błędu}. 
 
-Optymalizacja przebiega przy użyciu gradientu funkcji $ f $. Znając jego wartość możemy zmodyfikować $\theta$ o niewielki krok $ \alpha $, zwany \emph{szybkością uczenia} (ang. learning rate), aby odpowiednio zmniejszyć bądź zwiększyć wartość funkcji $ f $. 
+Optymalizacja przebiega przy użyciu gradientu funkcji $ f $. Znając jego wartość możemy zmodyfikować $\theta$ o niewielki krok $ \alpha $, zwany \emph{krokiem uczenia} (ang. learning rate), aby odpowiednio zmniejszyć bądź zwiększyć wartość funkcji $ f $. 
 
 $$ \theta_{i+1} = \theta_i - \alpha f'(x; \theta_i) $$
 
 Metoda ta nazywana jest \emph{metodą gradientu prostego} (ang. Stochastic Gradient Descent. SGD), a najczęściej stosowaną jej odmianą jest \emph{mini-batch SGD}, gdzie gradient liczony jest dla kilkudziesięciu przykładów z danych jednocześnie, po czym jest uśredniany. Przykłady pokazywane w jednym momencie sieci nazywane są \emph{partią} (ang. batch), a jedna iteracja w której siec widzi dokładnie wszystkie partie raz, nazywana jest epoką.
+
+Podczas tworzenia modelu możemy natrafić na pojęcie \emph{parametrów} oraz \emph{hiperparametrów} sieci. Poprzez parametry sieci rozumiemy wektor cech $\theta$, który jest modyfikowany w procesie uczenia sieci, a wyznaczany on jest losowo. Hiperparametrami natomiast nazywamy te czynniki, które ręcznie wyznaczamy przed rozpoczęciem procesu uczenia i są one przez nas arbitralnie wybierane. Nie jest możliwe ich uczenie się przez algorytm, a ich dobór jest arbitralny. Przykładami hiperparametrów modelu mogą być takie rzeczy jak głębokość sieci, szerokość sieci, krok uczący czy rozmiar partii.
 
 \begin{figure}[ht]
   \centering
@@ -456,7 +487,7 @@ $$ L_{log}(y, \hat{y}) = -\log\mathbb{P}(y | \hat{y}) =
 -\frac{1}{N} \sum_{i = 1}^N \sum_{k = 1}^M y_{i, k} \log \hat{y}_{i, k}
 $$
 
-gdzie $N$ to rozmiar danych treningowych, a $M$ to liczba różnych klas. Dla modeli regresyjnych najczęściej wybieraną funkcją jest \emph{błąd średniokwadratowy} (ang. Mean Squared Error, MSE):
+gdzie $y$ to rzeczywista wartość funkcji, zwana również \emph{celem}, $\hat{y}$ to nasza predykcja, $N$ to rozmiar danych treningowych, a $M$ to liczba różnych klas. Dla modeli regresyjnych najczęściej wybieraną funkcją jest \emph{błąd średniokwadratowy} (ang. Mean Squared Error, MSE):
 
 $$ L_{MSE}(y, \hat{y}) = \sum_{i = 1}^N (y_i - \hat{y}_i)^2$$
 
@@ -495,6 +526,8 @@ gdzie $ \mathbf{H} $ to wyjście z warstwy przed reparametryzacją, a $ \mathbf{
 
 \section{Konwolucyjne Sieci Neuronowe}
 
+\subsection{Wprowadzenie}
+
 Konwolucyjne sieci neuronowe są specjalnym typem architektury sieci, które wykorzystują specyficzną topologię danych, które można reprezentować na pewnych kratach. Najpopularniejszym przykładem są zdjęcia, które można przedstawić jako 2-wymiarowe macierze pikseli oraz szeregi czasowe, które opisują pomiary oddalone od siebie jednakowymi interwałami czasowymi. Obecnie stanowią one state-of-the-art w wielu dziedzinach uczenia maszynowego, a w szczególności we wszelkich zadaniach związanych z wizją komputerową. 
 
 \subsection{Operacja Konwolucji}
@@ -516,7 +549,7 @@ $$ S(i, j) = (I * K)(i, j) = \sum_m \sum_n I(m, n) K(i - m, j - n) $$
   \caption{Przykładowe wykonanie operacji konwolucji przy użyciu filtra 2 x 2}
 \end{figure}
 
-\section{Głębokie Uczenie Rezydualne}
+\subsection{Głębokie uczenie rezydualne}
 
 Pogłębianie sieci neuronowych czyni je trudniejszymi do wyuczenia. Popularnym rozwiązaniem tego problemu jest wykorzystanie rezydualnych bloków, które umożliwiły trenowanie głębszych sieci, niż to było możliwe przed ich powstaniem. Obecnie wszystkie czołowe modele wykorzystywane podczas rozpoznawania obrazów wykorzystują tę architekturę.
 
@@ -546,7 +579,25 @@ Głębokie sieci neuronowe obecnie są najlepszym typem modeli do aproksymacji d
 
 \section{Wprowadzenie}
 
+Obecnie uczenie ze wzmocnieniem w głównej mierze opiera się na wykorzystaniu sieci neuronowych jako aproksymatory funkcji wartości oraz polityki. Połączenie to pozwoliło nam na osiąganie niespotykanych dotąd wyników podczas rozwiązywania problemów takich jak gra w Dota 2 czy tworzenie autonomicznych samochodów. Dzięki zastosowaniu głębokiego uczenia jesteśmy w stanie radzić sobie z zadaniami, które charakteryzują się wielowymiarowością danych, a których rozwiązanie wcześniej było poza naszym zasięgiem.
+
+Do głębokiego uczenia ze wzmocnieniem (ang. Deep Reinforcement Learning, DRL) zaliczamy takie metody jak \emph{głęboka Q-sieć} (ang. Deep Q-Network, DQN),  \emph{policy gradient} czy metody \emph{actor-critic}. Rozdział ten opisuje w jaki sposób te metody łączą się z sieciami neuronowymi, prowadząc do najskuteczniejszych obecnie algorytmów uczenia ze wzmocnieniem. 
+
 \section{Deep Q-Learning}
+
+Jednym z ważniejszych algorytmów ostatnich lat jest \emph{głęboka Q-sieć} (DQN), która jest połączeniem opisanego wcześniej \emph{Q-learningu} oraz konwolucyjnych sieci neuronowych. Autorzy wykorzystali ją do nauczenia agenta gry na Atari, gdzie bez zmiany hiperparametrów modelu, zastosowali go do 49 różnych gier osiągając w wielu z nich wyniki lepsze od ludzi. Przyjmowała ona na wejściu jedynie obraz w postaci macierzy pikseli oraz wynik uzyskiwany przez nią i na podstawie tych danych, bez dodatkowych interakcji, podejmowała decyzje.
+
+W tym modelu sieć neuronowa pełni funkcję funkcji wartości akcji, tj. Q-funkcji, a podczas uczenia minimalizowana była następująca funkcja straty:
+
+$$ L_i(\theta_i) = \mathbb{E}_{s \sim \rho_{\pi(\cdot)}, a \sim \pi(\cdot)} \Big[ (y_i^2 - Q(s, a; \theta_i))^2 \Big] $$
+
+gdzie $ y_i = \mathbb{E}_{s' \sim \mathcal{E}'} \big[ r + \gamma \max_{a'} Q(s', a'; \theta_{i - 1}) \mid s, a \big] $ jest celem funkcji w $i$-tej iteracji, $\pi(s \mid a)$ jest polityką utworzoną na podstawie Q-funkcji, $\rho_{\pi(\cdot)} $ jest rozkładem stanów podczas podążania zgodnie z polityką $\pi$. Aktualizacja wag sieci następuje zgodnie z gradientem powyższej funkcji, który jest postaci:
+
+$$ \nabla_{\theta_i}L_i(\theta_i) = \mathbb{E}_{s, a \sim p(\cdot); s' \sim \mathcal{E}} 
+\Big[ \Big( r + \gamma \max_{a'} Q(s', a'; \theta_{i - 1}) - Q(s, a; \theta_i) \Big) \nabla_{\theta_i} Q(s, a; \theta_i) \Big] $$
+
+Funkcja straty jest optymalizowana przy pomocy metody gradientu prostego. Jeżeli aktualizacje wag sieci następowałyby za każdym razem po zebraniu trajektorii, to mielibyśmy do czynienia z klasycznym algorytmem Q-learning. W odróżnieniu od uczenia z nadzorem, zamiast niezależnych danych treningowych, dostajemy próbki zależne od wag $\theta$ i z tego powodu musimy korzystać z dodatkowych metod, dzięki którym pozbywamy się silnej korelacji pomiędzy próbkami. Korzystamy z metody zwanej \emph{powtórkami z doświadczenia} (ang. experience replay), która polega na zebraniu wielu trajektorii podczas procesu interakcji agenta ze środowiskiem i zapisywaniu ich jako powtórki w pamięci, a następnie próbkowane są losowo konkretne przykłady $(s_t, a_t, r_{t+1}, s_{t+1})$. Zastosowanie tej techniki sprawia iż zmniejszana jest wariancja podczas procesu uczenia się, a sam agent szybciej i stabilniej osiąga satysfakcjonujące nas rezultaty.
+
 
 \section{Policy Gradient}
 
