@@ -685,25 +685,57 @@ Dla większości obecnie rozwiązywanych problemów przy użyciu uczenia ze wzmo
 
 \section{Wprowadzenie}
 
+Wielu specjalistów od dawna zajmuje się tworzeniem systemów grających w gry planszowe. Pierwszym krokiem milowym w rozwoju inteligentnych systemów było utworzenie Deep Blue, algorytmu potrafiącego grać w szachy, który w 1997 pokonał ówczesnego mistrza świata Garrego Kasparowa. Kolejnym celem stało się wówczas rozwiązania gry w Go, w której ilość ruchów na każdą rundę oraz długość rozgrywki są nieporównywalnie większe niż w przypadku szachów. W ostatnim czasie zespołowi z Deep Mind udało się utworzyć algorytm AlphaGo, który w roku 2016 pokonał mistrza świata Lee Sedol'a. Łączył on wszystkie znane do tamtej pory techniki wykorzystywane w uczeniu ze wzmocnieniem oraz głębokie uczenie, a w ubiegłym roku, 2017, został on rozwinięty algorytmu AlphaGo Zero, który zupełnie generycznie, bez jakiejkolwiek wiedzy specjalistycznej, wykorzystując jedynie plansze jako wejście, osiągnął ponadludzkie zdolności gry w Go, wygrywając wszystkie gry przeciw wcześniejszemu algorytmowi. 
+
+Algorytm uczący agenta grającego w piłkarzyki na papierze jest w całości oparty na algorytmie AlphaGo Zero. Zmodyfikowana została jedynie architektura sieci oraz hiperparametry wykorzystane podczas uczenia.
+
 \section{Metoda uczenia poprzez grę z samym sobą}
+
+Iteracja polityki jest procesem w którym naprzemiennie wykonywana jest estymacja funkcji wartości na podstawie posiadanej polityki oraz ulepszanie obecnej polityki. Może się to odbywać przykładowo za pomocą próbkowania kolejnych trajektorii w pierwszym przypadku, a w drugim poprzez zamianę polityki na zachłanną względem otrzymanej funkcji wartości.
+
+Lepszym pomysłem, wykorzystywanym w \emph{classification-based} uczeniu ze wzmocnieniem, jest wykorzystanie metod przeszukiwania drzew Monte Carlo. Próbkujemy w nich wiele trajektorii przed wykonaniem każdej z akcji i wybieramy tę akcję, która przyniosła najlepsze rezultaty podczas próbkowania, a następnie wybrana akcja służy jako pozytywny przykład uczący, a pozostałe jako negatywne.
+
+W przypadku AlphaGo Zero tworzona jest polityka drzewa, na której podstawie wybierane są akcje, a następnie podstawowa polityka jest ulepszana na podstawie uprzednio otrzymanego rozkładu prawdopodobieństwa. Polityka drzewa tworzona jest na podstawie podstawowej polityki oraz funkcji wartości, które przechowywane są jako głęboka sieć neuronowa.
+
+Polityka oraz funkcja wartości są głęboką sieć neuronowa $f_\theta$, która przyjmuje na wejściu obecny stan gry, a produkuje w wyniku rozkład prawdopodobieństw po wszystkich możliwych akcjach oraz funkcję wartości dla tego stanu, $f_\theta(s) = (p, v)$.
 
 \subsection{Rozgrywanie gier}
 
+Przez cały czas trwania algorytmu przechowywany jest najlepszy gracz $\alpha_{\theta^\ast}$, który wykorzystywany jest do generowania przykładów uczących. Rozgrywa on kolejne gry między sobą, zapisując przebieg oraz wynik każdego z meczów, jako ciąg wszystkich wykonanych akcji $(s_t, \pi_t, r_t)$, gdzie $s_t$ to stan gry, $\pi_t$ to rozkład akcji z polityki drzewa, a $r_t$ to zwycięzca gry. Wszystkie te wartości są z perspektywy gracza wykonującego ruch w czasie $t$.
+
 \subsection{Trenowanie na zebranym doświadczeniu}
+
+Po zakończonej fazie rozgrywania gier, rozpoczynane jest trenowanie sieci. W tym celu losowane są przykłady z wykonanych akcji, a następnie optymalizowana następująca funkcja straty:
+
+$$ (p, v) = f_\theta(s) \quad
+L = (r - v)^2 - \pi^T \log p + c \lvert \lvert \theta \rvert \rvert^2
+$$
+
+gdzie $c$ jest współczynnikiem regularyzacyjnym.	
 
 \subsection{Ewaluacja wyuczonej polityki}
 
+W trakcie uczenia się sieci, co pewien czas wykonywana jest ewaluacja wytrenowanego agenta, która polega na rozegraniu pewnej ilości gier pomiędzy nim a najlepszym graczem $\alpha_{\theta^\ast}$. W przypadku gdy stosunek gier wygranych przez nowego agenta przekroczy ustalony poziom, wynoszący 55\%, to staje się on nowym najlepszym graczem, a dalszy trening jest przerywany i rozpoczynana jest kolejna epoka.
+
 \section{Algorytm przeszukujący drzewo gry}
+
+Akcje podejmowane podczas rozgrywki są oparte na polityce drzewa, która budowana jest w trakcie rozgrywki. Wykorzystywany jest do tego algorytm MCTS, opierający się na wynikach z sieci neuronowej. Krawędzie w drzewie, które odpowiadają parze $(s, a)$ -- stan, akcja, przechowują wartości o prawdopodobieństwie wyboru tej akcji przy obecnej polityce $P(s, a)$, licznik odwiedzin $N(s,a)$ oraz funkcję wartości akcji $Q(s,a)$. Wykorzystanie MCTS intuicyjnie może być rozumiane jako algorytm do gry z samym sobą, gdyż przed wykonaniem ruchu nasz agent wykonuje szereg symulacji i na ich podstawie dokonuje decyzji. 
 
 \subsection{Wybór ścieżki w drzewie}
 
+Wybór akcji rozpoczyna się w korzeniu drzewa gry, który reprezentuje rzeczywisty stan, w którym znajduje się agent. Wykonywane są kolejne symulacje, które polegają na wykonywaniu kolejnych akcji, aż agent natrafi na liść. Wówczas wykonywane jest rozwinięcie danego liścia do nowego węzła i jego ewaluacja. Symulacje wykorzystują statystyki $\big(N(s,a), W(s,a), Q(s,a), P(s,a) \big)$, gdzie $N, Q, P$ są takie jak w poprzednim podpunkcie, a $W(s,a)$ jest sumą do tej pory zaobserwowanych funkcji wartości. Akcjami wykonywanymi w kolejnych krokach są $a_t = \operatorname*{argmax}_a \big( Q(s_t, a) + U(s_t, a) \big)$, gdzie $U$ zdefiniowane jest następująco:
+
+$$ U(s,a) = c_{puct} P(s,a) \frac{\sqrt[]{\sum_b N(s,b)}}{1 + N(s,a)} $$
+
+gdzie $c_{puct}$ jest to stała wyznaczająca poziom eksploracji podczas symulacji. W ten sposób początkowo zapewniona jest eksploracja, gdyż najpierw wybierane są akcje z wysokim początkowym prawdopodobieństwem, ostatecznie jednak preferowane są akcje z wysoką wartością funkcji wartości akcji.
+
 \subsection{Rozwinięcie i ewaluacja nowego węzła}
+
+
 
 \subsection{Propagacja wsteczna}
 
 \subsection{Wybór akcji}
-
-\section{Architektura sieci}
 
 \section{Pierwsze testy na zmniejszonej planszy}
 
