@@ -16,7 +16,7 @@ python3 alphasoccer/actor_critic/run_soccer.py \
     --n_evaluations 10 \
     --n_training_steps 1024 \
     --batch_size 512 \
-    --n_games_in_replay_checkpoint 256 \
+    --n_games_in_replay_checkpoint 64 \
     --learning_rate 1e-4 \
     --n_rollouts 500 \
     --n_replays 2048 \
