@@ -184,11 +184,11 @@ Za mój wkład uważam:
 
 \begin{itemize}
 
-\item Rozwinięcie tematyki uczenia ze wzmocnieniem w grze piłkarzyki na papierze, do której nie mogłem znaleźć żadnego agenta opartego na współczesnych metodach,
+\item Zastosowanie metod uczenia ze wzmocnieniem do piłkarzyków na papierze, które wcześniej nie przyciągnęły wcześniej niczyjej uwagi,
 
 \item Implementacja algorytmu AlphaGo, którego dostępny jest jedynie opis słowny,
 
-\item Wyznaczenie które hiperparametry mogą zostać zredukowane, aby móc przeprowadzić eksperyment na przeciętnej maszynie oraz wyznaczenie tych hiperparametrów, które zostały pominięte.
+\item Wyznaczenie które hiperparametry mogą zostać zredukowane, aby móc przeprowadzić eksperyment na przeciętnej maszynie oraz wyznaczenie tych hiperparametrów, które zostały pominięte w pracy AlphaGo.
 
 \end{itemize}
 
@@ -601,9 +601,85 @@ Funkcja straty jest optymalizowana przy pomocy metody gradientu prostego. Jeżel
 
 \section{Policy Gradient}
 
-\section{Actor Critic-Methods}
+Metody \emph{policy gradient} pozwalają nam na bezpośrednie modelowanie polityki agenta, bez konieczności korzystania z funkcji wartości. Możemy dzięki nim uzyskać politykę $\pi(a \mid s, \theta)$, która jest parametryzowana przez pewien wektor $\theta$. Proces optymalizacji utworzonej w ten sposób polityki polega na maksymalizacji pewnej \emph{funkcji nagrody}, którą otrzymuje nasz agent, za pomocą \emph{wzrostowej metody gradientu prostego} (ang. gradient ascent). W przeciwieństwie do standardowej funkcji błędu w głębokim uczeniu, którą zazwyczaj minimalizujemy, tym razem będziemy starać się maksymalizować funkcję nagrody.
+
+Polityka może być dowolną funkcją $\pi(a \mid s, \theta)$, musi jednak być rózniczkowalna względem parametru $\theta$, abyśmy mogli wykorzystać metody gradientowe podczas jej uczenia. Uzyskana w ten sposób polityka jest stochastyczna, co w wielu przypadkach jest dla nas oczekiwanym efektem. Najczęstszym wyborem funkcji $\pi$ są sieci neuronowe, które znane są z innych dziedzin uczenia maszynowego. Aktualizacja parametrów naszego modelu może przebiegać zgodnie ze wzorem:
+
+$$ \theta_{i+1} = \theta_i + \alpha \nabla_{\theta}J , \quad
+J = \mathbb{E}_{\pi} \Big( \sum_{k = 0}^{\infty} \gamma^k r_k \Big)
+$$
+
+\section{Algorytm REINFORCE}
+
+Najprostszym przykładem metody policy gradient jest algorytm \emph{REINFORCE}, który należy do metod Monte Carlo i opiera się na próbkowaniu kolejnych trajektorii przy użyciu polityki $\pi$, a następnie ulepszaniu jej na podstawie zebranego doświadczenia. \emph{Teoria Policy Gradient} daje nam przydatny wzór na proporcjonalność gradientu funkcji nagrody:
+
+\begin{equation}\label{eq:pgt}
+\nabla J(\theta) \propto \sum_s \mu(s) \sum_a q_{\pi} \nabla_{\theta} \pi(a \mid s, \theta)
+\end{equation}
+
+gdzie $\pi$ to polityka parametryzowana przez $\theta$, a $\mu$ jest \emph{rozkładem on-policy}, który mówi jaką część czasu spędzamy w każdym ze stanów. Formalnie definiujemy funkcję:
+
+$$ \eta(s) = h(s) + \sum_{s'} \eta(s') \sum_{a} \pi(a \mid s') p(s \mid s', a) $$
+
+gdzie $ h(s) $ oznacza prawdopodobieństwo rozpoczęcia się epizodu w stanie s, a zatem jest rozkładem początkowym stanów, a $p(s \mid s', a) $ jest prawdopodobieństwem przejścia ze stanu $s'$ do stanu $s$ po wykonaniu akcji $a$. Rozkład on-policy definiujemy wówczas jako:
+
+$$ \mu (s) = \frac{\eta(s)}{\sum_s' \eta(s')} $$
+
+Rozwijając dalej równanie \eqref{eq:pgt} otrzymujemy:
+
+\begin{align*}
+\nabla J(\theta) \propto & \sum_s \mu(s) \sum_a q_{\pi} \nabla_{\theta} \pi(a \mid s, \theta) \\
+= & \mathbb{E}_\pi \Bigg[ \sum_{a} q_\pi (S_t, a) \nabla_\theta \pi(a \mid S_t, \theta) \Bigg]
+\end{align*}
+
+i w ten sposób pozbywamy się rozkładu $\mu$, który w przeciwnym wypadku musielibyśmy modelować lub znać. Zauważmy również że w tym wypadku wystarcza nam proporcjonalność tego wyrażenia, gdyż aktualizacje parametrów będą wykonywane o pewien arbitralnie dobrany krok uczący $\alpha$, który jest w stanie zniwelować wszelkie stałe nieproporcjonalności. Wykonując kolejne rachunki otrzymujemy: 
+
+\begin{align*}
+\nabla J(\theta) \propto  & \mathbb{E}_\pi \Bigg[ \sum_{a} \pi(a \mid S_t, \theta) q_\pi (S_t, a) \frac{\nabla_\theta \pi(a \mid S_t, \theta)}{\pi(a \mid S_t, \theta)} \Bigg] \\
+= & \mathbb{E}_\pi \Bigg[ q_\pi(S_t, A_t) \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} \Bigg] \\ 
+= & \mathbb{E}_\pi \Bigg[ G_t \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} \Bigg] 
+\end{align*}
+
+zamieniając w pierwszym przejściu $a$ na obserwację $A_t \sim \pi$, a następnie korzystamy z własności $ \mathbb{E}_\pi \big[ G_t \mid S_t, A_t \big] = q_\pi(S_t, A_t) \big] $. W ten sposób otrzymujemy wyrażenie, które możemy wykorzystać podczas próbkowania kolejnych trajektorii do aktualizacji parametrów naszej sieci.
+
+$$ \theta_{t+1} = \theta_t + \alpha G_t \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} $$
+
+Często możemy również spotkać się z innym zapisem wyrażenia $  \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)}$:
+
+$$  \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} = \nabla_\theta \ln \pi(A_t \mid S_t, \theta) $$
+
+Metoda REINFORCE może zostać wzbogacona o \emph{wartości bazowe} $b(s)$:
+
+$$ \nabla J(\theta) \propto \sum_s \mu(s) \sum_a \Big( q_\pi(s, a) - b(s) \Big) \nabla_\theta \pi(a \mid s, \theta) $$,
+
+których celem jest ograniczenie wariancji podczas uczenia się modelu. Warunkiem który funkcja $b$ musi spełniać jest jej niezależność od $a$, gdyż wtedy nie wprowadza ona dodatkowego obciążenia:
+
+$$ \sum_a b(s) \nabla_\theta \pi(a \mid s, \theta) = b(s) \nabla_\theta \sum_a \pi(a \mid s, \theta) = b(s) \nabla_\theta 1 = 0 $$
+
+Aktualizacja wag przyjmuje wówczas postać:
+
+$$ \theta_{t+1} = \theta_t + \alpha \Big( G_t - b(S_t) \Big) \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} $$
+
+
+Algorytm REINFORCE, podobnie jak wszystkie metody Monte Carlo, uczy się bardzo wolno, gdyż estymacje obarczone są wysoką wariancją. Rozwiązaniem tej niedogodności okazują się być modele przedstawione w kolejnej sekcji.
+
+\section{Metody Aktor Krytyk}
+
+Metody aktor krytyk są połączeniem modeli bazujących na modelowaniu polityki oraz tych bazujących na funkcji wartości. Polityka w tych metodach nazywana jest \emph{aktorem}, gdyż odpowiada ona za podejmowanie wykonywanych decyzji. Funkcja wartości nazywana jest \emph{krytykiem} i jej rolą jest ocenianie jakości akcji wykonywanych przez aktora. Parametry polityki są wówczas aktualizowane na podstawie estymacji wykonanych przez aktora.
+
+Jednym z prostszych algorytmów, który można przytoczyć jako przykład, jest jednokrokowa metoda aktor krytyk, która koncepcyjnie jest bardzo podobna do takich algorytmów jak TD(0) czy Sarsa. Pozwala ona na w pełni online algorytm uczenia, w którym wynik z pełnej trajektorii $G_t$ zamieniany jest na wynik jednokrokowy:
+
+\begin{align*}
+\theta_{t+1} =& \theta_t + \alpha \Big( G_t - \hat{v}(S_t, w) \Big) \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} \\
+=& \theta_t + \alpha \Big( R_{t+1} + \gamma \hat{v}(S_{t+1}, w) - \hat{v}(S_t, w) \Big) \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} \\
+=& \theta_t + \alpha \delta \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)}
+\end{align*}
+
+gdzie $ \hat{v}(S_t, w) $ jest aproksymowaną funkcją wartości stanu, parametryzowaną przez wektor $w$, a $\delta$ jest TD-błędem. Funkcja wartości dla stanu $S_t$ jest początkowo odejmowana od wyniku $G_t$ jako wartość bazowa. 
 
 \section{Podsumowanie}
+
+Dla większości obecnie rozwiązywanych problemów przy użyciu uczenia ze wzmocnieniem, to modele głębokiego uczenia są poziomem state-of-the-art i to na nich skupiona jest obecnie największa uwaga. W przypadku algorytmu AlphaGo Zero jego autorzy poszli o kolejny krok do przodu, włączając do modelu również przeszukiwanie drzewa rozgrywki, osiągając tym samym rezultaty które wcześniej wydawały się niemożliwe do uzyskania. Rozszerzenie tych metod zostanie opisane w kolejnym rozdziale, gdzie wykorzystując algorytm AlphaGo Zero staram się rozwiązać problem gry w piłkarzyki na papierze.
 
 \chapter{Gra w piłkarzyki na kartce}
 
