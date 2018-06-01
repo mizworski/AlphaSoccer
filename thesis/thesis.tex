@@ -16,6 +16,21 @@
 % dodaj opcję [en] dla wersji angielskiej (mogą być obie: [licencjacka,en])
 \documentclass[licencjacka]{pracamgr}
 
+% Tu jest dobre miejsce na Twoje własne makra i~środowiska:
+\newtheorem{defi}{Definicja}[section]
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\graphicspath{ {img/} }
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{amsmath,amsfonts}
+\usepackage[nottoc]{tocbibind}
+
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+
+% koniec definicji
 
 % Dane magistranta:
 \autor{Michał Izworski}{360968}
@@ -57,7 +72,7 @@
 % (podać tytuł/stopień imię i nazwisko opiekuna
 % Instytut
 % ew. Wydział ew. Uczelnia (jeżeli nie MIM UW))
-\opiekun{prof. dr hab. Andrzej Skowron\\
+\opiekun{prof. dr. hab. Andrzeja Skowrona\\
   Wydział Matematyki, Informatyki i Mechaniki\\
   }
 
@@ -85,20 +100,7 @@
 % Słowa kluczowe:
 \keywords{machine learning, reinforcement learning, deep learning, actor-critic methods, monte carlo tree search}
 
-% Tu jest dobre miejsce na Twoje własne makra i~środowiska:
-\newtheorem{defi}{Definicja}[section]
-\usepackage{wrapfig}
-\usepackage{graphicx}
-\graphicspath{ {img/} }
-\usepackage{algorithm}
-\usepackage[noend]{algpseudocode}
-\usepackage{amsmath,amsfonts}
 
-\makeatletter
-\def\BState{\State\hskip-\ALG@thistlm}
-\makeatother
-
-% koniec definicji
 
 \begin{document}
 
@@ -106,7 +108,10 @@
 
 %tu idzie streszczenie na strone poczatkowa
 \begin{abstract}
-  TO DO
+
+Uczenie ze wzmocnieniem zyskało w ostatnich latach na popularności, między innymi dzięki ogromnemu sukcesowi AlphaGo, które zdobyło tytuł mistrza świata w Go. Zamysłem jego twórców było stworzenie algorytmu, który będzie zdolny do rozwiązania dowolnej gry planszowej, w której zawodnicy posiadają pełną wiedzę o grze. 
+W tej pracy, opierając się na AlphaGo Zero, stworzony zostaje program zdolny do gry w piłkarzyki na papierze. Algorytm uczy się tylko w oparciu o gry ze samym sobą, a decyzje wykonuje przy pomocy sieci neuronowych. Wykonując możliwie minimalną ilość modyfikacji, sprawdzam jak dobrze dana metoda sprawdza się w innych grach. Podczas pracy zmagam się z problemem małych zasobów obliczeniowych, sprawdzając przy tym jak zmodyfikować AlphaGo Zero, aby mógł być on wyuczony na przeciętnej maszynie.
+
 \end{abstract}
 
 \tableofcontents
@@ -126,11 +131,13 @@
 
 %\section{Intro}
 
-Interakcja z otoczeniem jest prawdopodobnie dla większości z nas naturalnym sposobem uczenia się. 
-Dziecko uczące się stawiać pierwsze kroki nie posiada nauczyciela, który dokładnie instruuje je w jaki sposób powinno układać nogi, aby zachować równowagę. 
-Zamiast tego, poprzez metodę prób i błędów, stara się ono zrozumieć w jaki sposób zrealizować swój cel i poznaje jakie efekty przynosi wykonywanie przez nie konkretnych ruchów. 
-W ten sam sposób uczymy się przez całe życie, jednocześnie poznając otaczający nas świat oraz prawa, które nim rządzą, bez względu na to czy jest to nauka jazdy samochodem czy gry w szachy.
+%Interakcja z otoczeniem jest prawdopodobnie dla większości z nas naturalnym sposobem uczenia się. 
+%Dziecko uczące się stawiać pierwsze kroki nie posiada nauczyciela, który dokładnie instruuje je w jaki sposób powinno układać nogi, aby zachować równowagę. 
+%Zamiast tego, poprzez metodę prób i błędów, stara się ono zrozumieć w jaki sposób zrealizować swój cel i poznaje jakie efekty przynosi wykonywanie przez nie konkretnych ruchów. 
+%W ten sam sposób uczymy się przez całe życie, jednocześnie poznając otaczający nas świat oraz prawa, które nim rządzą, bez względu na to czy jest to nauka jazdy samochodem czy gry w szachy.
 
+
+Do napisania.
 %\section{Intro2}
 
 \section{Piłkarzyki na kartce}
@@ -156,12 +163,14 @@ Możliwe jest odbijanie się, które polega na wykonaniu przez gracza dodatkoweg
   \centering
   \includegraphics[width=0.2\textwidth]{odbicie}
   \caption{Odbicie (kolor czerwony)}
+  \label{fig:odbicie}
 \end{figure}
 
 Gra kończy się w momencie gdy piłka znajdzie się w jednej z bramek.
-Wówczas gracz, do którego należy dana bramka, przegrywa. 
+Wówczas gracz, do którego należy dana bramka przegrywa. 
 Gracz może również przegrać w wypadku gdy nie jest w stanie wykonać żadnego ruchu.
 
+Do zapisu gry wykorzystuje się notację, w której każdy z ruchów określony jest liczbą naturalną od 0 do 7, gdzie 0 oznacza ruch w górę, a kolejne idą zgodnie z ruchem wskazówek zegara o 45 stopni. Ruchy oddziela się przerwą jedynie pomiędzy graczami. Przykładowo grze na rysunku \ref{fig:odbicie} odpowiada zapis: $ 4 \;1 \; 66 $, gdyż najpierw gracz wykonał ruch w dół, następny po skosie do góry w prawo, a następnie wykonana została seria ruchów w lewo.
 
 \begin{figure}[ht]
   \centering
@@ -173,9 +182,9 @@ Gracz może również przegrać w wypadku gdy nie jest w stanie wykonać żadneg
 
 % todo napisz wczesniej cos o AlphaGo
 
-Celem mojej pracy jest zastosowanie algorytmu wykorzystanego w AlpaGo, do wyuczenia agenta zdolnego do gry w piłkarzyki na kartce. Postaram się w niej dowiedzieć w jaki sposób hiperparametry wykorzystane w AlphaGo powinny zostać zaadaptowane do mojego problemu. 
+Celem mojej pracy jest zastosowanie algorytmu wykorzystanego w AlphaGo, do wyuczenia agenta zdolnego do gry w piłkarzyki na kartce. Postaram się w niej dowiedzieć w jaki sposób hiperparametry wykorzystane w AlphaGo powinny zostać zaadaptowane do mojego problemu. 
 
-Ponadto maszyny wykorzystywane podczas uczenia AlphaGo są rzędy wielkości większe od typowych komputerów, które są dostępne dla przeciętnego studenta. Moje eksperymenty będą skupiały się również na tym jak hiperparametry modelu mogą być redukowane, aby jednocześnie uzyskać wyniki w sensownym czasie oraz aby były one dla nas satysfakcjonujące.
+Ponadto maszyny wykorzystywane do uczenia AlphaGo są rzędy wielkości lepsze od komputerów wykorzystywanych przez przeciętną osobę. Moje eksperymenty będą skupiały się również na tym które hiperparametry mogą zostać zredukowane, aby jednocześnie uzyskać wyniki w sensownym czasie oraz aby były one dla nas satysfakcjonujące.
 
 
 \section{Wkład własny}
@@ -184,34 +193,37 @@ Za mój wkład uważam:
 
 \begin{itemize}
 
-\item Zastosowanie metod uczenia ze wzmocnieniem do piłkarzyków na papierze, które wcześniej nie przyciągnęły wcześniej niczyjej uwagi,
+\item Zastosowanie metod uczenia ze wzmocnieniem do piłkarzyków na papierze, które nie przyciągnęły do tej pory niczyjej uwagi,
 
-\item Implementacja algorytmu AlphaGo, którego dostępny jest jedynie opis słowny,
+\item Wyznaczenie które hiperparametry mogą zostać zredukowane, aby móc przeprowadzić eksperyment na przeciętnej maszynie,
 
-\item Wyznaczenie które hiperparametry mogą zostać zredukowane, aby móc przeprowadzić eksperyment na przeciętnej maszynie oraz wyznaczenie tych hiperparametrów, które zostały pominięte w pracy AlphaGo.
+\item Reimplementacja algorytmu wykorzystanego w AlphaGo oraz wyuczenie wag.
 
 \end{itemize}
 
 \section{Zarys pracy}
 
-Pozostała część pracy została podzielona na następujące rozdziały:
+Pozostała część tekstu została podzielona na następujące rozdziały:
+\begin{itemize}
 
-W rozdziale drugim postaram wprowadzić czytelnika w zagadnienie uczenia ze wzmocnieniem, wyprowadzając podstawowe definicje oraz pojęcia, które wykorzystywane będą w późniejszych rozdziałach pracy.
+\item W rozdziale drugim postaram wprowadzić czytelnika w zagadnienie uczenia ze wzmocnieniem, wyprowadzając podstawowe definicje oraz pojęcia, które wykorzystywane będą w dalszych częściach.
 
-W rozdziale trzecim zaznajomię czytelnika z tematem głębokich sieci neuronowych, które stanowią dziś ogromną część uczenia maszynowego i cieszą się ogromną popularnością ze względu na swoje znakomite osiągnięcia.
+\item W rozdziale trzecim zaznajomię czytelnika z tematem głębokich sieci neuronowych, które stanowią dziś ogromną część uczenia maszynowego i cieszą się popularnością ze względu na swoje znakomite osiągnięcia.
 
-W rozdziale czwartym wytłumaczę w jaki sposób połączyć ze sobą światy uczenia ze wzmocnieniem oraz głębokich sieci neuronowych, otrzymując w ten sposób głębokie uczenie ze wzmocnieniem, które odpowiedzialne jest obecnie za czołowe osiągnięcie w dziedzinie uczenia ze wzmocnieniem, takie jak autonomiczne samochody czy AlphaGo.
+\item W rozdziale czwartym wytłumaczę w jaki sposób połączyć ze sobą światy uczenia ze wzmocnieniem oraz głębokich sieci neuronowych, otrzymując w ten sposób głębokie uczenie ze wzmocnieniem, które odpowiedzialne jest obecnie za czołowe osiągnięcia w dziedzinie uczenia ze wzmocnieniem, takie jak autonomiczne samochody czy AlphaGo.
 
-W rozdziale piątym opowiem o wykonanym przeze mnie eksperymencie uczenia się gry w piłkarzyki na kartce. Wyjaśnię w jaki sposób algorytm zdobywa doświadczenie potrzebne mu podczas uczenia się oraz w jaki sposób wygląda proces podejmowania decyzji oraz uczenia się.
+\item W rozdziale piątym opowiem o wykonanym przeze mnie eksperymencie uczenia się gry w piłkarzyki na kartce. Wyjaśnię w jaki sposób algorytm zdobywa doświadczenie potrzebne mu podczas uczenia się oraz w jaki sposób wygląda proces podejmowania decyzji oraz uczenia się.
 
-Ostatni rozdział podsumowuje wykonaną pracę i zawiera moje wnioski wyciągnięte podczas tej pracy.
+\item Ostatni rozdział podsumowuje wykonaną pracę i zawiera wyciągnięte podczas niej wnioski.
+\end{itemize}
  
 \chapter{Uczenie ze Wzmocnieniem}\label{r:rl}
 
 \section{Wprowadzenie}
 
-Uczenie ze wzmocnieniem (ang. Reinforcement Learning, RL) jest działem uczenia maszynowego, zajmującym się sekwencyjnym podejmowaniem decyzji. Na proces uczenia składa się \emph{agent}, który uczy się podejmować decyzje oraz \emph{środowisko}, które stanowi cały świat zewnętrzy dla agenta. Interakcja między nimi polega na naprzemiennym wykonywaniu akcji przez agenta oraz prezentowaniu nowej sytuacji, w której on się znalazł i nagrody jaką otrzymał przez środowisko. Celem agenta jest maksymalizacja nagród, które otrzymuje.
-Podczas procesu uczenia się, nigdy nie wskazujemy agentowi którą akcje powinien on wykonać, co stanowi główną różnice pomiędzy uczeniem ze wzmocnieniem a uczeniem nadzorowanym (ang. Supervised Learning). 
+Uczenie ze wzmocnieniem (ang. Reinforcement Learning, RL) \cite{Sutton, Szepesvari} jest działem uczenia maszynowego, zajmującym się sekwencyjnym podejmowaniem decyzji. Na proces uczenia składa się \emph{agent}, który uczy się podejmować decyzje oraz \emph{środowisko}, które stanowi cały świat zewnętrzy dla agenta. Interakcja między nimi polega na naprzemiennym wykonywaniu akcji przez agenta oraz prezentowaniu mu przez środowisko nowej sytuacji w której się znalazł i nagrody jaką otrzymał. Celem agenta jest maksymalizacja nagród, które otrzymuje.
+
+Podczas procesu uczenia się, nigdy nie wskazujemy agentowi optymalnej akcji, a zamiast tego musi on sam do niej dojść. Stanowi to główną różnice pomiędzy uczeniem ze wzmocnieniem a uczeniem nadzorowanym (ang. Supervised Learning). Rozdział oparty jest na książce Suttona oraz Barto \cite{Sutton}.
 
 \section{Dyskretny Proces Markowa}
 
@@ -223,15 +235,13 @@ Dyskretny Proces Markowa składa się z:
 \item nagrody otrzymywanej przez agenta za każdym razem, gdy ten wykona jakąś akcje, $ r_t \in \mathbb{R} $
 \item prawdopodobieństwa przejścia między stanami
 $$ p(s'|s, a) = \mathbb{P}(s_{t+1} = s' \mid s_t = s, a_t = a)$$
-\item funkcji nagrody, $ R : S \times S \times A \rightarrow \mathbb{R} $
-$$ R(s, a, s') = \mathbb{E}(r_{t+1} \mid s_t = s, a_t = a, s_{t+1} = s') $$
 \item współczynnik dyskontującego wartości nagród otrzymywanych w przyszłości $ \gamma \in [0, 1] $
 \end{itemize}
 
 
 \section{Wynik oraz epizody}
 
-Interakcja między agentem a środowiskiem zachodzi w każdym, dyskretnym punkcie czasu $ t = 0, 1, 2, ... $. Znajdując się w punkcie czasu $t$, agent obserwuje stan $ s_t \in \mathcal{S} $, w którym się znajduję, na jego podstawie wykonuje akcję $ a_t \in \mathcal{A}(s) $, gdzie $ \mathcal{A}(s) $ jest zbiorem wszystkich akcji, które można wykonać znajdując się w stanie $s$. W kolejnym kroku dowiaduje się on jaką nagrodę $ r_{t+1} \in \mathbb{R} $ otrzymał i do jakiego stanu $ s_t{t+1} $ się przeniósł. W wyniku otrzymujemy następujący ciąg stanów, akcji oraz nagród, zwany \emph{trajektorią}:
+Interakcja między agentem a środowiskiem zachodzi w każdym, dyskretnym punkcie czasu $ t = 0, 1, 2, ... $. Znajdując się w punkcie czasu $t$, agent obserwuje stan $ s_t \in \mathcal{S} $, w którym się znajduję, na jego podstawie wykonuje akcję $ a_t \in \mathcal{A}(s) $, gdzie $ \mathcal{A}(s) $ jest zbiorem wszystkich akcji, które można wykonać znajdując się w stanie $s$. W kolejnym kroku dowiaduje się on jaką nagrodę $ r_{t+1} \in \mathbb{R} $ otrzymał i do jakiego stanu $ s_{t+1} $ się przeniósł. Stan w którym nasz agent rozpoczyna interakcje ze środowiskiem nazywamy \emph{początkowym} i jest on wyznaczany losowo przez środowisko na podstawie rozkładu $\mathcal{D}$, natomiast stany do których nasz agent się przenosi są zgodne z rozkładem prawdopodobieństwa przejścia między stanami. W wyniku otrzymujemy następujący ciąg stanów, akcji oraz nagród, zwany \emph{trajektorią}:
 
 $$ s_0, a_0, r_1, s_1, a_1, r_2, ... $$
 
@@ -255,20 +265,20 @@ Możemy również spotkać się ze środowiskami, z którymi interakcja przebieg
 $$ G_t = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + ... = 
 \sum_{k=0}^{\infty} \gamma^k r_{t+k+1} $$
 
-gdzie $ \gamma \in [0, 1) $.
+gdzie $ \gamma \in [0, 1) $. Wymagany go aby zapewnić ograniczoność wyniku.
 
 
 \section{Polityka}
 
-Polityka jest funkcją która każdemu stanowi przyporządkowuje akcję. Może być ona deterministyczna, $ \pi(s) $, bądź też stochastyczna, $ \pi(a \mid s) $, i wówczas stanowić rozkład prawdopodobieństwa wszystkich akcji dla ustalonego stanu. Metody uczenia ze wzmocnieniem określają w jaki sposób polityka jest modyfikowana na podstawie doświadczenia zbieranego przez agenta.
+Polityka jest funkcją która każdemu stanowi przyporządkowuje akcję. Może być ona deterministyczna, $ \pi(s) $, lub też stochastyczna, $ \pi(a \mid s) $, i wówczas stanowić rozkład prawdopodobieństwa wszystkich akcji dla ustalonego stanu. Metody uczenia ze wzmocnieniem określają w jaki sposób polityka jest modyfikowana na podstawie doświadczenia zbieranego przez agenta.
 
 \section{Funkcja Wartości}
 
-Posiadając już politykę naszego agenta, możemy chcieć się dowiedzieć jaką nagrodę uzyska agent, który będzie jej przestrzegał. W tym celu definiujemy \emph{funkcję wartości stanu} (ang. Value Function), którą oznaczamy jako $ v_{\pi}(s) $ dla ustalonej polityki $ \pi $. Definiujemy ją jako:
+Posiadając politykę, możemy chcieć się dowiedzieć jaką nagrodę uzyska agent, który będzie się nią kierował. W tym celu definiujemy \emph{funkcję wartości stanu} (ang. Value Function), którą oznaczamy jako $ v_{\pi}(s) $ dla ustalonej polityki $ \pi $. Definiujemy ją jako:
 
 $$ v_{\pi}(s) = \mathbb{E}_{\pi}[G_t \mid S_t = s] = \mathbb{E}_{\pi} \Bigg[ \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \bigg| S_t = s \Bigg] $$
 
-gdzie $ \mathbb{E}_{\pi} $ jest wartością oczekiwaną przy założeniu że agent kieruje się polityką $\pi$, z kolei $t$ jest dowolnym punktem w czasie. 
+gdzie $ \mathbb{E}_{\pi} $ jest wartością oczekiwaną przy założeniu że agent wykonuje akcje zgodnie z polityką $\pi$, a $t$ jest dowolnym punktem w czasie. 
 
 Podobnie definiujemy wartość wybrania akcji $a$, gdy znajdujemy się w stanie $s$ oraz podążamy zgodnie z polityką $\pi$, oznaczaną jako $q_{\pi}(s, a)$. Jest ona wartością oczekiwaną z sytuacji w której rozpoczynamy w stanie $s$, wykonujemy akcję $a$, po czym wszystkie kolejne akcje wykonujemy zgodnie z polityką $\pi$. Funkcję tę nazywamy \emph{funkcją wartości akcji} lub \emph{Q-funkcją}.
 
@@ -276,7 +286,7 @@ $$ q_{\pi}(s, a) = \mathbb{E}_{\pi}[G_t \mid S_t = s, A_t = a] = \mathbb{E}_{\pi
 
 \section{Optymalność polityki oraz funkcji wartości}
 
-Podczas rozwiązywania problemu uczenia ze wzmocnieniem staramy się znaleźć politykę, której przestrzeganie przyniesie naszemu agentowi jak największą nagrodę. Będziemy mówić że polityka $\pi$ jest lepsza lub równa polityce $\pi'$, wtedy i tylko wtedy gdy oczekiwana nagroda dla niej jest większa lub równa niż dla $\pi'$ w każdym stanie należącym do przestrzeni stanów. Zawsze istnieje polityka, która jest lepsza lub równa od wszystkich innych i nazywamy ją \emph{optymalną polityką}. Może istnieć wiele różnych od siebie optymalnych polityk, jednak każdą z nich oznaczamy jako $\pi_{\ast}$. Dla wszystkich z nich funkcja wartości stanu jest taka sama i nazywamy ją \emph{optymalną funkcją wartości stanu}. Spełnia ona własność:
+Podczas rozwiązywania problemu uczenia ze wzmocnieniem staramy się znaleźć politykę, której przestrzeganie przyniesie naszemu agentowi możliwie największą nagrodę. Będziemy mówić że polityka $\pi$ jest lepsza lub równa polityce $\pi'$, wtedy i tylko wtedy gdy oczekiwana nagroda dla niej jest większa lub równa niż dla $\pi'$ w każdym stanie należącym do przestrzeni stanów. Zawsze istnieje polityka, która jest lepsza lub równa od wszystkich innych i nazywamy ją \emph{optymalną polityką}. Może istnieć wiele różnych od siebie optymalnych polityk, dla uproszczenia wszystkie oznaczamy tak samo jako $\pi_{\ast}$. Każda z nich posiada identyczną funkcję wartości stanu, nazywamy ją \emph{optymalną funkcją wartości stanu}. Spełnia ona własność:
 
 $$ v_{\ast}(s) = \max_{\pi} v_{\pi}(s) $$
 
@@ -290,7 +300,7 @@ Ponadto optymalną funkcję wartości stanu możemy zdefiniować odwołując si�
 
 $$ v_{\ast}(s) = \max_{a \in \mathcal{A}} q_{\pi_{\ast}}(s) $$
 
-Podstawową własnością, jaką spełniają funkcje wartości, jest \emph{równanie Bellmana}. Dla dowolnej polityki $\pi$ oraz stanu $s$ zachodzi:
+Podstawową własnością spełnianą przez funkcję wartości jest \emph{równanie Bellmana}. Dla dowolnej polityki $\pi$ oraz stanu $s$ zachodzi:
 
 \begin{align}
 v_{\pi}(s) &= \mathbb{E}_{\pi}[G_t \mid S_t = s]  \nonumber \\
@@ -299,7 +309,7 @@ v_{\pi}(s) &= \mathbb{E}_{\pi}[G_t \mid S_t = s]  \nonumber \\
 &= \sum_a \pi(a \mid s) \sum_{s', r} p(s', r \mid s, a) \Big[r + \gamma v_{\pi}(s') \Big]
 \end{align}
 
-Na podstawie własności optymalnych funkcji wartości oraz równania Bellmana możemy wyprowadzić \emph{równania optymalności Bellmana}, bez odwoływania się przy tym do żadnej polityki. Pierwsze z nich odnosi się do funkcji wartości stanu:
+Na podstawie własności optymalnych funkcji wartości oraz równania Bellmana możemy wyprowadzić \emph{równania optymalności Bellmana} \cite{bellman1954, bellman1957}, bez odwoływania się przy tym do żadnej polityki. Pierwsze z nich odnosi się do funkcji wartości stanu:
 
 \begin{align}
 v_{\ast}(s) &= \max_{a \in \mathcal{A}} q_{\pi_{\ast}}(s, a) \nonumber \\
@@ -318,13 +328,13 @@ q_{\ast}(s, a) &= \mathbb{E}[r_{t+1} + \gamma \max_{a'} q_{\ast} (S_{t+1}, a') \
 
 \section{Metody uczenia ze wzmocnieniem}
 
-Metody rozwiązywania problemu uczenia ze wzmocnieniem możemy podzielić ze względu na to, czy wykorzystują one model środowiska. Metody \emph{model-based} wymagają od nas \emph{modelu} środowiska, z którego nasz agent będzie korzystał podczas aby przewidzieć w jaki sposób środowisko będzie zachowywało się w odpowiedzi na wykonywane przez niego akcje.
-Dzięki temu możliwe jest \emph{planowanie}, które pozwala na przewidywanie zachowania środowiska wiele kroków wprzód. Tego typu problemy możemy spotkać przy okazji nauki naszego agenta w Go, gdzie środowisko imitowane jest przez niego samego, podczas gdy gra on sam ze sobą. 
+Metody rozwiązywania problemu uczenia ze wzmocnieniem możemy podzielić ze względu na to czy wykorzystują one model środowiska. Metody \emph{model-based} wymagają od nas \emph{modelu} środowiska wykorzystywanego przez agenta aby przewidzieć w jaki sposób otoczenie będzie zachowywało się w odpowiedzi na wykonywane przez niego akcje.
+Dzięki temu możliwe jest \emph{planowanie}, które pozwala na przewidywanie stanów oraz nagród na wiele kroków wprzód. Tego typu problemy możemy spotkać przy okazji nauki naszego agenta gry w Go\cite{alphago2016, alphagozero}, gdzie środowisko imitowane jest przez niego samego, podczas gdy gra on sam ze sobą. W ten sposób przewiduje on jakie akcje podejmie przeciwnik w odpowiedzi na jego ruchy, dzięki czemu może on podejmować jeszcze lepsze decyzje.
 Drugą klasą algorytmów są metody \emph{model-free}, w których agent posiada jedynie politykę oraz funkcję wartości, a samo zachowanie środowiska jest dla niego nieznane i może on obserwować jedynie bezpośrednie skutki swoich działań. Z takimi problemami spotykamy się np. w przypadku gry naszego agenta na Atari, gdzie nie próbujemy dowiedzieć się jakie prawa rządzą poszczególnymi grami, a zamiast tego po prostu dajemy naszemu agentowi grać.
 
 \subsection{Metody Monte Carlo}
 
-Metody Monte Carlo korzystają z idei \emph{uogólnionej iteracji polityki}, która składa się z dwóch, przeplatających się ze sobą procesów. Pierwszy krok, nazywany \emph{krokiem ewaluacji polityki}, polega na aproksymacji funkcji wartości na podstawie polityki, wykorzystywanej przez agenta. Z kolei w drugim kroku ulepszamy obecną politykę, przy użyciu wcześniej uzyskanej funkcji wartości. Nazywamy go \emph{krokiem ulepszania polityki}.
+Metody Monte Carlo korzystają z idei \emph{iteracji polityki} \cite{policy-iteration}, która składa się z dwóch, przeplatających się ze sobą procesów. Pierwszy krok, nazywany \emph{krokiem ewaluacji polityki}, polega na aproksymacji funkcji wartości na podstawie polityki, wykorzystywanej przez agenta. Z kolei w drugim kroku ulepszamy obecną politykę, przy użyciu wcześniej uzyskanej funkcji wartości. Nazywamy go \emph{krokiem ulepszania polityki}.
 
 W przypadku metod Monte Carlo, ewaluacje polityki wykonujemy poprzez próbkowanie kolejnych trajektorii, a następnie wyliczanie średniego wyniku dla każdego ze stanów, bądź każdej pary stan-akcja. Zbierana przez nas historia akcji w postaci trajektorii nazywamy \emph{doświadczeniem} agenta. Najprostszy sposób aktualizacji funkcji wartości może wyglądać następująco:
 
@@ -332,9 +342,9 @@ $$ v(s_t) \leftarrow v(s_t) + \alpha \big[G_t - v(s_t)\big] $$
 
 gdzie $G_t$ oznacza wynik agenta następujący po czasie $t$, a $\alpha$ parametrem wpływającym na szybkość uczenia się.
 
-Ulepszanie polityki następuje poprzez zachłanny wybór najlepszej akcji dla każdego ze stanów, przy pomocy funkcji wartości akcji. Jednak w przypadku takiego doboru polityki, skazujemy się na deterministyczną politykę, która nie jest w stanie odkrywać nowych, potencjalnie lepszych akcji, gdyż cały czas wybierać będzie ona te same akcje. 
+Ulepszanie polityki następuje poprzez zachłanny wybór najlepszej akcji dla każdego ze stanów, na podstawie wyuczonej funkcji wartości akcji. Jednak w przypadku takiego doboru polityki, skazujemy się na deterministyczną politykę, która nie jest w stanie odkrywać nowych, potencjalnie lepszych akcji, gdyż cały czas wybierać będzie ona te same akcje. 
 
-Aby utrzymać eksploracje nowych akcji oraz stanów, wprowadzamy pojęcie \emph{$\epsilon$--zachłannej} polityki, która z wysokim prawdopodobieństwem wykonuje akcję, która maksymalizuje wartość funkcji wartości akcji, a od czasu do czasu wykonuje losową akcję. Dzięki temu utrzymujemy stały poziom eksploracji, a przy niewielkich założeniach dla epsilona polityka zbiega do optymalnej.
+Aby utrzymać eksploracje nowych akcji oraz stanów, wprowadzamy pojęcie \emph{$\varepsilon$--zachłannej} polityki, która z wysokim prawdopodobieństwem wykonuje akcję, która maksymalizuje wartość funkcji wartości akcji, a od czasu do czasu wykonuje losową akcję. Dzięki temu utrzymujemy stały poziom eksploracji, a przy niewielkich założeniach dla epsilona polityka zbiega do optymalnej.
 
 $$
 \pi(a \mid s) =
@@ -344,11 +354,11 @@ $$
 \end{cases}
 $$
 
-Metody Monte Carlo cierpią z powodu wysokiej wariancji podczas uczenia, przez co potrzeba bardzo wielu iteracji, aby agent mógł wyuczyć się sensownej polityki. Są one przykładem metod model-free.
+Metody Monte Carlo cierpią z powodu wysokiej wariancji podczas uczenia, przez co potrzeba bardzo wielu iteracji, aby agent mógł wyuczyć się sensownej polityki, co z kolei wiąże się z ogromnym kosztem ponoszonym na uczenie. Metody Monte Carlo są przykładem metod model-free.
 
 \subsection{Temporal-Difference Learning} 
 
-Prawdopodobnie najważniejszą ideą wykorzystywaną  w uczeniu ze wzmocnieniem jest \emph{temporal-difference} (TD) learning. Podobnie do metod Monte Carlo wykorzystuje ono doświadczenie agenta, bez użycia modelu środowiska. Nie jest wymagane jednak oczekiwanie na zakończenie epizodu, aby zaktualizować wartość funkcji wartości, a zamiast tego aktualizacje mogą następować po wykonaniu pojedynczego kroku. Aktualizacja funkcji wartości w przypadku TD learning może wyglądać następująco:
+Bardzo istotnym podejściem wykorzystywanym w uczeniu ze wzmocnieniem jest \emph{temporal-difference} learning (TD Learning) \cite{TD}. Podobnie do metod Monte Carlo wykorzystuje ono doświadczenie agenta bez potrzeby wykorzystania modelu środowiska. Nie jest wymagane jednak oczekiwanie na zakończenie epizodu, aby zaktualizować wartość funkcji wartości, a zamiast tego aktualizacje mogą następować po wykonaniu pojedynczego kroku. Aktualizacja funkcji wartości w przypadku TD learning może wyglądać następująco:
 
 $$ V(S_t) \leftarrow V(S_t) + \alpha \big[R_{t+1} + \gamma V(S_{t+1}) - V(S_t) \big] $$
 
@@ -366,7 +376,7 @@ nazywamy \emph{błędem TD}.
 
 Metody w uczeniu ze wzmocnieniem dzielimy również ze względu na to czy ewaluacja polityki przebiega przy użyciu polityki, która została wykorzystana podczas generowania trajektorii. Metody ewaluujące tę samą politykę nazywamy \emph{on-policy}, natomiast te które działają na różnych politykach nazywamy \emph{off-policy}.
 
-Dwoma podstawowymi algorytmami zaliczającymi się do TD learning jest \emph{SARSA (State-Action-Reward-State-Action} oraz \emph{Q-Learning}.
+Dwoma podstawowymi algorytmami zaliczającymi się do TD learning jest \emph{SARSA (State-Action-Reward-State-Action} \cite{SARSA} oraz \emph{Q-Learning} \cite{Q-learning}.
 
 SARSA jest przykładem metody on-policy, która wykorzystuje funkcję wartości akcji, zamiast funkcji wartości stanu. W przypadku tej metody aktualizacja funkcji wartości akcji jest następująca:
 
@@ -378,27 +388,26 @@ Q-Learning natomiast jest przykładem metody off-policy, w której aktualizacja 
 
 $$ Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha \big[R_{t+1} + \gamma \max_a Q(S_{t+1}, a) - Q(S_t, A_t) \big] $$
 
-W ten sposób uczona się przez nas funkcja $Q$ bezpośrednio aproksymuje $Q_\ast$, niezależnie od tego jaka polityka jest przez nas wykorzystywana do wybierania kolejnych akcji.
+W ten sposób uczona przez nas funkcja $Q$ bezpośrednio aproksymuje $Q_\ast$, niezależnie od tego jaka polityka jest przez nas wykorzystywana do wybierania kolejnych akcji.
 
-\subsection{Rollout Algorithms}
+\subsection{Algorytmy Rollout}
 
-Metody wykorzystujące model do podejmowania decyzji, nazywane metodami \emph{model-based}, opierają się na planowaniu kolejnych ruchów, które w przyszłości podejmie nasz agent. Główną metodą planowania jest \emph{planowanie w momencie podjęcia decyzji}, które skupia się na podejmowaniu decyzji po znalezieniu się w konkretnym stanie $S_t$, a więc wyborze akcji $A_t$. Najważniejszy dla nas wówczas jest stan, w którym się znaleźliśmy, mniej natomiast te odległe bądź już odwiedzone, do których już nigdy nie powrócimy. Niezwykle użyteczne okazują się one w przypadku gdy na podjęcie decyzji możemy poświęcić trochę czasu, jak np. w przypadku szachów czy Go, mniej przydatne będzie ono jeśli nasz program będzie musiał bardzo szybko podejmować decyzje. 
+Metody \emph{model-based}, wykorzystujące wymodelowane środowisko, opierają się na planowaniu kolejnych ruchów, które w przyszłości podejmie nasz agent. Główną metodą planowania jest \emph{planowanie w momencie podjęcia decyzji}, które skupia się na podejmowaniu decyzji po znalezieniu się w konkretnym stanie $S_t$, a więc na wyborze akcji $A_t$. Najważniejszy dla nas wówczas jest stan, w którym się znaleźliśmy, mniej natomiast te odległe lub już odwiedzone. 
 
-Algorytmy typu rollout są algorytmami planowania w momencie podjęcia decyzji  i bazują na bardzo podobnej zasadzie co metody Monte Carlo. Przybliżają one funkcję wartości akcji dla stanu, w którym się znajdują, za pomocą symulowania kolejnych trajektorii, podobnie jak w przypadku ewaluacji polityki w Monte Carlo. Ich celem jednak nie jest znalezienie optymalnej polityki $\pi_\ast$ czy też funkcji $q_\ast$, a zamiast tego służą nam do stworzenia \emph{rollout polityki} za każdym razem gdy znajdziemy się w jakimś stanie. Okazuje się że polityki otrzymane w ten sposób radzą sobie nadzwyczaj dobrze.
+Algorytmy typu rollout są algorytmami planowania w momencie podjęcia decyzji  i bazują na bardzo podobnej zasadzie co metody Monte Carlo. Przybliżają one funkcję wartości akcji dla obecnego stanu, za pomocą symulowania kolejnych trajektorii, wykorzystując do tego politykę podstawową. Ich celem jednak nie jest znalezienie optymalnej polityki $\pi_\ast$ czy też funkcji $q_\ast$, a zamiast tego służą nam do stworzenia \emph{polityki rollout} za każdym razem gdy znajdziemy się w jakimś stanie. Otrzymane w ten sposób polityki są lepsze od wyjściowych, możemy więc traktować je jako metodę na ulepszanie posiadanej przez nas już polityki podstawowej.
 
 \subsection{Monte Carlo Tree Search}
 
-Przeszukiwanie drzew metodą Monte Carlo, czyli \emph{Monte Carlo Tree Search (MCTS)} jest dość nowym podejściem w uczeniu ze wzmocnieniem, wykorzystanym między innymi w takich programach jak AlphaGo. 
-
-MCTS jako algorytm rollout symuluje kolejne trajektorie rozpoczynające się w obecnym stanie, a kończące na stanie terminalnym. Rozszerza on ten pomysł poprzez przechowywanie i aktualizację funkcji wartości akcji dla kolejnych ruchów, zamiast jak to było w poprzednim przypadku, tylko dla stanu w którym się on znajduje. Tworzone jest wówczas drzewo, ukorzenione w obecnym stanie, które wraz z kolejnymi symulacjami się rozszerza i dokładniej aproksymuje Q funkcję. Dla stanów obecnych w drzewie, decyzję podejmujemy na podstawie funkcji wartości zawartej w węzłach drzewa, a politykę wytworzoną w ten sposób nazywamy \emph{polityką drzewa}. Gdy podczas symulowania trajektorii dochodzimy do liścia w naszym drzewie, to dalsza symulacja wykonywana jest na podstawie rollout polityki. Eksporacja zapewniona jest na poziomie polityki drzewa, na przykład za pomocą zastosowania polityki $\epsilon$-zachłannej.
+Przeszukiwanie drzew metodą Monte Carlo, czyli \emph{Monte Carlo Tree Search (MCTS)} \cite{MCTS} opiera się na algorytmach rollout i jest wykorzystywany między innymi w takich programach jak AlphaGo\cite{alphago2016, alphagozero}. 
+Rozszerza on pomysł opisany w poprzedniej sekcji o przechowywanie i aktualizację funkcji wartości akcji dla kolejnych ruchów, zamiast jedynie dla stanu w którym znajduje się agent. W tym celu tworzone jest drzewo, ukorzenione w obecnym stanie, które wraz z kolejnymi symulacjami się rozszerza i dokładniej aproksymuje Q funkcję. Dla stanów obecnych w drzewie, decyzję podejmujemy na podstawie funkcji wartości zawartej w węzłach drzewa, a dla stanów poza drzewem wykorzystujemy podstawową politykę. Politykę wytworzoną w ten sposób nazywamy \emph{polityką drzewa}. Eksploracja zapewniona jest na poziomie polityki drzewa, na przykład za pomocą zastosowania polityki $\varepsilon$-zachłannej.
 
 Pojedyncza iteracja MCTS dzieli się na cztery kroki:
 
 \begin{enumerate}
 \item \textbf{Wybór.} Wybierane są kolejne stany należące do drzewa na podstawie polityki utworzonej z wartości funkcji akcji, która zdefiniowana jest przez krawędzie grafu. Przejście przez drzewo rozpoczyna się w korzeniu, a kończy w liściu drzewa.
 \item \textbf{Rozwinięcie.} Drzewo jest rozszerzane w liściu, który został osiągnięty w poprzednim kroku, poprzez dodanie nowych węzłów jako dzieci dla tego liścia. Nowe węzły reprezentują stany, które wcześniej nie były obecne w drzewie.
-\item \textbf{Symulacja.} Zaczynając w węźle wybranym w pierwszym punkcie, rozpoczynana jest symulacja na podstawie polityki rollout. W wyniku otrzymujemy trajektorię, której pierwsze ruchy zostały wybrane za pomocą polityki drzewa, a pozostałe -- polityki rollout.
-\item \textbf{Propagacja wsteczna.} Wynik agenta jest propagowany wstecz do aktualizacji istniejących węzłów, bądź utworzenia nowych. Proces ten dotyczy jedynie stanów, które znajdują się w drzewie.
+\item \textbf{Symulacja.} Zaczynając w węźle wybranym w pierwszym punkcie, rozpoczynana jest symulacja na podstawie polityki podstawowej. W wyniku otrzymujemy trajektorię, której pierwsze ruchy zostały wybrane za pomocą polityki drzewa, a pozostałe -- polityki podstawowej.
+\item \textbf{Aktualizacja węzłów.} Wynik agenta jest propagowany wstecz do aktualizacji istniejących węzłów. Proces ten dotyczy jedynie stanów, które znajdują się w drzewie.
 \end{enumerate}
 
 
@@ -415,27 +424,27 @@ W tym rozdziale zaprezentowane zostały podstawowe podejścia oraz koncepcje sto
 
 \chapter{Głębokie Sieci Neuronowe}
 
-Ostatnio bardzo często mamy okazję słyszeć o Sztucznych Sieciach Neuronowych. Ponownie stały się one popularne wśród społeczności sztucznej inteligencji i obecnie osiągają najlepsze wyniki w bardzo wielu dziedzinach. Pozwalają nam one nam na tworzenie autonomicznych pojazdów, rozpoznawać obrazy lepiej od ludzi czy pokonać mistrza świata w Go. 
+Ostatnio bardzo często mamy okazję słyszeć o Sztucznych Sieciach Neuronowych \cite{dlbook}. Ponownie stały się one popularne wśród społeczności sztucznej inteligencji i obecnie osiągają najlepsze wyniki w bardzo wielu dziedzinach. Stało się to między innymi za sprawą rozwoju komputerów, które są obecnie w stanie wykonywać ogromne ilości obliczeń. Sieci neuronowe pozwalają nam na tworzenie autonomicznych pojazdów \cite{sdc1, sdc2}, rozpoznawać obrazy lepiej od ludzi \cite{resnet, resnext} czy pokonać mistrza świata w Go\cite{alphago2016, alphagozero}. 
 
-Głębokie Sieci Neuronowe mają zdolność do tworzenia aproksymacji nieliniowych funkcji na podstawie danych. Ponadto, w porównaniu do innych modeli uczenia maszynowego, nie wymagają one ręcznego tworzenia istotnych cech na podstawie danych, a zamiast tego same tworzą własną reprezentacje. Dzięki temu ograniczają one wymaganą interakcje z modelem, przy jednoczesnej poprawie jakości uzyskiwanych cech.
+Głębokie Sieci Neuronowe mają zdolność do tworzenia aproksymacji nieliniowych funkcji na podstawie danych. Ponadto w porównaniu do innych modeli uczenia maszynowego, nie wymagają one ręcznego tworzenia cech na podstawie danych, a zamiast tego same tworzą własną reprezentacje. Dzięki temu ograniczają one wymaganą interakcje z modelem, przy jednoczesnej poprawie jakości uzyskiwanych cech.
 
 \section{Sieci jednokierunkowe}
 
-Głębokie sieci jednokierunkowe (ang. Deep Feedforward Networks), zwane również wielowarstwowym perceptronem (ang. Multilayer Perceptron), są podstawowym modelem głebokiego uczenia. Ich zadaniem jest przybliżanie funkcji $ y = f^{\ast}(x) $, która dla danych wejściowych $x$ przyporządkowuje konkretną decyzję $y$ np. kategorię. Sieć jest wówczas funkcją $ y = f(x; \theta) $ parametryzowaną przez wektor $\theta$, który uczy się na podstawie danych.
+Głębokie sieci jednokierunkowe (ang. Deep Feedforward Networks), zwane również wielowarstwowym perceptronem (ang. Multilayer Perceptron), są podstawowym modelem głebokiego uczenia. Ich zadaniem jest przybliżanie funkcji $ y = f^{\ast}(x) $, która dla danych wejściowych $x$ przyporządkowuje decyzję bądź wartość $y$. Sieć jest wówczas funkcją $ y = f(x; \theta) $ parametryzowaną przez wektor $\theta$ i uczy się na podstawie danych.
 
-Sieci neuronowe nazywane są sieciami, gdyż są one złożeniem wielu funkcji ze sobą, przez co informacje przepływają kolejno przez wszystkie z nich. Możemy je reprezentować jako acykliczny graf, który definiuje kolejne kroki wykonywanych obliczeń. Przykładowo możemy złożyć ze sobą dwie funkcje $ f(x) = f^{(2)}(f^{(1)}(x)) $, otrzymując sieć w której $f^{(1)} $ jest pierwszą warstwą sieci, a $ f^{(2)} $ -- drugą. Ilość składanych ze sobą sieci nazywamy \emph{głębokością} sieci, ostatnią warstwę -- \emph{warstwą wyjściową}, a pozostałe warstwy -- \emph{ukrytymi warstwami}. 
+Sieci neuronowe nazywane są sieciami, gdyż są one złożeniem wielu funkcji ze sobą, przez co informacje przepływają kolejno przez wszystkie z nich. Możemy je reprezentować jako acykliczny graf, który definiuje kolejne kroki wykonywanych obliczeń. Przykładowo możemy złożyć ze sobą dwie funkcje $ f(x) = f^{(2)}(f^{(1)}(x)) $, otrzymując sieć w której $f^{(1)} $ jest pierwszą warstwą, a $ f^{(2)} $ -- drugą. Ilość składanych ze sobą warstw nazywamy \emph{głębokością} sieci, ostatnią warstwę -- \emph{warstwą wyjściową}, a pozostałe warstwy -- \emph{ukrytymi warstwami}. 
 
 W sieciach jednokierunkowych przepływ informacji występuje w jednym kierunku, a więc każda z warstw jest zależna jedynie od poprzednich. Nie występuje w nich sprzężenie zwrotne, które jest charakterystyczne dla rekurencyjnych sieci neuronowych.
 
-Sztuczne sieci neuronowe swoją budową bazują na prawdziwych sieci neuronowych, które występują w mózgu. Warstwy sieci scharakteryzowane są przez \emph{szerokość}, która mówi o rozmiarze wektora produkowanego przez odpowiadającą jej funkcję. Każdy element wektora może pełnić wówczas funkcję analogiczną do neurona, który zbiera wszystkie informacje z poprzedniego wektora i tworzy na ich podstawie pewną wartość. Wszystkie neurony w warstwie działają niezależnie od siebie. Pomimo jednak iż głębokie uczenie posiadają swoje korzenie w neuronaukach, to obecnie funkcje są dobierane przez inżynierów na podstawie ich własności matematycznych, a ich głównym celem nie jest już naśladowanie działania mózgu.
+Sztuczne sieci neuronowe swoją budową bazują na prawdziwych sieci neuronowych, które występują w mózgu. Warstwy sieci scharakteryzowane są przez \emph{szerokość}, która mówi o rozmiarze wektora produkowanego przez odpowiadającą jej funkcję. Każdy element wektora może pełnić wówczas funkcję analogiczną do neurona, który zbiera wszystkie informacje z poprzedniego wektora i tworzy na ich podstawie pewną wartość. Szerokość warstwy jest więc również ilością neuronów w niej zawartych. Wszystkie neurony w warstwie działają niezależnie od siebie. Pomimo jednak iż głębokie uczenie posiadają swoje korzenie w neuronaukach, to obecnie tworzone są one przez matematyków i inżynierów na podstawie ich własności matematycznych, a ich głównym celem nie jest naśladowanie działania mózgu.
 
 \section{Budowa neuronu}
 
-Każdy z neuronów na wejściu przyjmuje wektor $x$, który odpowiada poprzedzającej mu warstwie. Następnie liczony jest jego iloczyn skalarny z wektorem wag $w$ i dodawane jest obciążenie $b$. Otrzymana wartość przekazywana jest do funkcji aktywacji $f$, a na końcu wyniki ze wszystkich neuronów są ze sobą konkatenowane w wektor, którego długość jest równa ilości neuronów w danej warstwie.
+Każdy z neuronów na wejściu przyjmuje wektor $x$, który odpowiada poprzedzającej mu warstwie. Liczony jest jego iloczyn skalarny z wektorem wag $w$ i dodawane jest obciążenie $b$. Otrzymana wartość przekazywana jest do funkcji aktywacji $f$, a na końcu wyniki ze wszystkich neuronów są ze sobą konkatenowane w wektor, którego długość jest równa ilości neuronów w danej warstwie.
 
 $$ y_i = f(\mathbf{x}^{T}\mathbf{w} + b) $$
 
-Rolą funkcji aktywacji w sieciach neuronowych jest wprowadzenie nieliniowości do funkcji, dzięki którym możemy aproksymować dowolne funkcje. Najpopularniejszymi z nich są:
+Rolą funkcji aktywacji \cite{relu, activation-fn} w sieciach neuronowych jest wprowadzenie nieliniowości, dzięki którym możemy aproksymować dowolne funkcje. Najpopularniejszymi z nich są:
 
 \begin{itemize}
 \item Sigmoid:
@@ -457,23 +466,23 @@ $$ f(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}} $$
 
 \end{itemize}
 
-W przypadku klasyfikacji, w której występuje wiele kategorii, wykorzystywana jest funkcja Softmax, która aplikowana jest od razu do całego wyjściowego wektora:
+W przypadku klasyfikacji, w której występuje wiele kategorii, wykorzystywana jest funkcja \emph{softmax}, która aplikowana jest od razu do całego wyjściowego wektora:
 
 
-$$ f_i(x) = \frac{e^x}{\sum_j e^j} $$
+$$ f_i(x) = \frac{e^{x_i}}{\sum_k e^{x_k}} $$
 
 
 \section{Uczenie sieci neuronowej}
 
-Uczenie sieci neuronowej jest procesem optymalizacji, która polega na minimalizacji bądź maksymalizacji pewnej funkcji $ f(x; \theta) $ za pomocą zmieniania wartośći $ \theta $. Funkcja $ f $ jest przez nas nazywana \emph{funkcją celu}, w przypadku minimalizacji często nazywana jest również \emph{funkcją kosztu}, \emph{funkcją straty} lub \emph{funkcją błędu}. 
+Uczenie sieci neuronowej jest procesem optymalizacji, poleającym na minimalizacji bądź maksymalizacji pewnej funkcji $ f(x; \theta) $ za pomocą zmieniania wartośći $ \theta $. Funkcja $ f $ jest przez nas nazywana \emph{funkcją celu}, w przypadku minimalizacji często nazywana jest również \emph{funkcją kosztu}, \emph{funkcją straty} lub \emph{funkcją błędu}. 
 
 Optymalizacja przebiega przy użyciu gradientu funkcji $ f $. Znając jego wartość możemy zmodyfikować $\theta$ o niewielki krok $ \alpha $, zwany \emph{krokiem uczenia} (ang. learning rate), aby odpowiednio zmniejszyć bądź zwiększyć wartość funkcji $ f $. 
 
 $$ \theta_{i+1} = \theta_i - \alpha f'(x; \theta_i) $$
 
-Metoda ta nazywana jest \emph{metodą gradientu prostego} (ang. Stochastic Gradient Descent. SGD), a najczęściej stosowaną jej odmianą jest \emph{mini-batch SGD}, gdzie gradient liczony jest dla kilkudziesięciu przykładów z danych jednocześnie, po czym jest uśredniany. Przykłady pokazywane w jednym momencie sieci nazywane są \emph{partią} (ang. batch), a jedna iteracja w której siec widzi dokładnie wszystkie partie raz, nazywana jest epoką.
+Metoda ta nazywana jest \emph{metodą gradientu prostego} (ang. Stochastic Gradient Descent, SGD) \cite{sgd}, a najczęściej stosowaną jej odmianą jest \emph{mini-batch SGD} \cite{mini-batch-sgd}, gdzie gradient liczony jest dla kilkudziesięciu przykładów z danych jednocześnie, po czym jest uśredniany. Przykłady pokazywane w jednym momencie sieci nazywane są \emph{partią} (ang. batch), a jedna iteracja w której sieć widzi wszystkie batche dokładnie raz, nazywana jest epoką.
 
-Podczas tworzenia modelu możemy natrafić na pojęcie \emph{parametrów} oraz \emph{hiperparametrów} sieci. Poprzez parametry sieci rozumiemy wektor cech $\theta$, który jest modyfikowany w procesie uczenia sieci, a wyznaczany on jest losowo. Hiperparametrami natomiast nazywamy te czynniki, które ręcznie wyznaczamy przed rozpoczęciem procesu uczenia i są one przez nas arbitralnie wybierane. Nie jest możliwe ich uczenie się przez algorytm, a ich dobór jest arbitralny. Przykładami hiperparametrów modelu mogą być takie rzeczy jak głębokość sieci, szerokość sieci, krok uczący czy rozmiar partii.
+Podczas tworzenia modelu możemy natrafić na pojęcia \emph{parametrów} oraz \emph{hiperparametrów}. Poprzez parametry sieci rozumiemy wektor cech $\theta$, który jest modyfikowany w procesie uczenia sieci, a inicjalizowany jest on losowo. Hiperparametrami natomiast nazywamy te czynniki, które ręcznie wyznaczamy przed rozpoczęciem procesu uczenia i są one przez nas arbitralnie wybierane. Nie jest możliwe ich uczenie się przez algorytm. Przykładami hiperparametrów modelu mogą być takie rzeczy jak głębokość sieci, szerokość sieci, krok uczący czy rozmiar batcha.
 
 \begin{figure}[ht]
   \centering
@@ -491,22 +500,21 @@ gdzie $y$ to rzeczywista wartość funkcji, zwana również \emph{celem}, $\hat{
 
 $$ L_{MSE}(y, \hat{y}) = \sum_{i = 1}^N (y_i - \hat{y}_i)^2$$
 
-Różnica pomiędzy wykorzystaniem metod gradientowych optymalizacji w głębokim uczeniu maszynowym i klasycznym uczeniu maszynowym, jest fakt iż nieliniowość sieci neuronowych powoduje iż funkcje straty w większości przypadków nie są wypukłe. Z tego powodu zbieżność danych metod nie jest gwarantowana, a jakość otrzymanego modelu jest zależna od parametrów początkowych modelu. Powstało wiele metod aby unikać lokalne minima funkcji celu, a powszechnie stosowanymi oraz dającymi najlepsze rezultaty są obecnie \emph{Adam} oraz \emph{RMSprop}. 
+Różnica pomiędzy wykorzystaniem metod gradientowych optymalizacji w głębokim uczeniu maszynowym i klasycznym uczeniu maszynowym, jest brak wypukłości funkcji straty z powodu nieliniowości sieci neuronowych. Zbieżność danych metod do globalnego optimum nie jest gwarantowana, a jakość otrzymanego modelu jest zależna od parametrów początkowych. Powstało wiele metod aby unikać wpadnięcia w lokalne minima funkcji celu, powszechnie stosowanym sposobem jest modyfikacja sposobu aktualizacji wag, a przykładowymi i obecnie najpopularniejszymi algorytmami są \emph{Adam} \cite{adam} oraz \emph{RMSprop} \cite{rmsprop}. 
 
 \section{Propagacja wsteczna}
 
-W celu wykonania predykcji przy użyciu naszego modelu, musimy przekazać mu przykład, dla którego utworzy on estymację. Informacja o nim zostaje przekazywana przez kolejne warstwy, aby ostatecznie zwrócić jakiś wynik. Każdy kolejny krok wykonywanych obliczeń możemy utożsamić z grafem, który definiuje w jaki sposób wygląda przepływ przez naszą sieć. Przetworzenie przykładu przez naszą sieć nazywamy wówczas \emph{propagacją} (ang. forward propagation). Otrzymana przez nas estymacja jest później wykorzystana w funkcji błędu. 
+W celu wykonania predykcji przy użyciu naszego modelu, musimy przekazać mu przykład, dla którego utworzy on estymację. Informacja o nim zostaje przekazywana przez kolejne warstwy, aby ostatecznie zwrócić jakiś wynik. Każdy kolejny krok wykonywanych obliczeń możemy utożsamić z przejściem po grafie, który definiuje w jaki sposób wygląda przepływ przez naszą sieć. Przetworzenie przykładu przez naszą sieć nazywamy wówczas \emph{propagacją} (ang. forward propagation). Otrzymana przez nas estymacja jest później wykorzystana w funkcji błędu. 
 
-Algorytm propagacji wstecznej polega na przepływie sieci w przeciwnym kierunku, zaczynając od funkcji kosztu. Kolejne pochodne składające się na gradient liczone są przy pomocy metody łańcuchowej.
+Algorytm propagacji wstecznej \cite{backprop} polega na przepływie sieci w przeciwnym kierunku, zaczynając od funkcji kosztu. Kolejne pochodne składające się na gradient liczone są przy pomocy metody łańcuchowej. Jest więc on algorytmem obliczającym gradient funkcji.
 
 $$ \frac{dz}{dx} = \frac{dz}{dy} \frac{dy}{dx} $$
  
 
 \section{Regularyzacja}
 
-Częstym problemem występującym podczas uczenia sieci neuronowych oraz ogólnie modeli uczenia maszynowego jest problem zbytniego dopasowania do danych. Występuje on gdy funkcja błędu na zbiorze treningowym osiąga znacząco niższy poziom niż na zbiorze testowym, który nie był obecny podczas uczenia się sieci. Podejmowane są różne kroki w celu zmniejszenia różnicy pomiędzy błędami obserwowanymi na obu tych zbiorach, a najpopularniejszym i najprostszym z nich jest regularyzacja parametrów.
-
-Regularyzacja parametrów wykorzystywana jest również w prostszych modelach statystycznych, takich jak regresja liniowa czy logistyczna. Zmniejsza ona teoretyczną pojemność modelu, co pozytywnie wpływa na jego jakość. Polega ona na dodaniu dodatkowego składnika do funkcji błędu, który odpowiada za zwiększanie jej wartości w zależności od parametrów sieci. Zmodyfikowana funkcja straty jest wówczas postaci:
+Częstym problemem występującym podczas uczenia sieci neuronowych oraz innych modeli uczenia maszynowego jest problem zbytniego dopasowania do danych (ang. overfitting). Występuje on gdy funkcja błędu na zbiorze treningowym osiąga znacząco niższy poziom niż na zbiorze testowym, który nie był obecny podczas uczenia się sieci. Zjawisko to oznacza brak dobrej generalizacji modelu poza zbiorem treningowym, co czyni go mało użytecznym dla nas. 
+Podejmowane są różne kroki w celu zmniejszenia różnicy pomiędzy błędami obserwowanymi na obu tych zbiorach, a najpopularniejszym i najprostszym z nich jest regularyzacja parametrów. Zmniejsza ona teoretyczną pojemność modelu, co pozytywnie wpływa na jego jakość. Polega ona na dodaniu dodatkowego składnika do funkcji błędu, który odpowiada za zwiększanie jej wartości w zależności od parametrów sieci. Regularyzacja parametrów wykorzystywana jest również w prostszych modelach statystycznych, takich jak regresja liniowa \cite{lasso, ridge}. Zmodyfikowana funkcja straty jest wówczas postaci:
 
 $$ L'(y, \hat{y}) = L'(y, f(x; \theta)) = L(y, f(x; \theta)) + \alpha \Omega(\theta) $$, 
 
@@ -516,19 +524,19 @@ Innymi znanymi metodami regularyzacji są takie rzeczy jak augmentacja danych cz
 
 \section{Normalizacja batchów}
 
-Uczenie głębokich sieci neuronowych okazuje się bardzo trudnym zadaniem. Aktualizacje warstw następują jednocześnie dla całej sieci, natomiast same gradienty liczone są przy założeniu że pozostałe warstwy pozostaną takie same. Zmiana parametrów powoduje iż rozkład wartości dla każdej z warstw cały czas ulega zmianie, przez co musimy korzystać z małych learning rate, gdyż cały proces jest mocno niestabilny. Problem ten nazywany jest \emph{internal covariate shift} i rozwiązywany jest przez normalizację wyników z każdej warstwy. 
+Uczenie głębokich sieci neuronowych okazuje się bardzo trudnym zadaniem. Aktualizacje warstw następują jednocześnie dla całej sieci, natomiast same gradienty liczone są przy założeniu że pozostałe warstwy pozostaną takie same. Zmiana parametrów może powodować modyfikację rozkładu wartości dowolnej z warstw, co z kolei może niekorzystnie wpływać na pozostałe. Wskutek tego musimy korzystać z małych learning rate, gdyż cały proces jest mocno niestabilny. Problem ten nazywany jest \emph{internal covariate shift} i rozwiązywany jest przez normalizację wyników z każdej warstwy. 
 
-Normalizacja batchów (ang. Batch normalization) polega na reparametryzacji wyniku każdej z warstw, która wykonuje się przy każdej kolejnej propagacji partii. Po jej wykonaniu rozkład wartości z każdej z warstw ma zawsze tę samą średnią oraz wariancję.
+Normalizacja batchów (ang. batch normalization) \cite{batch-norm} polega na modyfikacji wyniku każdej z warstw, która wykonuje się przy każdej kolejnej propagacji partii. Po jej wykonaniu rozkład wartości z każdej z warstw ma zawsze tę samą średnią oraz wariancję.
 
 $$ \mathbf{H'} = \frac{\mathbf{H} - \mathbf{\mu}}{\mathbf{\sigma}} $$
 
-gdzie $ \mathbf{H} $ to wyjście z warstwy przed reparametryzacją, a $ \mathbf{H'} $ -- po reparametryzacji. Normalizacja batchów okazuje się również skuteczną metodą regularyzacji.
+gdzie $ \mathbf{H} $ to wyjście z warstwy przed modyfikacją, a $ \mathbf{H'} $ -- po modyfikacji. Normalizacja batchów okazuje się również skuteczną metodą regularyzacji.
 
 \section{Konwolucyjne Sieci Neuronowe}
 
 \subsection{Wprowadzenie}
 
-Konwolucyjne sieci neuronowe są specjalnym typem architektury sieci, które wykorzystują specyficzną topologię danych, które można reprezentować na pewnych kratach. Najpopularniejszym przykładem są zdjęcia, które można przedstawić jako 2-wymiarowe macierze pikseli oraz szeregi czasowe, które opisują pomiary oddalone od siebie jednakowymi interwałami czasowymi. Obecnie stanowią one state-of-the-art w wielu dziedzinach uczenia maszynowego, a w szczególności we wszelkich zadaniach związanych z wizją komputerową. 
+Konwolucyjne sieci neuronowe \cite{lecun-cnn, krizhevsky-cnn} są specjalnym typem architektury sieci, które wykorzystują przestrzenny charakter danych, które można reprezentować na kracie. Przykładem takich danych są zdjęcia, które są 2-wymiarowymi macierzami pikseli, oraz szeregi czasowe, które opisują pomiary oddalone od siebie jednakowymi odcinkami czasowymi. Obecnie konwolucyjne sieci neuronowe stanowią state-of-the-art w wielu dziedzinach uczenia maszynowego, a w szczególności we wszelkich zadaniach związanych z wizją komputerową. 
 
 \subsection{Operacja Konwolucji}
 
@@ -545,15 +553,17 @@ $$ S(i, j) = (I * K)(i, j) = \sum_m \sum_n I(m, n) K(i - m, j - n) $$
 
 \begin{figure}[ht!]
   \centering
-  \includegraphics[width=0.85\textwidth]{konwolucja}
+  \includegraphics[width=0.6\textwidth]{konwolucja}
   \caption{Przykładowe wykonanie operacji konwolucji przy użyciu filtra 2 x 2}
 \end{figure}
 
 \subsection{Głębokie uczenie rezydualne}
 
-Pogłębianie sieci neuronowych czyni je trudniejszymi do wyuczenia. Popularnym rozwiązaniem tego problemu jest wykorzystanie rezydualnych bloków, które umożliwiły trenowanie głębszych sieci, niż to było możliwe przed ich powstaniem. Obecnie wszystkie czołowe modele wykorzystywane podczas rozpoznawania obrazów wykorzystują tę architekturę.
+Przez ostatnie lata architektury sieci neuronowych się pogłębiały, a uczenie ich stawało się co raz cięższe. Wykorzystanie \emph{rezydualnych bloków} \cite{resnet} okazało się częściowo rozwiązać ten problem i wspomóc proces uczenia się, a dzięki nim udało się trenować dużo głębsze sieci niż przed ich powstaniem. Ich wykorzystanie jest popularne w wielu obecnie stosowanych architekturach.
 
-Przypuśćmy że oczekiwanym przez nas mapowaniem z warstwy konwolucyjnej byłaby funkcja $ \mathcal{H}(x) $. Rezydalne mapowanie polega na tym, aby bezpośrednie wyjście z warstwy starało się dopasować do funkcji $ \mathcal{F}(x) = \mathcal{H}(x) - x $, po czym do niego jest dodawane $x$, uzyskując oczekiwaną wartość. Architektura ta okazuje się zdecydowanie poprawiać wyniki uczenia się sieci. Autorzy rezydualnego uczenia przypuszczają że sieciom neuronowym dużo łatwiej jest nauczyć się rezydualnego mapowania, zamiast tego standardowego. W skrajnym przypadku gdyby optymalnym mapowaniem była identyczność, to wówczas dużo łatwiej jest wyuczyć się przekształcenia o zerowym wyjściu, niż identyczności.
+Przypuśćmy że oczekiwanym przez nas mapowaniem z warstwy konwolucyjnej byłaby funkcja $ \mathcal{H}(x) $. Rezydalne mapowanie polega na tym, aby bezpośrednie wyjście z warstwy dopasowywało się do funkcji $ \mathcal{F}(x) = \mathcal{H}(x) - x $, a oczekiwana wartość zostaje uzyskana poprzez późniejsze dodanie wejścia $x$. 
+
+Zastosowanie tej transformacji okazuje się zdecydowanie poprawiać wyniki uczenia się sieci. Autorzy rezydualnego uczenia przypuszczają, że sieciom neuronowym dużo łatwiej jest nauczyć się rezydualnego mapowania, zamiast tego standardowego. W skrajnym przypadku gdyby optymalnym mapowaniem była identyczność, to wówczas dużo łatwiej jest wyuczyć się przekształcenia o zerowym wyjściu, niż identyczności.
 
 \begin{figure}[ht!]
   \centering
@@ -579,15 +589,15 @@ Głębokie sieci neuronowe obecnie są najlepszym typem modeli do aproksymacji d
 
 \section{Wprowadzenie}
 
-Obecnie uczenie ze wzmocnieniem w głównej mierze opiera się na wykorzystaniu sieci neuronowych jako aproksymatory funkcji wartości oraz polityki. Połączenie to pozwoliło nam na osiąganie niespotykanych dotąd wyników podczas rozwiązywania problemów takich jak gra w Dota 2 czy tworzenie autonomicznych samochodów. Dzięki zastosowaniu głębokiego uczenia jesteśmy w stanie radzić sobie z zadaniami, które charakteryzują się wielowymiarowością danych, a których rozwiązanie wcześniej było poza naszym zasięgiem.
+Obecnie uczenie ze wzmocnieniem w głównej mierze opiera się na wykorzystaniu sieci neuronowych jako aproksymatory funkcji wartości lub polityki. Połączenie to pozwoliło nam na osiąganie niespotykanych dotąd wyników podczas rozwiązywania problemów takich jak gra w Dota 2 \cite{dota2} czy tworzenie autonomicznych samochodów \cite{sdc1, sdc2}. Dzięki zastosowaniu głębokiego uczenia jesteśmy w stanie radzić sobie z zadaniami, które charakteryzują się wielowymiarowością danych, a których rozwiązanie wcześniej było poza naszym zasięgiem.
 
-Do głębokiego uczenia ze wzmocnieniem (ang. Deep Reinforcement Learning, DRL) zaliczamy takie metody jak \emph{głęboka Q-sieć} (ang. Deep Q-Network, DQN),  \emph{policy gradient} czy metody \emph{actor-critic}. Rozdział ten opisuje w jaki sposób te metody łączą się z sieciami neuronowymi, prowadząc do najskuteczniejszych obecnie algorytmów uczenia ze wzmocnieniem. 
+Do głębokiego uczenia ze wzmocnieniem (ang. Deep Reinforcement Learning, DRL) zaliczamy takie metody jak \emph{głęboka Q-sieć} (ang. Deep Q-Network, DQN),  \emph{policy gradient} czy metody \emph{actor-critic}. Rozdział ten opisuje w jaki sposób uczenie ze wzmocnieniem łączone jest z głębokimi sieciami neuronowymi, prowadząc do najskuteczniejszych obecnie algorytmów. 
 
 \section{Deep Q-Learning}
 
-Jednym z ważniejszych algorytmów ostatnich lat jest \emph{głęboka Q-sieć} (DQN), która jest połączeniem opisanego wcześniej \emph{Q-learningu} oraz konwolucyjnych sieci neuronowych. Autorzy wykorzystali ją do nauczenia agenta gry na Atari, gdzie bez zmiany hiperparametrów modelu, zastosowali go do 49 różnych gier osiągając w wielu z nich wyniki lepsze od ludzi. Przyjmowała ona na wejściu jedynie obraz w postaci macierzy pikseli oraz wynik uzyskiwany przez nią i na podstawie tych danych, bez dodatkowych interakcji, podejmowała decyzje.
+Jednym z ważniejszych algorytmów należących do tej kategorii jest \emph{głęboka Q-sieć} (DQN) \cite{dqn}, która jest połączeniem opisanego w pierwszym rozdziale \emph{Q-learningu} \cite{Q-learning} oraz sztucznych sieci neuronowych. Została ona wykorzystana w 49 różnych grach na Atari, osiągając w wielu z nich wyniki lepsze od ludzi. Sieć przyjmowała na wejściu jedynie obraz w postaci macierzy pikseli oraz wynik przez nią osiągany i na ich podstawie podejmowała decyzje. Nie tworzono ręcznie żadnych dodatkowych cech, a hiperparametry wykorzystane podczas uczenia były takie same dla każdej gry, co wskazuje na dobrą generyczność algorytmu.
 
-W tym modelu sieć neuronowa pełni funkcję funkcji wartości akcji, tj. Q-funkcji, a podczas uczenia minimalizowana była następująca funkcja straty:
+W tym modelu sieć neuronowa pełni rolę funkcji wartości akcji, tj. Q-funkcji, a podczas uczenia minimalizowana była następująca funkcja straty:
 
 $$ L_i(\theta_i) = \mathbb{E}_{s \sim \rho_{\pi(\cdot)}, a \sim \pi(\cdot)} \Big[ (y_i^2 - Q(s, a; \theta_i))^2 \Big] $$
 
@@ -596,14 +606,14 @@ gdzie $ y_i = \mathbb{E}_{s' \sim \mathcal{E}'} \big[ r + \gamma \max_{a'} Q(s',
 $$ \nabla_{\theta_i}L_i(\theta_i) = \mathbb{E}_{s, a \sim p(\cdot); s' \sim \mathcal{E}} 
 \Big[ \Big( r + \gamma \max_{a'} Q(s', a'; \theta_{i - 1}) - Q(s, a; \theta_i) \Big) \nabla_{\theta_i} Q(s, a; \theta_i) \Big] $$
 
-Funkcja straty jest optymalizowana przy pomocy metody gradientu prostego. Jeżeli aktualizacje wag sieci następowałyby za każdym razem po zebraniu trajektorii, to mielibyśmy do czynienia z klasycznym algorytmem Q-learning. W odróżnieniu od uczenia z nadzorem, zamiast niezależnych danych treningowych, dostajemy próbki zależne od wag $\theta$ i z tego powodu musimy korzystać z dodatkowych metod, dzięki którym pozbywamy się silnej korelacji pomiędzy próbkami. Korzystamy z metody zwanej \emph{powtórkami z doświadczenia} (ang. experience replay), która polega na zebraniu wielu trajektorii podczas procesu interakcji agenta ze środowiskiem i zapisywaniu ich jako powtórki w pamięci, a następnie próbkowane są losowo konkretne przykłady $(s_t, a_t, r_{t+1}, s_{t+1})$. Zastosowanie tej techniki sprawia iż zmniejszana jest wariancja podczas procesu uczenia się, a sam agent szybciej i stabilniej osiąga satysfakcjonujące nas rezultaty.
+Funkcja straty jest optymalizowana przy pomocy metody gradientu prostego. W odróżnieniu od uczenia z nadzorem, zamiast niezależnych danych treningowych, dostajemy próbki zależne od wag $\theta$ i z tego powodu musimy korzystać z dodatkowych metod, dzięki którym pozbywamy się silnej korelacji pomiędzy próbkami. Korzystamy z metody zwanej \emph{powtórkami z doświadczenia} (ang. experience replay), która polega na zebraniu wielu trajektorii podczas procesu interakcji agenta ze środowiskiem i zapisywaniu ich jako powtórki w pamięci, a następnie próbkowane są losowo konkretne przykłady $(s_t, a_t, r_{t+1}, s_{t+1})$. Zastosowanie tej techniki sprawia iż zmniejszana jest wariancja podczas procesu uczenia się, dzięki czemu agent szybciej i stabilniej osiąga satysfakcjonujące nas rezultaty.
 
 
 \section{Policy Gradient}
 
-Metody \emph{policy gradient} pozwalają nam na bezpośrednie modelowanie polityki agenta, bez konieczności korzystania z funkcji wartości. Możemy dzięki nim uzyskać politykę $\pi(a \mid s, \theta)$, która jest parametryzowana przez pewien wektor $\theta$. Proces optymalizacji utworzonej w ten sposób polityki polega na maksymalizacji pewnej \emph{funkcji nagrody}, którą otrzymuje nasz agent, za pomocą \emph{wzrostowej metody gradientu prostego} (ang. gradient ascent). W przeciwieństwie do standardowej funkcji błędu w głębokim uczeniu, którą zazwyczaj minimalizujemy, tym razem będziemy starać się maksymalizować funkcję nagrody.
+Metody \emph{policy gradient} \cite{policy-gradient-sutton} pozwalają nam na bezpośrednie modelowanie polityki agenta, bez konieczności korzystania z funkcji wartości. Możemy dzięki nim uzyskać politykę $\pi(a \mid s, \theta)$ parametryzowaną przez wektor $\theta$. Proces optymalizacji utworzonej w ten sposób polityki polega na maksymalizacji \emph{funkcji nagrody}, którą otrzymuje nasz agent, za pomocą \emph{wzrostowej metody gradientu prostego} (ang. gradient ascent). W przeciwieństwie do standardowej funkcji celu w głębokim uczeniu, którą zazwyczaj minimalizujemy, tym razem będziemy starać się maksymalizować tę funkcję, gdyż jest to nagroda otrzymywana przez naszego agenta.
 
-Polityka może być dowolną funkcją $\pi(a \mid s, \theta)$, musi jednak być rózniczkowalna względem parametru $\theta$, abyśmy mogli wykorzystać metody gradientowe podczas jej uczenia. Uzyskana w ten sposób polityka jest stochastyczna, co w wielu przypadkach jest dla nas oczekiwanym efektem. Najczęstszym wyborem funkcji $\pi$ są sieci neuronowe, które znane są z innych dziedzin uczenia maszynowego. Aktualizacja parametrów naszego modelu może przebiegać zgodnie ze wzorem:
+Polityka może być dowolną funkcją $\pi(a \mid s, \theta)$, musi jednak być różniczkowalna względem parametru $\theta$, abyśmy mogli wykorzystać metody gradientowe podczas jej uczenia. Uzyskana w ten sposób polityka jest stochastyczna, co w wielu przypadkach jest przez nas wymaganym efektem. Najczęstszym wyborem funkcji $\pi$ są sieci neuronowe, które znane są z innych dziedzin uczenia maszynowego. Aktualizacja parametrów naszego modelu może przebiegać zgodnie ze wzorem:
 
 $$ \theta_{i+1} = \theta_i + \alpha \nabla_{\theta}J , \quad
 J = \mathbb{E}_{\pi} \Big( \sum_{k = 0}^{\infty} \gamma^k r_k \Big)
@@ -611,7 +621,7 @@ $$
 
 \section{Algorytm REINFORCE}
 
-Najprostszym przykładem metody policy gradient jest algorytm \emph{REINFORCE}, który należy do metod Monte Carlo i opiera się na próbkowaniu kolejnych trajektorii przy użyciu polityki $\pi$, a następnie ulepszaniu jej na podstawie zebranego doświadczenia. \emph{Teoria Policy Gradient} daje nam przydatny wzór na proporcjonalność gradientu funkcji nagrody:
+Najprostszym przykładem metody policy gradient jest algorytm \emph{REINFORCE} \cite{reinforce}, który należy do metod Monte Carlo i opiera się na próbkowaniu kolejnych trajektorii przy użyciu polityki $\pi$, a następnie ulepszaniu jej na podstawie zebranego doświadczenia. \emph{Teoria Policy Gradient} daje nam przydatny wzór na proporcjonalność gradientu funkcji nagrody:
 
 \begin{equation}\label{eq:pgt}
 \nabla J(\theta) \propto \sum_s \mu(s) \sum_a q_{\pi} \nabla_{\theta} \pi(a \mid s, \theta)
@@ -632,7 +642,7 @@ Rozwijając dalej równanie \eqref{eq:pgt} otrzymujemy:
 = & \mathbb{E}_\pi \Bigg[ \sum_{a} q_\pi (S_t, a) \nabla_\theta \pi(a \mid S_t, \theta) \Bigg]
 \end{align*}
 
-i w ten sposób pozbywamy się rozkładu $\mu$, który w przeciwnym wypadku musielibyśmy modelować lub znać. Zauważmy również że w tym wypadku wystarcza nam proporcjonalność tego wyrażenia, gdyż aktualizacje parametrów będą wykonywane o pewien arbitralnie dobrany krok uczący $\alpha$, który jest w stanie zniwelować wszelkie stałe nieproporcjonalności. Wykonując kolejne rachunki otrzymujemy: 
+i w ten sposób pozbywamy się rozkładu $\mu$, który w przeciwnym wypadku musielibyśmy modelować lub znać. Zauważmy również że wystarcza nam proporcjonalność tego wyrażenia, gdyż aktualizacje parametrów będą wykonywane o pewien arbitralnie dobrany krok uczący $\alpha$, który niweluje uzyskaną nieproporcjonalność. Wykonując kolejne rachunki otrzymujemy: 
 
 \begin{align*}
 \nabla J(\theta) \propto  & \mathbb{E}_\pi \Bigg[ \sum_{a} \pi(a \mid S_t, \theta) q_\pi (S_t, a) \frac{\nabla_\theta \pi(a \mid S_t, \theta)}{\pi(a \mid S_t, \theta)} \Bigg] \\
@@ -640,7 +650,7 @@ i w ten sposób pozbywamy się rozkładu $\mu$, który w przeciwnym wypadku musi
 = & \mathbb{E}_\pi \Bigg[ G_t \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} \Bigg] 
 \end{align*}
 
-zamieniając w pierwszym przejściu $a$ na obserwację $A_t \sim \pi$, a następnie korzystamy z własności $ \mathbb{E}_\pi \big[ G_t \mid S_t, A_t \big] = q_\pi(S_t, A_t) \big] $. W ten sposób otrzymujemy wyrażenie, które możemy wykorzystać podczas próbkowania kolejnych trajektorii do aktualizacji parametrów naszej sieci.
+w pierwszym przejściu zamieniamy $a$ na obserwację $A_t \sim \pi$, a następnie korzystamy z własności $ \mathbb{E}_\pi \big[ G_t \mid S_t, A_t \big] = q_\pi(S_t, A_t) \big] $. W ten sposób otrzymujemy wyrażenie, które możemy wykorzystać do aktualizacji parametrów naszej sieci poprzez próbkowanie kolejnych trajektorii .
 
 $$ \theta_{t+1} = \theta_t + \alpha G_t \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} $$
 
@@ -648,7 +658,7 @@ Często możemy również spotkać się z innym zapisem wyrażenia $  \frac{\nab
 
 $$  \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} = \nabla_\theta \ln \pi(A_t \mid S_t, \theta) $$
 
-Metoda REINFORCE może zostać wzbogacona o \emph{wartości bazowe} $b(s)$:
+Może się zdarzyć, np. w grach na Atarii, że dowolny ruch wykonany przez agenta przynosi sporą nagrodę, przez co podczas uczenia model będzie się starał zwiększać prawdopodobieństwa wszystkich tych ruchów. Aby wspomóc proces uczenia wprowadzamy pojęcie \emph{wartości bazowych}, $b(s)$, które odejmują od wszystkich nagród średnią oczekiwaną nagrodę ze stanu, w którym przebywa nasz aktor. W ten sposób będzie on zwiększał prawdopodobieństwa tylko tych akcji, które przynoszą lepszy wynik niż średni. Aktualizacja parametrów wygląda wówczas następująco:
 
 $$ \nabla J(\theta) \propto \sum_s \mu(s) \sum_a \Big( q_\pi(s, a) - b(s) \Big) \nabla_\theta \pi(a \mid s, \theta) $$,
 
@@ -665,9 +675,9 @@ Algorytm REINFORCE, podobnie jak wszystkie metody Monte Carlo, uczy się bardzo 
 
 \section{Metody Aktor Krytyk}
 
-Metody aktor krytyk są połączeniem modeli bazujących na modelowaniu polityki oraz tych bazujących na funkcji wartości. Polityka w tych metodach nazywana jest \emph{aktorem}, gdyż odpowiada ona za podejmowanie wykonywanych decyzji. Funkcja wartości nazywana jest \emph{krytykiem} i jej rolą jest ocenianie jakości akcji wykonywanych przez aktora. Parametry polityki są wówczas aktualizowane na podstawie estymacji wykonanych przez aktora.
+Często nasz aktor może wykonać długą serię poprawnych ruchów, a dopiero na sam koniec popełnić błąd, który będzie kosztował go grę. W tym wypadku w metodzie REINFORCE prawdopodobieństwa wykonania wszystkich ruchów w trajektorii zostałyby obniżone. Metody aktor krytyk stanowią rozwiązanie dla tego problemu. Są one połączeniem modeli bazujących na polityce oraz tych bazujących na funkcji wartości. Polityka w tych metodach nazywana jest \emph{aktorem}, gdyż odpowiada ona za podejmowanie wykonywanych decyzji. Funkcja wartości nazywana jest \emph{krytykiem} i jej rolą jest ocenianie jakości akcji wykonywanych przez aktora. Parametry polityki są aktualizowane na podstawie estymacji wartości wykonywanych akcji za pomocą krytyka, zamiast wykorzystywać obarczone wysoką wariancją wyniki samych gier. W opisanym wyżej przykładzie obniżylibyśmy jedynie prawdopodobieństwo wykonania ostatniej akcji, która była dla nas niekorzystna, a pozostałe mogłyby pozostać bez zmian.
 
-Jednym z prostszych algorytmów, który można przytoczyć jako przykład, jest jednokrokowa metoda aktor krytyk, która koncepcyjnie jest bardzo podobna do takich algorytmów jak TD(0) czy Sarsa. Pozwala ona na w pełni online algorytm uczenia, w którym wynik z pełnej trajektorii $G_t$ zamieniany jest na wynik jednokrokowy:
+Jednym z prostszych algorytmów, który można przytoczyć jako przykład, jest jednokrokowa metoda aktor krytyk, która koncepcyjnie jest bardzo podobna do algorytmów takich jak TD(0) czy Sarsa. Pozwala ona na w pełni online algorytm uczenia, w którym zamiast korzystać z wyniku całego epizodu $G_t$, wykorzystujemy wynik jednokrokowy:
 
 \begin{align*}
 \theta_{t+1} =& \theta_t + \alpha \Big( G_t - \hat{v}(S_t, w) \Big) \frac{\nabla_\theta \pi(A_t \mid S_t, \theta)}{\pi(A_t \mid S_t, \theta)} \\
@@ -679,75 +689,143 @@ gdzie $ \hat{v}(S_t, w) $ jest aproksymowaną funkcją wartości stanu, parametr
 
 \section{Podsumowanie}
 
-Dla większości obecnie rozwiązywanych problemów przy użyciu uczenia ze wzmocnieniem, to modele głębokiego uczenia są poziomem state-of-the-art i to na nich skupiona jest obecnie największa uwaga. W przypadku algorytmu AlphaGo Zero jego autorzy poszli o kolejny krok do przodu, włączając do modelu również przeszukiwanie drzewa rozgrywki, osiągając tym samym rezultaty które wcześniej wydawały się niemożliwe do uzyskania. Rozszerzenie tych metod zostanie opisane w kolejnym rozdziale, gdzie wykorzystując algorytm AlphaGo Zero staram się rozwiązać problem gry w piłkarzyki na papierze.
+Dla większości obecnie rozwiązywanych problemów przy użyciu uczenia ze wzmocnieniem, to modele głębokiego uczenia stanowią state-of-the-art i to na nich skupiona jest obecnie największa uwaga. W przypadku algorytmu AlphaGo Zero jego autorzy poszli o kolejny krok do przodu, włączając do modelu również przeszukiwanie drzewa rozgrywki, osiągając tym samym rezultaty które wcześniej wydawały się niemożliwe do uzyskania. Rozszerzenie tych metod zostanie opisane w kolejnym rozdziale, gdzie wykorzystując algorytm AlphaGo Zero staram się rozwiązać problem gry w piłkarzyki na papierze.
 
 \chapter{Gra w piłkarzyki na kartce}
 
 \section{Wprowadzenie}
 
-Wielu specjalistów od dawna zajmuje się tworzeniem systemów grających w gry planszowe. Pierwszym krokiem milowym w rozwoju inteligentnych systemów było utworzenie Deep Blue, algorytmu potrafiącego grać w szachy, który w 1997 pokonał ówczesnego mistrza świata Garrego Kasparowa. Kolejnym celem stało się wówczas rozwiązania gry w Go, w której ilość ruchów na każdą rundę oraz długość rozgrywki są nieporównywalnie większe niż w przypadku szachów. W ostatnim czasie zespołowi z Deep Mind udało się utworzyć algorytm AlphaGo, który w roku 2016 pokonał mistrza świata Lee Sedol'a. Łączył on wszystkie znane do tamtej pory techniki wykorzystywane w uczeniu ze wzmocnieniem oraz głębokie uczenie, a w ubiegłym roku, 2017, został on rozwinięty algorytmu AlphaGo Zero, który zupełnie generycznie, bez jakiejkolwiek wiedzy specjalistycznej, wykorzystując jedynie plansze jako wejście, osiągnął ponadludzkie zdolności gry w Go, wygrywając wszystkie gry przeciw wcześniejszemu algorytmowi. 
+Wielu specjalistów od dawna zajmuje się tworzeniem systemów grających w gry planszowe. Pierwszym krokiem milowym w rozwoju inteligentnych systemów było utworzenie Deep Blue \cite{deep-blue}, algorytmu potrafiącego grać w szachy, który w 1997 pokonał ówczesnego mistrza świata Garrego Kasparowa. Kolejnym celem stało się wówczas rozwiązania gry w Go, w której ilość ruchów na każdą rundę oraz długość rozgrywki są nieporównywalnie większe niż w przypadku szachów. W ostatnim czasie zespołowi z Deep Mind udało się utworzyć algorytm AlphaGo\cite{alphago2016}, który w roku 2016 pokonał mistrza świata Lee Sedol'a. Łączył on wszystkie znane do tamtej pory techniki wykorzystywane w uczeniu ze wzmocnieniem oraz głębokie uczenie. Natomiast w ubiegłym roku, 2017, został on rozwinięty do algorytmu AlphaGo Zero\cite{alphagozero}, który zupełnie generycznie, bez jakiejkolwiek wiedzy specjalistycznej, wykorzystując jedynie plansze jako wejście, osiągnął ponadludzkie zdolności gry w Go, wygrywając wszystkie gry przeciwko swojemu poprzedniku. 
 
 Algorytm uczący agenta grającego w piłkarzyki na papierze jest w całości oparty na algorytmie AlphaGo Zero. Zmodyfikowana została jedynie architektura sieci oraz hiperparametry wykorzystane podczas uczenia.
 
+\section{Algorytm przeszukujący drzewo gry}
+
+Do podejmowania decyzji wykorzystywana jest sieć neuronowa $f_\theta$, która na wejściu wczytuje obecny stan planszy, a produkuje wektor prawdopodobieństw wykonania akcji oraz wartość stanu, która oznacza prawdopodobieństwo wygrania gry przez gracza z którego perspektywy wykonywany jest ruch, $f_\theta(s) = (p, v)$. W ten sposób funkcja wartości akcji oraz polityka łączona jest w jedną sieć neuronową, a konkretniej siecią konwolucyjną, złożoną z bloków rezydualnych, w której po ostatniej warstwie konwolucyjnej sieć rozbija się na dwie ścieżki, które kolejno są odpowiedzialne za politykę oraz funkcję wartości. W ten sposób te same cechy przestrzenne są wykorzystywane zarówno do wyboru akcji, jak i oceny wartości stanu. Zmniejsza to również złożoność obliczeniową.
+
+Akcje podejmowane podczas rozgrywki są oparte na polityce drzewa, która budowana jest w trakcie rozgrywki. Agent przed wykonaniem każdego ruchu wykonuje szereg symulacji, polegających na rozgrywaniu gry z samym sobą. Wykorzystywany jest do tego algorytm MCTS, który wykorzystuje wyniki sieci neuronowej, aby uzyskać rozkład prawdopodobieństw akcji $\pi$, który jest lepszy od pierwotnego rozkładu $p$. 
+
+Krawędzie w drzewie przeszukiwań odpowiadają parze $(s, a)$ -- stanu oraz akcji i przechowują one pierwotne prawdopodobieństwo wyboru tej akcji uzyskane z sieci neuronowej $P(s, a)$, licznik odwiedzin danej krawędzi $N(s,a)$, funkcję wartości akcji $Q(s,a)$ oraz sumę do tej pory zaobserwowanych funkcji wartości $W(s,a)$. 
+
+\subsection{Przechodzenie ścieżki w drzewie}
+
+Wybór akcji rozpoczyna się w korzeniu drzewa gry, reprezentującym stan w którym znajduje się agent. Wykonywane są kolejne symulacje, które polegają na wykonywaniu kolejnych akcji i przechodzeniu po drzewie, aż agent natrafi na liść. Wówczas wykonywane jest rozwinięcie danego liścia do nowego węzła i jego ewaluacja. Symulacje wykorzystują statystyki $\big(N(s,a), W(s,a), Q(s,a), P(s,a) \big)$. Akcjami wykonywanymi w kolejnych krokach są $a_t = \operatorname*{argmax}_a \big( Q(s_t, a) + U(s_t, a) \big)$. Funkcja $U$ zdefiniowana jest następująco:
+
+$$ U(s,a) = c_{puct} P(s,a) \frac{\sqrt[]{\sum_b N(s,b)}}{1 + N(s,a)} $$ 
+
+gdzie $c_{puct}$ jest to stała wyznaczająca poziom eksploracji podczas symulacji. W ten sposób początkowo zapewniona jest eksploracja, gdyż najpierw wybierane są akcje z wysokim początkowym prawdopodobieństwem, ostatecznie jednak preferowane są akcje z wysoką wartością funkcji wartości akcji.
+
+\subsection{Rozwinięcie nowego węzła}
+
+W momencie gdy algorytm przechodzenia drzewa natrafi na liść, reprezentujący stan $s_L$, następuje jego rozwinięcie za pomocą sieci neuronowej. Otrzymywane są wówczas wartości $f_\theta(s_L) = (p_{s_L}, v_{s_L})$, z których $p_{s_L}$ wykorzystane jest do utworzenia krawędzi wychodzących z węzła, $(a, s_L)$, które inicjalizowane są na $\big\{N(s_L, a) = 0, Q(s_L, a) = 0, W(s_L, a) = 0, P(s_L, a) = p_{s_L, a}  \big\}$. Natomiast $v_{s_L}$ jest przekazywane wstecz w celu aktualizacji węzłów na ścieżce.
+
+\subsection{Aktualizacja węzłów}
+
+Wszystkie krawędzie $(s_t, a_t)$, należące do ścieżki wybranej podczas pierwszego kroku, są aktualizowane o nową wiedzę uzyskaną podczas rozwijania węzła. Licznik wizyt jest zwiększany, $N(s_t, a_t) = N(s_t, a_t) + 1$, a funkcje wartości aktualizowane na podstawie wartości stanu, $v_{s_L}$, otrzymanej w poprzednim punkcie, $W(s_t, a_t) = W(s_t, a_t) + v_{s_L}$, $Q(s_t, a_t) = \frac{W(s_t, a_t)}{Q(s_t, a_t)}$.
+\subsection{Wybór akcji}
+
+Po wykonaniu wyznaczonej ilości symulacji, algorytm wyznacza jaką akcję $a$ wykona znajdując się w pozycji $s_0$, która jest korzeniem drzewa odpowiadającemu polityce. Rozkład prawdopodobieństw polityki drzewa jest następujący:
+
+$$
+\pi(a \mid s_0) = \frac {N(s_0, a)^{\frac{1}{\tau}}}{\sum_b N(s_0, b)^{\frac{1}{\tau}}}
+$$
+
+gdzie $\tau$ jest parametrem temperatury, który wpływa na poziom eksploracji. Drzewo jest następnie ponownie wykorzystane podczas kolejnego ruchu, poprzez przejście do odpowiedniego poddrzewa. Dzięki temu nasze drzewo cały czas się rozrasta, a polityka staje się coraz dokładniejsza.
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{alphago-mcts}
+  \caption{Wykorzystanie algorytmu MCTS}
+\end{figure}
+
 \section{Metoda uczenia poprzez grę z samym sobą}
-
-Iteracja polityki jest procesem w którym naprzemiennie wykonywana jest estymacja funkcji wartości na podstawie posiadanej polityki oraz ulepszanie obecnej polityki. Może się to odbywać przykładowo za pomocą próbkowania kolejnych trajektorii w pierwszym przypadku, a w drugim poprzez zamianę polityki na zachłanną względem otrzymanej funkcji wartości.
-
-Lepszym pomysłem, wykorzystywanym w \emph{classification-based} uczeniu ze wzmocnieniem, jest wykorzystanie metod przeszukiwania drzew Monte Carlo. Próbkujemy w nich wiele trajektorii przed wykonaniem każdej z akcji i wybieramy tę akcję, która przyniosła najlepsze rezultaty podczas próbkowania, a następnie wybrana akcja służy jako pozytywny przykład uczący, a pozostałe jako negatywne.
-
-W przypadku AlphaGo Zero tworzona jest polityka drzewa, na której podstawie wybierane są akcje, a następnie podstawowa polityka jest ulepszana na podstawie uprzednio otrzymanego rozkładu prawdopodobieństwa. Polityka drzewa tworzona jest na podstawie podstawowej polityki oraz funkcji wartości, które przechowywane są jako głęboka sieć neuronowa.
-
-Polityka oraz funkcja wartości są głęboką sieć neuronowa $f_\theta$, która przyjmuje na wejściu obecny stan gry, a produkuje w wyniku rozkład prawdopodobieństw po wszystkich możliwych akcjach oraz funkcję wartości dla tego stanu, $f_\theta(s) = (p, v)$.
 
 \subsection{Rozgrywanie gier}
 
-Przez cały czas trwania algorytmu przechowywany jest najlepszy gracz $\alpha_{\theta^\ast}$, który wykorzystywany jest do generowania przykładów uczących. Rozgrywa on kolejne gry między sobą, zapisując przebieg oraz wynik każdego z meczów, jako ciąg wszystkich wykonanych akcji $(s_t, \pi_t, r_t)$, gdzie $s_t$ to stan gry, $\pi_t$ to rozkład akcji z polityki drzewa, a $r_t$ to zwycięzca gry. Wszystkie te wartości są z perspektywy gracza wykonującego ruch w czasie $t$.
+Proces uczenia się algorytmu dzieli się na trzy, następujące po sobie etapy. Pierwszym z nich jest generowanie przykładów uczących przez wytrenowaną wcześniej sieć neuronową, która reprezentuje najlepszego gracza $\alpha_{\theta^\ast}$. Rozgrywa ona kolejne gry między sobą, zapisując przebieg oraz wynik każdego z meczów, jako ciąg wszystkich wykonanych akcji $(s_t, \pi_t, z_t)$, gdzie $s_t$ to stan gry, $\pi_t$ to rozkład akcji z polityki drzewa, a $z_t$ to zwycięzca gry. Wszystkie te wartości są z perspektywy gracza wykonującego ruch w czasie $t$.
 
 \subsection{Trenowanie na zebranym doświadczeniu}
 
-Po zakończonej fazie rozgrywania gier, rozpoczynane jest trenowanie sieci. W tym celu losowane są przykłady z wykonanych akcji, a następnie optymalizowana następująca funkcja straty:
+Po zakończonej fazie rozgrywania gier, rozpoczynane jest trenowanie sieci. W tym celu losowane są przykłady z wykonanych akcji, $(s_i, \pi_i, z_i)$, a następnie optymalizowana następująca funkcja straty:
 
-$$ (p, v) = f_\theta(s) \quad
-L = (r - v)^2 - \pi^T \log p + c \lvert \lvert \theta \rvert \rvert^2
+$$ (p_i, v_i) = f_\theta(s_i) \quad
+J(\theta) = \sum_{i = 1}^n \Big[ (z_i - v_i)^2 - \pi_i^T \log p_i + c \lvert \lvert \theta \rvert \rvert^2 \Big]
 $$
 
-gdzie $c$ jest współczynnikiem regularyzacyjnym.	
+gdzie $c$ jest współczynnikiem regularyzacyjnym, a $n$ to rozmiar batcha. Celem uczenia naszego aktora jest zbliżenie polityki sieci neuronowej do polityki drzewa, uzyskanej za pomocą algorytmu MCTS, oraz dokładne przewidywanie które stany są wygrywające, a które przegrywające. Do obydwu celów dążymy jednocześnie dzięki umieszczeniu odpowiednich składników w funkcji celu. Błąd aktora jest minimalizowany za pomocą cross entropii, a krytyka za pomocą błędu średniokwadratowego.
 
 \subsection{Ewaluacja wyuczonej polityki}
 
 W trakcie uczenia się sieci, co pewien czas wykonywana jest ewaluacja wytrenowanego agenta, która polega na rozegraniu pewnej ilości gier pomiędzy nim a najlepszym graczem $\alpha_{\theta^\ast}$. W przypadku gdy stosunek gier wygranych przez nowego agenta przekroczy ustalony poziom, wynoszący 55\%, to staje się on nowym najlepszym graczem, a dalszy trening jest przerywany i rozpoczynana jest kolejna epoka.
 
-\section{Algorytm przeszukujący drzewo gry}
 
-Akcje podejmowane podczas rozgrywki są oparte na polityce drzewa, która budowana jest w trakcie rozgrywki. Wykorzystywany jest do tego algorytm MCTS, opierający się na wynikach z sieci neuronowej. Krawędzie w drzewie, które odpowiadają parze $(s, a)$ -- stan, akcja, przechowują wartości o prawdopodobieństwie wyboru tej akcji przy obecnej polityce $P(s, a)$, licznik odwiedzin $N(s,a)$ oraz funkcję wartości akcji $Q(s,a)$. Wykorzystanie MCTS intuicyjnie może być rozumiane jako algorytm do gry z samym sobą, gdyż przed wykonaniem ruchu nasz agent wykonuje szereg symulacji i na ich podstawie dokonuje decyzji. 
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{alphago-self-play}
+  \caption{Uczenie sieci na podstawie gry ze samą sobą}
+\end{figure}
 
-\subsection{Wybór ścieżki w drzewie}
-
-Wybór akcji rozpoczyna się w korzeniu drzewa gry, który reprezentuje rzeczywisty stan, w którym znajduje się agent. Wykonywane są kolejne symulacje, które polegają na wykonywaniu kolejnych akcji, aż agent natrafi na liść. Wówczas wykonywane jest rozwinięcie danego liścia do nowego węzła i jego ewaluacja. Symulacje wykorzystują statystyki $\big(N(s,a), W(s,a), Q(s,a), P(s,a) \big)$, gdzie $N, Q, P$ są takie jak w poprzednim podpunkcie, a $W(s,a)$ jest sumą do tej pory zaobserwowanych funkcji wartości. Akcjami wykonywanymi w kolejnych krokach są $a_t = \operatorname*{argmax}_a \big( Q(s_t, a) + U(s_t, a) \big)$, gdzie $U$ zdefiniowane jest następująco:
-
-$$ U(s,a) = c_{puct} P(s,a) \frac{\sqrt[]{\sum_b N(s,b)}}{1 + N(s,a)} $$
-
-gdzie $c_{puct}$ jest to stała wyznaczająca poziom eksploracji podczas symulacji. W ten sposób początkowo zapewniona jest eksploracja, gdyż najpierw wybierane są akcje z wysokim początkowym prawdopodobieństwem, ostatecznie jednak preferowane są akcje z wysoką wartością funkcji wartości akcji.
-
-\subsection{Rozwinięcie i ewaluacja nowego węzła}
-
-
-
-\subsection{Propagacja wsteczna}
-
-\subsection{Wybór akcji}
+\newpage
 
 \section{Pierwsze testy na zmniejszonej planszy}
 
+W celu dostosowania hiperparametrów algorytmu, pierwsza jego wersja była uczona na pomniejszonej planszy o rozmiarach 4 x 6. Starałem się wówczas wyznaczyć ile minimalnie gier powinno zostać rozegranych w celu wygenerowania danych uczących dla obecnej iteracji, aby model mógł dokonywać rzeczywistych postępów i wykonywać poprawną generalizację. Wyznaczenie tego było istotne gdyż czas trwania jednej epoki jest rzędu kilku dni nieustannej pracy komputera z kartą graficzną. Ponadto dobrałem wówczas również architekturę sieci neuronowej oraz pozostałe hiperparametry takie jak temperatura $\tau$ czy stała eksploracji $c_{puct}$.
+
+Architektura sieci została ustalona na 8 bloków rezydualnych, każdy o szerokości 128 filtrów. Na każdą epokę rozgrywane było 2048 gier, w których na każdy ruch przypadało 700 rozwinięć podczas przeszukiwania drzewa i w efekcie wykonanie jednej epoki zajmowało średnio 12 godzin. Początkowy stosunek wygranych douczonej sieci przeciwko jej pierwotnej wersji jest bardzo wysoki, a z czasem zaczyna maleć, a sam proces uczenia zaczyna zwalniać i wymagane jest zwiększanie ilości gier oraz rozwinięć. Istotna okazała się również obserwacja rzeczywistego poziomu eksploracji drzewa, aby odpowiednio dostosować hiperparametry odpowiedzialne za eksploracje, gdyż przy ich złym wyborze algorytm wciąż podążał tą samą ścieżką, a w wyniku nie zdobywał nowego doświadczenia. Kod źródłowy jest dostępny pod adresem: https://github.com/mizworski/AlphaSoccer.
+
+\subsection{Przykładowe ruchy wyuczone przez model}
+
+tutaj wrzucę kilka przykładowych serii ruchów
+
+\subsection{Gra pomiędzy wczesną i późną iteracją modelu}
+
+jakaś gra
+
 \section{Wyniki dla gry standardowych rozmiarów}
 
-\section{Podsumowanie}
+Po uzyskaniu pierwszych efektów w grze na zmniejszonej planszy, eksperymenty zostały przeniesione na pełnowymiarową planszę Przy zachowaniu tych samych hiperparametrów, pojedyncza epoka trwała już 40 godzin nieustannej pracy komputera. Testy były wówczas bardzo kosztowne, a przeszukiwanie parametrów stało się bardzo ograniczone. 
+
+Model po paru epokach zaczął już rozumieć zasady gry i starał się przesunąć piłkę jak najbliżej bramki swojego przeciwnika. Lokalnie na planszy jego ruchy wyglądały na przemyślane i przypominały grę normalnego gracza. Nie potrafił on jednak obronić się przed bardzo długimi ruchami, tj. takimi w których wykonywane było wiele odbić. Ostatecznie wystawiał się on na tego typu ruchy, które prowadziły do jego porażki.
+
+
+\subsection{Przykładowe ruchy wyuczone przez model}
+
+tutaj wrzucę kilka przykładowych serii ruchów
+
+
+\subsection{Gra pomiędzy wczesną i późną iteracją modelu}
+
+jakaś gra
 
 \chapter{Wnioski}
 
-\begin{thebibliography}{99}
+Wytrenowanie algorytmu zdolnego do gry w dowolną planszową grę strategiczną jest obecnie możliwe przy użyciu znanych nam technik, jednak okazuje się być poza zasięgiem przeciętnego człowieka, który nie dysponuje zapleczem obliczeniowym takim jak DeepMind czy OpenAI. Karta graficzna z najwyższej półki obecnie jest zdolna do wykonywania około 8~gigaflopsów, to jest $8 \cdot 10^9$ operacji zmiennoprzecinkowych na sekundę (flops, ang. floating points operations per second). Do określenia ilości operacji wykonanych podczas pełnego wytrenowania sieci neuronowej wykorzystuje się jednostkę \emph{petaflopso-dni} i jest to ilość operacji wykonanych przez maszynę o wydajności 1 petaflopsa ($10^{15}$ flops) przez cały dzień. 
 
-\end{thebibliography}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\textwidth]{compute}
+  \caption{Ilość petaflopsodni wykorzystanych podczas poszczególnych projektów \cite{dqn, resnet, dota2, nmt, alphago2016, alphagozero}}
+\end{figure}
+
+Obecne problemy z którymi zmagają się specjaliści od uczenia ze wzmocnieniem wykorzystują dziesiątki, setki, a nawet tysiące petaflopsodni \cite{openai-compute}. Przeciętna karta jest o rzędy wielkości poza zasięgiem zbliżenia się do tych wartości. Na wykorzystanie tych algorytmów do celów niekomercyjnych będziemy musieli jeszcze trochę poczekać.
+
+Kontrolowanie procesu uczenia okazało się niezwykle istotne podczas wykonywania tego eksperymentu. Warto sprawdzać czy rozkłady prawdopodobieństw dla akcji wykonywanych przez trenującego agenta oraz tworzone przez niego oceny stanów są zgodne z naszą intuicją. Dodatkowo warto też śledzić rozgrywane gry, aby wyłapać ewentualne dziwne zachowania. Łatwo jest popełnić błąd, który nie prowadzi do przerwania wykonania programu, jednak zasadniczo utrudni uczenie lub uczyni je kompletnie bezsensownym.
+
+Na początku procesu uczenia może nam się błędnie wydawać, że nasz agent dokonuje postępy, gdy w rzeczywistości będzie to losowy szum. W tym wypadku pomocne okazuje się testowanie agenta przeciwko polityce wykonującej losowo akcje. Warto również znaleźć metrykę, która pozwoli nam na obiektywną ocenę umiejętności naszego algorytmu, np. punkty elo.
+
+Podczas implementacji algorytmu powinniśmy dokładnie weryfikować wszystkie założenia, które poczynają autorzy prac z których korzystamy i weryfikować czy w dobry sposób je interpretujemy. Zazwyczaj zawierają one wiele, dobrze ukrytych szczegółów, których nie uda nam się wyłapać za pierwszym razem, gdy czytamy dany tekst. Warto zatem od czasu do czasu ponownie przeczytać opracowywane teksty, aby upewnić się, że wciąż utrzymujemy się na poprawnym kursie.
+
+Błędy w kodzie mogą być dla nas bardzo kosztowne, gdyż może się zdarzyć że przeprowadzimy serię różnych eksperymentów, w celu ustalenia optymalnych hiperparametrów. Jednak po znalezieniu i naprawieniu błędu, może się okazać że zachowanie modelu jest zupełnie inne, a w konsekwencji będziemy musieli powtórzyć wszystko co zrobiliśmy do tej pory.
+
+Rozwój sztucznej inteligencji w ostatnich latach w większości dotyczy bardzo wąskich zastosowań. Modele do rozpoznawania obrazów czy tłumaczenia tekstów potrafią rozwiązywać tylko swoje wyspecjalizowane zadania i bardzo daleko jest im do traktowania ich jako rozumne twory. Najbliższe ogólnej sztucznej inteligencji (ang. Artificial General Intelligence, AGI) obecnie są właśnie algorytmy uczenia ze wzmocnieniem, których interakcja z otoczeniem najbardziej przypomina inteligentne zachowanie. Jednak nawet im jest daleko, abyśmy mogli uznać je za niezależne istoty, które potrafią zrozumieć otaczający je świat i wykształcić świadomość. Nie mniej jednak z entuzjazmem podchodzimy do rozwoju tej dziedziny, aby przybliżyć nas o kolejny krok do AGI.
+
+
+%\begin{thebibliography}{99}
+%\end{thebibliography}
+
+
+\bibliographystyle{acm}
+\bibliography{bibliografia}
 
 \end{document}
 
