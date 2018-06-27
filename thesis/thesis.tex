@@ -120,25 +120,11 @@ W tej pracy, opierając się na AlphaGo Zero, stworzony zostaje program zdolny d
 
 \chapter{Wprowadzenie}\label{r:intro}
 
-%Sztuczna inteligencja cieszy się ogromnym wzrostem zainteresowania w ostatnim czasie, zarówno wśród społeczności naukowej, jak i w przemyśle. Swoją popularność zawdzięcza temu, iż dzięki niej jesteśmy w stanie poradzić sobie z problemami, których rozwiązania przy użyciu programów komputerowych przynosiły bardzo mierne rezultaty. 
-%Na szczególną uwagę zasługuje Uczenie Maszynowe (ang. Machine Learning), które jest obecnie wiodącym nurtem i przyciąga największą uwagę ze względu na najlepsze rezultaty.
-%Pozwoliło nam ono na tworzenie programów do rozpoznawania obrazów, tłumaczenia maszynowego czy generowania muzyki. 
-%Sztuczna inteligencja okazała się 
+Uczenie maszynowe zyskuje ostatnio na popularności dzięki jego coraz szerszym zastosowaniu w rozwiązywaniu naszych codziennych problemów. Obecnie pomagają nam one w zakresie diagnozy medycznej \cite{medical-ml}, komponowaniu muzyki \cite{musegan} czy prowadzeniu samochodów \cite{sdc1}. Najczęściej spotykanymi są modele uczenia z nadzorem, które wymagają mnóstwo opisanych przez ludzi danych, np. zdjęć wraz z opisem co się na nich znajduje, oraz modele uczenia bez nadzoru, w których co prawda nie wymagamy opisu, jednak pozyskanie samych danych może okazać się problemem. Ponadto programy uzyskane za pomocą tych metod zazwyczaj rozwiązują bardzo wąski zakres problemów, takich jak rozpoznawanie konkretnych obiektów na zdjęciu czy przewidywanie ceny mieszkania.
 
-%Uczenie Maszynowe cieszy się ogromnym wzrostem zainteresowania w ostatnim czasie, zarówno wśród społeczności naukowej, jak i w przemyśle.
-%Pozwoliło nam ono na rozwiązanie problemów, których wcześniejsze próby rozwiązania dawały kiepskie rezultaty, takich jak rozpoznawania obrazów, tłumaczenia maszynowego czy generowania muzyki.
-%Jednym z przełomowych wyników sztucznej inteligencji, jakie udało nam się uzyskać
+Alternatywą dla powyższych paradygmatów jest uczenie ze wzmocnieniem, w którym uczymy się jak powinniśmy się zachowywać w otaczającym nas świecie. Podczas nauki za źródło wiedzy wykorzystuje ono interakcje ze środowiskiem, co jest naturalnym sposobem nauki również dla nas jako ludzi. Niezależnie od tego czy to dziecko stawiające pierwsze kroki, czy to my po raz pierwszy jeżdżący na nartach, metodą prób i błędów staramy się zrozumieć jak zrealizować nasz cel. Podejście to jest z nami obecne całe życie i stanowi źródło wiedzy w wielu przypadkach.
 
-%\section{Intro}
-
-%Interakcja z otoczeniem jest prawdopodobnie dla większości z nas naturalnym sposobem uczenia się. 
-%Dziecko uczące się stawiać pierwsze kroki nie posiada nauczyciela, który dokładnie instruuje je w jaki sposób powinno układać nogi, aby zachować równowagę. 
-%Zamiast tego, poprzez metodę prób i błędów, stara się ono zrozumieć w jaki sposób zrealizować swój cel i poznaje jakie efekty przynosi wykonywanie przez nie konkretnych ruchów. 
-%W ten sam sposób uczymy się przez całe życie, jednocześnie poznając otaczający nas świat oraz prawa, które nim rządzą, bez względu na to czy jest to nauka jazdy samochodem czy gry w szachy.
-
-
-Do napisania.
-%\section{Intro2}
+W uczeniu ze wzmocnieniem osoba ucząca otrzymuje numeryczny sygnał, opisujący jak dobrze sobie radzi i stara nauczyć się jakie akcje maksymalizują tę nagrodę. Może nią być czas utrzymywania przez nas równowagi czy liczba kroków które przeszliśmy. Uczeń nie dowiaduje się które akcje powinien wykonywać, a zamiast tego jest pozostawiony sam sobie aby samemu to odkryć. Często również zdarza się tak że nie dowiaduje się on od razu, czy wykonana przez niego akcja była dobra, gdyż jej skutki mogą być bardzo odroczone w czasie, np. w przypadku złego odżywiania się czy wykonaniu złego otwarcia szachowego.
 
 \section{Piłkarzyki na kartce}
 
@@ -151,7 +137,7 @@ Gracze na przemian wykonują ruchy polegające na przemieszczeniu piłki na sąs
   \caption{Pusta plansza}
 \end{figure}
 
-Najczęściej stosowanym wymiarem planszy jest 8x10 kratek.
+Najczęściej stosowanym wymiarem planszy jest 8 na 10 kratek.
 Przy krótszych bokach narysowane są dwie bramki o szerokości 2 kratek, w których gracze muszą umieścić piłkę.
 Rozgrywka toczy się jedynie na przecięciach linii.
 Środek planszy jest punktem startowym gry, do którego gracze dorysowują kolejne linie, oznaczające przemieszczenie piłki na sąsiednie pole. Każdy kolejny ruch zaczyna się w miejscu, w którym skończył się poprzedni, wzdłuż kratki lub po przekątnej. 
@@ -182,7 +168,7 @@ Do zapisu gry wykorzystuje się notację, w której każdy z ruchów określony 
 
 % todo napisz wczesniej cos o AlphaGo
 
-Celem mojej pracy jest zastosowanie algorytmu wykorzystanego w AlphaGo, do wyuczenia agenta zdolnego do gry w piłkarzyki na kartce. Postaram się w niej dowiedzieć w jaki sposób hiperparametry wykorzystane w AlphaGo powinny zostać zaadaptowane do mojego problemu. 
+Celem mojej pracy jest zastosowanie algorytmu AlphaGo \cite{alphago2016, alphagozero}, który w 2016 zwyciężył podczas gry z mistrzem świata w Go, stając się najlepszym graczem i jednocześnie najbardziej zaawansowanym algorytmem uczenia ze wzmocnieniem, do wyuczenia agenta zdolnego do gry w piłkarzyki na kartce. Postaram się w niej dowiedzieć w jaki sposób hiperparametry wykorzystane w AlphaGo powinny zostać zaadaptowane do mojego problemu. 
 
 Ponadto maszyny wykorzystywane do uczenia AlphaGo są rzędy wielkości lepsze od komputerów wykorzystywanych przez przeciętną osobę. Moje eksperymenty będą skupiały się również na tym które hiperparametry mogą zostać zredukowane, aby jednocześnie uzyskać wyniki w sensownym czasie oraz aby były one dla nas satysfakcjonujące.
 
