@@ -692,12 +692,6 @@ Stan gry musi być w pewien sposób przez nas reprezentowany, aby sieć neuronow
 
 W tym celu na planszy została wydzielona krata, w której komórce odpowiada pole, na którym znaleźć się piłka. Zatem jeśli nasze boisko zostało wyrysowane na kartce w kratkę o wymiarach $M \times N$, to nasza krata będzie wymiarów $(M + 1) \times (N + 1)$. Otrzymana przez nas krata odpowiada macierzy $\mathbb{R}^{n \times m}$ i stanowi ona pojedynczą warstwę w mapie cech. 
 
-\begin{figure}[ht!]
-  \centering
-  \includegraphics[width=35mm]{feature_map_grid}
-  \caption{Plansza wraz z nałożoną kratą.}
-\end{figure}
-
 Na wejściową mapę cech składa się kilka warstw, które są ustawiane jedna na drugiej. Są to odpowiednio: 
 \begin{itemize}
 \item 8 warstw odpowiadających każdemu z kierunków,
