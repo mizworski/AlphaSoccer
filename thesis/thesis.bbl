@@ -1,0 +1,212 @@
+\begin{thebibliography}{10}
+
+\bibitem{nmt}
+{\sc {Bahdanau}, D., {Cho}, K., and {Bengio}, Y.}
+\newblock {Neural Machine Translation by Jointly Learning to Align and
+  Translate}.
+\newblock {\em ArXiv e-prints\/} (Sept. 2014).
+
+\bibitem{bellman1954}
+{\sc Bellman, R.}
+\newblock The theory of dynamic programming.
+\newblock {\em Bull. Amer. Math. Soc. 60}, 6 (11 1954), 503--515.
+
+\bibitem{bellman1957}
+{\sc Bellman, R.}
+\newblock {\em Dynamic Programming}, 1~ed.
+\newblock Princeton University Press, Princeton, NJ, USA, 1957.
+
+\bibitem{policy-iteration}
+{\sc Bertsekas, D.~P.}
+\newblock Approximate policy iteration: a survey and some new methods.
+\newblock {\em Journal of Control Theory and Applications 9}, 3 (Aug 2011),
+  310--335.
+
+\bibitem{sdc1}
+{\sc {Bojarski}, M., {Del Testa}, D., {Dworakowski}, D., {Firner}, B., {Flepp},
+  B., {Goyal}, P., {Jackel}, L.~D., {Monfort}, M., {Muller}, U., {Zhang}, J.,
+  {Zhang}, X., {Zhao}, J., and {Zieba}, K.}
+\newblock {End to End Learning for Self-Driving Cars}.
+\newblock {\em ArXiv e-prints\/} (Apr. 2016).
+
+\bibitem{sgd}
+{\sc {Bottou}, L., {Curtis}, F.~E., and {Nocedal}, J.}
+\newblock {Optimization Methods for Large-Scale Machine Learning}.
+\newblock {\em ArXiv e-prints\/} (June 2016).
+
+\bibitem{deep-blue}
+{\sc Campbell, M., Hoane, Jr., A.~J., and Hsu, F.-h.}
+\newblock Deep blue.
+\newblock {\em Artif. Intell. 134}, 1-2 (Jan. 2002), 57--83.
+
+\bibitem{MCTS}
+{\sc Chaslot, G., Bakkes, S., Szita, I., and Spronck, P.}
+\newblock Monte-carlo tree search: A new framework for game ai.
+
+\bibitem{musegan}
+{\sc {Dong}, H.-W., {Hsiao}, W.-Y., {Yang}, L.-C., and {Yang}, Y.-H.}
+\newblock {MuseGAN: Multi-track Sequential Generative Adversarial Networks for
+  Symbolic Music Generation and Accompaniment}.
+\newblock {\em ArXiv e-prints\/} (Sept. 2017).
+
+\bibitem{dlbook}
+{\sc Goodfellow, I., Bengio, Y., and Courville, A.}
+\newblock {\em Deep Learning}.
+\newblock MIT Press, 2016.
+
+\bibitem{resnet}
+{\sc {He}, K., {Zhang}, X., {Ren}, S., and {Sun}, J.}
+\newblock {Deep Residual Learning for Image Recognition}.
+\newblock {\em ArXiv e-prints\/} (Dec. 2015).
+
+\bibitem{ridge}
+{\sc Hoerl, A.~E., and Kennard, R.~W.}
+\newblock Ridge regression: Biased estimation for nonorthogonal problems.
+\newblock {\em Technometrics 12}, 1 (1970), 55--67.
+
+\bibitem{sdc2}
+{\sc {Huval}, B., {Wang}, T., {Tandon}, S., {Kiske}, J., {Song}, W.,
+  {Pazhayampallil}, J., {Andriluka}, M., {Rajpurkar}, P., {Migimatsu}, T.,
+  {Cheng-Yue}, R., {Mujica}, F., {Coates}, A., and {Ng}, A.~Y.}
+\newblock {An Empirical Evaluation of Deep Learning on Highway Driving}.
+\newblock {\em ArXiv e-prints\/} (Apr. 2015).
+
+\bibitem{batch-norm}
+{\sc {Ioffe}, S., and {Szegedy}, C.}
+\newblock {Batch Normalization: Accelerating Deep Network Training by Reducing
+  Internal Covariate Shift}.
+\newblock {\em ArXiv e-prints\/} (Feb. 2015).
+
+\bibitem{SARSA}
+{\sc J.~Gordon, G.}
+\newblock Chattering in sarsa(lambda) - a cmu learning lab internal report.
+
+\bibitem{relu}
+{\sc Jarrett, K., Kavukcuoglu, K., Ranzato, M., and LeCun, Y.}
+\newblock What is the best multi-stage architecture for object recognition?
+\newblock In {\em 2009 IEEE 12th International Conference on Computer Vision\/}
+  (Sept 2009), pp.~2146--2153.
+
+\bibitem{adam}
+{\sc {Kingma}, D.~P., and {Ba}, J.}
+\newblock {Adam: A Method for Stochastic Optimization}.
+\newblock {\em ArXiv e-prints\/} (Dec. 2014).
+
+\bibitem{krizhevsky-cnn}
+{\sc Krizhevsky, A., Sutskever, I., and Hinton, G.~E.}
+\newblock Imagenet classification with deep convolutional neural networks.
+\newblock In {\em Proceedings of the 25th International Conference on Neural
+  Information Processing Systems - Volume 1\/} (USA, 2012), NIPS'12, Curran
+  Associates Inc., pp.~1097--1105.
+
+\bibitem{backprop}
+{\sc Lecun, Y.}
+\newblock A theoretical framework for back-propagation.
+
+\bibitem{lecun-cnn}
+{\sc Lecun, Y., Bottou, L., Bengio, Y., and Haffner, P.}
+\newblock Gradient-based learning applied to document recognition.
+\newblock In {\em Proceedings of the IEEE\/} (1998), pp.~2278--2324.
+
+\bibitem{mini-batch-sgd}
+{\sc Li, M., Zhang, T., Chen, Y., and Smola, A.~J.}
+\newblock Efficient mini-batch training for stochastic optimization.
+\newblock In {\em Proceedings of the 20th ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining\/} (New York, NY, USA, 2014), KDD '14,
+  ACM, pp.~661--670.
+
+\bibitem{medical-ml}
+{\sc {Litjens}, G., {Kooi}, T., {Ehteshami Bejnordi}, B., {Arindra Adiyoso
+  Setio}, A., {Ciompi}, F., {Ghafoorian}, M., {van der Laak}, J.~A.~W.~M., {van
+  Ginneken}, B., and {S{\'a}nchez}, C.~I.}
+\newblock {A Survey on Deep Learning in Medical Image Analysis}.
+\newblock {\em ArXiv e-prints\/} (Feb. 2017).
+
+\bibitem{dqn}
+{\sc {Mnih}, V., {Kavukcuoglu}, K., {Silver}, D., {Graves}, A., {Antonoglou},
+  I., {Wierstra}, D., and {Riedmiller}, M.}
+\newblock {Playing Atari with Deep Reinforcement Learning}.
+\newblock {\em ArXiv e-prints\/} (Dec. 2013).
+
+\bibitem{openai-compute}
+{\sc OpenAI}.
+\newblock Ai and compute.
+
+\bibitem{dota2}
+{\sc OpenAI}.
+\newblock Dota 2.
+
+\bibitem{activation-fn}
+{\sc {Ramachandran}, P., {Zoph}, B., and {Le}, Q.~V.}
+\newblock {Searching for Activation Functions}.
+\newblock {\em ArXiv e-prints\/} (Oct. 2017).
+
+\bibitem{sgd-img}
+{\sc Raschka, S.}
+\newblock Machine learning faq.
+
+\bibitem{alphago2016}
+{\sc Silver, D., Huang, A., Maddison, C., Guez, A., Sifre, L., van~den
+  Driessche, G., Schrittwieser, J., Antonoglou, I., Panneershelvam, V.,
+  Lanctot, M., Dieleman, S., Grewe, D., Nham, J., Kalchbrenner, N., Sutskever,
+  I., Lillicrap, T., Leach, M., Kavukcuoglu, K., Graepel, T., and Hassabis, D.}
+\newblock Mastering the game of go with deep neural networks and tree search.
+\newblock 484--489.
+
+\bibitem{alphagozero}
+{\sc Silver, D., Schrittwieser, J., Simonyan, K., Antonoglou, I., Huang, A.,
+  Guez, A., Hubert, T., Baker, L., Lai, M., Bolton, A., Chen, Y., Lillicrap,
+  T., Hui, F., Sifre, L., van~den Driessche, G., Graepel, T., and Hassabis, D.}
+\newblock Mastering the game of go without human knowledge.
+\newblock 354--359.
+
+\bibitem{TD}
+{\sc Sutton, R.~S.}
+\newblock Learning to predict by the method of temporal differences.
+\newblock {\em Machine Learning 3\/} (1988), 9--44.
+
+\bibitem{Sutton}
+{\sc Sutton, R.~S., and Barto, A.~G.}
+\newblock {\em Introduction to Reinforcement Learning}, 1st~ed.
+\newblock MIT Press, Cambridge, MA, USA, 1998.
+
+\bibitem{policy-gradient-sutton}
+{\sc Sutton, R.~S., McAllester, D., Singh, S., and Mansour, Y.}
+\newblock Policy gradient methods for reinforcement learning with function
+  approximation.
+\newblock In {\em Proceedings of the 12th International Conference on Neural
+  Information Processing Systems\/} (Cambridge, MA, USA, 1999), NIPS'99, MIT
+  Press, pp.~1057--1063.
+
+\bibitem{Szepesvari}
+{\sc Szepesvari, C.}
+\newblock {\em Algorithms for Reinforcement Learning}.
+\newblock Morgan and Claypool Publishers, 2010.
+
+\bibitem{lasso}
+{\sc Tibshirani, R.}
+\newblock Regression shrinkage and selection via the lasso.
+\newblock {\em Journal of the Royal Statistical Society. Series B
+  (Methodological) 58}, 1 (1996), 267--288.
+
+\bibitem{rmsprop}
+{\sc Tieleman, T., and Hinton, G.}
+\newblock {RMSprop Gradient Optimization}.
+
+\bibitem{Q-learning}
+{\sc Watkins, C.~J., and Dayan, P.}
+\newblock Q-learning.
+\newblock {\em Machine Learning 8\/} (1992), 279--292.
+
+\bibitem{reinforce}
+{\sc Williams, R.~J.}
+\newblock Simple statistical gradient-following algorithms for connectionist
+  reinforcement learning.
+\newblock {\em Machine Learning 8}, 3 (May 1992), 229--256.
+
+\bibitem{resnext}
+{\sc {Xie}, S., {Girshick}, R., {Doll{\'a}r}, P., {Tu}, Z., and {He}, K.}
+\newblock {Aggregated Residual Transformations for Deep Neural Networks}.
+\newblock {\em ArXiv e-prints\/} (Nov. 2016).
+
+\end{thebibliography}
