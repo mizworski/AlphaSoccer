@@ -166,7 +166,7 @@ Gra kończy się w momencie gdy piłka znajdzie się w jednej z bramek.
 Wówczas gracz, do którego należy dana bramka przegrywa. 
 Gracz może również przegrać w wypadku gdy nie jest w stanie wykonać żadnego ruchu.
 
-Do zapisu gry wykorzystuje się notację, w której każdy z ruchów określony jest liczbą naturalną od 0 do 7, gdzie 0 oznacza ruch w górę, a kolejne idą zgodnie z ruchem wskazówek zegara o 45 stopni. Ruchy oddziela się przerwą jedynie pomiędzy graczami. Przykładowo grze na rysunku \ref{fig:odbicie} odpowiada zapis: $ 4 \;1 \; 66 $, gdyż najpierw gracz wykonał ruch w dół, następny po skosie do góry w prawo, a następnie wykonana została seria ruchów w lewo.
+Do zapisu gry wykorzystuje się notację, w której każdy z ruchów określony jest liczbą naturalną od 0 do 7, gdzie 0 oznacza ruch w górę, a kolejne idą zgodnie z ruchem wskazówek zegara o 45 stopni. Ruchy oddziela się przerwą jedynie pomiędzy graczami. Przykładowo grze na rysunku \ref{fig:odbicie} odpowiada zapis: $ 1. \; 4 \;1 \; 2. \; 66 $, gdyż w rundzie turze zostały wykonane ruchy w dół (4), następnie do góry w prawo (1), a w drugiej -- podwójny ruch w lewo (6 i 6).
 
 \begin{figure}[ht]
   \centering
@@ -699,6 +699,66 @@ Wielu specjalistów od dawna zajmuje się tworzeniem systemów grających w gry 
 
 Algorytm uczący agenta grającego w piłkarzyki na papierze jest w całości oparty na algorytmie AlphaGo Zero. Zmodyfikowana została jedynie architektura sieci oraz hiperparametry wykorzystane podczas uczenia.
 
+
+\section{Reprezentacja danych}
+
+Stan gry musi być w pewien sposób przez nas reprezentowany, aby sieć neuronowa mogła go przetworzyć i na jego podstawie podjąć decyzje. AlphaSoccer wykorzystuje sieć konwolucyjną, z tego powodu dane muszą być przedstawione jako mapa cech. 
+
+W tym celu na planszy została wydzielona krata, w której komórce odpowiada pole, na którym znaleźć się piłka. Zatem jeśli nasze boisko zostało wyrysowane na kartce w kratkę o wymiarach $M \times N$, to nasza krata będzie wymiarów $(M + 1) \times (N + 1)$. Otrzymana przez nas krata odpowiada macierzy $\mathbb{R}^{n \times m}$ i stanowi ona pojedynczą warstwę w mapie cech. 
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=35mm]{feature_map_grid}
+  \caption{Plansza wraz z nałożoną kratą.}
+\end{figure}
+
+Na wejściową mapę cech składa się kilka warstw, które są ustawiane jedna na drugiej. Są to odpowiednio: 
+\begin{itemize}
+\item 8 warstw odpowiadających każdemu z kierunków,
+$$ f(i, j, k) = 
+\begin{cases}
+    1,              & \text{gdy z miejsca (i, j) wychodzi linia w kierunku k}\\
+    0,              & \text{wpp}
+\end{cases}
+$$
+\item 1 warstwa odpowiadająca miejscom, od których można się odbić,
+$$ f(i, j, w_o) = 
+\begin{cases}
+    1,              & \text{jeśli z (i, j) wychodzi linia w dowolną stronę} \\
+    0,              & \text{wpp} 
+\end{cases}
+$$
+\item 1 warstwa odpowiadająca pozycji piłki,
+$$ f(i, j, w_p) = 
+\begin{cases}
+    1,              & \text{gdy piłka znajduje się na pozycji (i, j)}\\
+    0,              & \text{wpp}
+\end{cases}
+$$
+
+\item 1 warstwa odpowiadająca obciążeniu (bias),
+$$ f(i, j, w_b) = 1 $$
+
+Warto zauważyć, że wprowadzona została pewna redundancja, gdyż krawędzie są zawsze reprezentowane podwójnie, w obu stanach które dana krawędź łączy. Jest to celowe działanie i nic nie wskazuje na to, aby niekorzystnie wpływało na jakość modelu.
+
+\begin{figure}
+\centering
+\setlength{\tabcolsep}{5mm}
+\begin{tabular}{ccc}
+  \includegraphics[width=35mm]{feature_map} & 
+  \includegraphics[width=35mm]{feature_map_grid} & 
+  \includegraphics[width=35mm]{dots}\\
+  Plansza z perspektywy & 
+  Plansza wraz z & 
+  Przykładowa warstwa w \\
+  ludzkiego obserwatora. & nałożoną kratą. & 
+  mapie cech -- warstwa odbić. \\
+\end{tabular}
+\caption{Reprezentacja danych.}
+\end{figure}
+
+\end{itemize}
+
 \section{Algorytm przeszukujący drzewo gry}
 
 Do podejmowania decyzji wykorzystywana jest sieć neuronowa $f_\theta$, która na wejściu wczytuje obecny stan planszy, a produkuje wektor prawdopodobieństw wykonania akcji oraz wartość stanu, która oznacza prawdopodobieństwo wygrania gry przez gracza z którego perspektywy wykonywany jest ruch, $f_\theta(s) = (p, v)$. W ten sposób funkcja wartości akcji oraz strategia łączona jest w jedną sieć neuronową, a konkretniej siecią konwolucyjną, złożoną z bloków rezydualnych, w której po ostatniej warstwie konwolucyjnej sieć rozbija się na dwie ścieżki, które kolejno są odpowiedzialne za strategię oraz funkcję wartości. W ten sposób te same cechy przestrzenne są wykorzystywane zarówno do wyboru akcji, jak i oceny wartości stanu. Zmniejsza to również złożoność obliczeniową.
@@ -774,13 +834,51 @@ W celu dostosowania hiperparametrów algorytmu, pierwsza jego wersja była uczon
 
 Architektura sieci została ustalona na 8 bloków rezydualnych, każdy o szerokości 128 filtrów. Na każdą epokę rozgrywane było 2048 gier, w których na każdy ruch przypadało 700 rozwinięć podczas przeszukiwania drzewa i w efekcie wykonanie jednej epoki zajmowało średnio 12 godzin. Początkowy stosunek wygranych douczonej sieci przeciwko jej pierwotnej wersji jest bardzo wysoki, a z czasem zaczyna maleć, a sam proces uczenia zaczyna zwalniać i wymagane jest zwiększanie ilości gier oraz rozwinięć. Istotna okazała się również obserwacja rzeczywistego poziomu eksploracji drzewa, aby odpowiednio dostosować hiperparametry odpowiedzialne za eksploracje, gdyż przy ich złym wyborze algorytm wciąż podążał tą samą ścieżką, a w wyniku nie zdobywał nowego doświadczenia. Kod źródłowy jest dostępny pod adresem: https://github.com/mizworski/AlphaSoccer.
 
-\subsection{Przykładowe ruchy wyuczone przez model}
 
-tutaj wrzucę kilka przykładowych serii ruchów
+\subsection{Ruchy wyuczone przez model}
 
-\subsection{Gra pomiędzy wczesną i późną iteracją modelu}
+Sieć bardzo szybko wyucza się otwarcia, nazwanego przeze mnie dwoma rombami. Zagranie to jest w pełni symetryczne i powoduje zablokowanie przeciwnika po jego stronie boiska, z perspektywy gracza rozpoczynającego grę. Model niestety preferował rozpoczęcie gry w lewo, pomimo oczywistej symetrii planszy. Zjawisko to jest niepokojące, gdyż idealny model nie powinien rozróżniać stron i z tym samym prawdopodobieństwem, losowo wybierać jeden z symetrycznych ruchów. Remedium na to było zastosowanie przez zespół DeepMind w 2016 \cite{alphago2016} roku augmentacji danych, polegającej na wyborze losowego z 4 odbić symetrycznych planszy podczas wyboru decyzji. Jednak w późniejszej wersji, tj. AlphaGo Zero \cite{alphagozero}, zrezygnowano z tego podejścia i plansza nie była modyfikowana przed przekazaniem jej do sieci neuronowej.
 
-jakaś gra
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=20mm]{romb}
+  \caption{Otwarcie dwóch rombów.}
+\end{figure}
+
+W momencie gdy sieć znajdowała się w jednym z pól narożnych wewnątrz boiska, obok swojej bramki, to blokowała ona kolejny ruch, aby uchronić się przed bramką. Można wówczas zaobserwować, że rozumie ona iż jeżeli chce ona wygrać, to nie może wcześniej przegrać, więc na równi ze strzeleniem gola traktuje ona obronę swojej bramki.
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=20mm]{blok}
+  \caption{Blokowanie dojścia do własnej bramki.}
+\end{figure}
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=20mm]{blok2}
+  \caption{Sieć wykonała ruchu zielone, a później żółty, blokując tym samym dojście do własnej bramki. Gdyby zdecydowałą się wykonać ruch niebieski oraz żółty, to zostawiłaby przejście dla przeciwnika, który mógłby skończyć grę idąc po ukosie w lewo (7), a później dwa razy w prawo (1).}
+\end{figure}
+
+Ponadto powyższe przykłady pokazują, że sieć bez problemu rozpoznaje miejsca, w których otrzyma ona dodatkowy ruch i wykorzystuje tę wiedzę podczas planowania.
+
+Sieć otrzymana w wyniku powyższego eksperymentu potrafiła mniej więcej w połowie przypadków pokonać ludzkiego testera.
+
+\begin{figure}
+\centering
+\setlength{\tabcolsep}{5mm}
+\begin{tabular}{cccc}
+  \includegraphics[width=25mm]{small0} & \includegraphics[width=25mm]{small1} & 
+  \includegraphics[width=25mm]{small2} & \includegraphics[width=25mm]{small3} \\
+  1. 0 5 & 2. 71 33 & 3. 17 0364 & 4. 617 6524 \\[6pt]
+\end{tabular}
+\begin{tabular}{ccc}
+  \includegraphics[width=25mm]{small4} & \includegraphics[width=25mm]{small5} &
+  \includegraphics[width=25mm]{small6} \\
+  5. 20 5453 & 6. 61 7243 & 7. 0 543
+\end{tabular}
+\caption{Gra pomiędzy dwoma różnymi modelami gracza na zmniejszonej planszy. Ruchy gracza wykonującego pierwszy ruch zaznaczone są na czerwono, a drugiego na zielono. Gracz zielony, który jest późniejszą wersją AlphaSoccer, wygrywa pomimo wykonywania ruchu jako drugi. }
+\end{figure}
 
 \section{Wyniki dla gry standardowych rozmiarów}
 
@@ -789,14 +887,44 @@ Po uzyskaniu pierwszych efektów w grze na zmniejszonej planszy, eksperymenty zo
 Model po paru epokach zaczął już rozumieć zasady gry i starał się przesunąć piłkę jak najbliżej bramki swojego przeciwnika. Lokalnie na planszy jego ruchy wyglądały na przemyślane i przypominały grę normalnego gracza. Nie potrafił on jednak obronić się przed bardzo długimi ruchami, tj. takimi w których wykonywane było wiele odbić. Ostatecznie wystawiał się on na tego typu ruchy, które prowadziły do jego porażki.
 
 
-\subsection{Przykładowe ruchy wyuczone przez model}
-
-tutaj wrzucę kilka przykładowych serii ruchów
-
-
 \subsection{Gra pomiędzy wczesną i późną iteracją modelu}
 
-jakaś gra
+Rozgrywki średnio zawierają aż 100 ruchów, rozłożonych na około 20 rund, co sprawia że ich wizualizacja staje się bardzo ciężka. Poniżej przedstawiam zapis jednej z rozgrywek w standardowej notacji oraz kilka plansz po zakończonej grze.
+
+\texttt{1.\,0 5\;
+2.\,0 33\;
+3.\,1 3\;
+4.\,17 54\;
+5.\,7 45\;
+6.\,0 3\;
+7.\,16677 5\;
+8.\,0 3\;
+9.\,17 55253\;
+10.\,1 3\;
+11.\,1177 543\;
+12.\,11 3664633\;
+13.\,1 3\;
+14.\,170 35\;
+15.\,717 5066666336\;
+16.\,3 5\;
+17.\,7244 30\;
+18.\,752712142227442 3\;
+19.\,17575 3\;
+20.\,06764 3\;
+}
+
+\begin{figure}
+\centering
+\setlength{\tabcolsep}{5mm}
+\begin{tabular}{cccc}
+  \includegraphics[width=35mm]{standard0} & \includegraphics[width=35mm]{standard1} & 
+  \includegraphics[width=35mm]{standard2}\\
+\end{tabular}
+\begin{tabular}{ccc}
+  \includegraphics[width=35mm]{standard3} & \includegraphics[width=35mm]{standard4} \\
+\end{tabular}
+\caption{Plansze po ukończonych rozgrywkach na pełnowymiarowym boisku.}
+\end{figure}
 
 \chapter{Wnioski}
 
