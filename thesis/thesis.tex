@@ -354,6 +354,30 @@ $$ \delta_t = R_{t+1} + \gamma V(S_{t+1}) - V(S_t) $$
 
 nazywamy \emph{błędem TD}.
 
+Wyobraźmy sobie sytuację w której wracamy do domu po pracy. Gdy wychodzimy z biura spodziewamy się, że za 30 minut możemy znaleźć się w domu. Po pięciu minutach docieramy do samochodu, jednak zaczyna mocno padać, co sprawia że oczekujemy wydłużenia czasu przejazdu o 10 minut. Piętnaście minut później opuszczamy autostradę i aktualizujemy naszą predykcję, ustalając czas trwania całego przejazdu jako 35 minut. Jednak wkrótce naszą drogę blokuje ciężarówka, przez która na drogę na której mieszkamy wjeżdżamy 40 minut po wyjściu z biura, a po kolejnych 3 minutach jesteśmy już w domu.
+
+\begin{center}
+ \begin{tabular}{ p{4cm} | p{3cm}| p{3cm} | p{3cm} } 
+ \hline
+ Stan & Czas poświęcony na podróż & Oczekiwany pozostały czas podróży & Oczekiwany łączny czas podróży \\ 
+ \hline
+ wyjście z biura & 0 & 30 & 30 \\ 
+ \hline
+ wejście do samochodu, zaczyna padać deszcz & 5 & 35 & 40 \\
+ \hline
+ opuszczenie autostrady & 20 & 15 & 35 \\
+ \hline
+ droga dojazdowa, ciężarówka & 30 & 10 & 40 \\
+ \hline 
+ ulica domowa & 40 & 3 & 43 \\
+ \hline
+ dotarcie do domu & 43 & 0 & 43 \\
+ \hline
+\end{tabular}
+\end{center}
+
+W przypadku metody Monte Carlo wszystkie wykonane przez nas predykcje zostałyby poprawione w kierunku ostatecznego wyniku uzyskanego przez nas, czyli całkowitego czasu przejazdu. Dzięki metodom TD jesteśmy w stanie modyfikować uzyskiwane przez nas oszacowania z dużo większą precyzją, ograniczając tym samym wariancję obserwowaną podczas uczenia.
+
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1.0\textwidth]{mc_td}
@@ -585,12 +609,14 @@ Jednym z ważniejszych algorytmów należących do tej kategorii jest \emph{gł�
 
 W tym modelu sieć neuronowa pełni rolę funkcji wartości akcji, tj. Q-funkcji, a podczas uczenia minimalizowana była następująca funkcja straty:
 
-$$ L_i(\theta_i) = \mathbb{E}_{s \sim \rho_{\pi(\cdot)}, a \sim \pi(\cdot)} \Big[ (y_i^2 - Q(s, a; \theta_i))^2 \Big] $$
+$$ L_i(\theta_i) = \mathbb{E}_{s, a \sim \pi(\cdot)} \Big[ (y_i^2 - Q(s, a; \theta_i))^2 \Big] $$
 
-gdzie $ y_i = \mathbb{E}_{s' \sim \mathcal{E}'} \big[ r + \gamma \max_{a'} Q(s', a'; \theta_{i - 1}) \mid s, a \big] $ jest celem funkcji w $i$-tej iteracji, $\pi(s \mid a)$ jest strategią utworzoną na podstawie Q-funkcji, $\rho_{\pi(\cdot)} $ jest rozkładem stanów podczas podążania zgodnie z strategią $\pi$. Aktualizacja wag sieci następuje zgodnie z gradientem powyższej funkcji, który jest postaci:
+gdzie $ y_i = \mathbb{E}_{s' \sim \mathcal{E}'} \big[ r + \gamma \max_{a'} Q(s', a'; \theta_{i - 1}) \mid s, a \big] $ jest celem funkcji w $i$-tej iteracji, $\pi(s \mid a)$ jest strategią utworzoną na podstawie Q-funkcji, na podstawie której podejmowane są ruchy przez agenta. Aktualizacja wag sieci następuje zgodnie z gradientem powyższej funkcji, który jest postaci:
 
-$$ \nabla_{\theta_i}L_i(\theta_i) = \mathbb{E}_{s, a \sim p(\cdot); s' \sim \mathcal{E}} 
+$$ \nabla_{\theta_i}L_i(\theta_i) = \mathbb{E}_{s, a \sim \pi(\cdot); s' \sim \mathcal{E}} 
 \Big[ \Big( r + \gamma \max_{a'} Q(s', a'; \theta_{i - 1}) - Q(s, a; \theta_i) \Big) \nabla_{\theta_i} Q(s, a; \theta_i) \Big] $$
+
+Powyższy gradient odpowiada gradientowi funkcji $Q$, zmodyfikowanego o błąd TD, a więc różnice pomiędzy zaobserwowanym wynikiem w kolejnym kroku podczas uczenia, a wynikiem przewidzianym przez sieć. W ten sposób w przypadku gdy po wykonaniu kroku wynik okaże się dużo wyższy, niż uprzednio agent się spodziewał, to sieć zmodyfikuje swoje predykcje, aby następnym razem w tym samym stanie oczekiwać wyższego wyniku. Jeżeli natomiast przewidywania naszego agenta okażą się zbyt optymistyczne, to w kolejnym kroku sieć obniży swoje oczekiwania.
 
 Funkcja straty jest optymalizowana przy pomocy metody gradientu prostego. W odróżnieniu od uczenia z nadzorem, zamiast niezależnych danych treningowych, dostajemy próbki zależne od wag $\theta$ i z tego powodu musimy korzystać z dodatkowych metod, dzięki którym pozbywamy się silnej korelacji pomiędzy próbkami. Korzystamy z metody zwanej \emph{powtórkami z doświadczenia} (ang. experience replay), która polega na zebraniu wielu trajektorii podczas procesu interakcji agenta ze środowiskiem i zapisywaniu ich jako powtórki w pamięci, a następnie próbkowane są losowo konkretne przykłady $(S_t, A_t, R_{t+1}, s_{t+1})$. Zastosowanie tej techniki sprawia iż zmniejszana jest wariancja podczas procesu uczenia się, dzięki czemu agent szybciej i stabilniej osiąga satysfakcjonujące nas rezultaty.
 
@@ -604,6 +630,8 @@ Strategia może być dowolną funkcją $\pi(a \mid s, \theta)$, musi jednak być
 $$ \theta_{i+1} = \theta_i + \alpha \nabla_{\theta}J , \quad
 J = \mathbb{E}_{\pi} \Big( \sum_{k = 0}^{\infty} \gamma^k R_k \Big)
 $$
+
+Wagi zostają zmienione o pewien niewielki krok $\alpha$, w kierunku wskazywanym przez gradient $ \nabla_{\theta}J $, który odpowiada za wielkość otrzymywanej przez agenta nagrody $ J $. Wykonując tę operacje spodziewamy się jej wzrostu. Funkcją nagrody agenta jest otrzymywany przez niego wynik.
 
 \section{Algorytm REINFORCE}
 
